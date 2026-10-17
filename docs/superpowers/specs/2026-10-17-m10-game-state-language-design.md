@@ -63,7 +63,7 @@ Expected output: `6`, `1`, `8`, each on a new line. If reference semantics for r
 ### 4.1 Grammar extensions
 
 - `record <Name> { <field>: <Type>; ... }` at top level.
-- `List<Number>`, `List<Bool>`, `List<String>` or `List<NamedRecord>` for variables, parameters, and function return types; nested `List<List<T>>` may be parsed, with explicit test coverage before enabling.
+- `List<Number>`, `List<Bool>`, `List<String>` or `List<NamedRecord>` for variables, parameters, and function return types. Nested `List<List<T>>` is intentionally **out of scope for M10** and must fail with a clear diagnostic.
 - `let variable: Type = expression;` optional annotation; required when an empty list literal `[]` has no other expected element type.
 - `[item1, item2, ...]` homogeneous list literal; `[]` permitted with type context.
 - `RecordName { field: expr, ... }` exact-field record constructor (order independent).
@@ -80,7 +80,7 @@ Expected output: `6`, `1`, `8`, each on a new line. If reference semantics for r
 - `record` definitions share the top-level type namespace, but are not automatically exported as module types. `M10` retains the existing primitive/signature M4 module ABI; exporting named record types across modules is a separate future compatibility gate.
 - `len` and `push` are builtin names. Redeclaring them in conflicting scopes should be rejected consistently with `print` rules.
 - Composite records/lists are not equality-comparable in M10; `==` and `!=` work for existing primitive types only. This prevents accidental JS referential-vs-structural ambiguity.
-- M10 does **not** introduce `Map`, `Option`, `Result`, generics beyond `List<T>`, property methods, closures or a public FFI.
+- M10 does **not** introduce `Map`, `Option`, `Result`, generics beyond one-level `List<T>`, property methods, closures or a public FFI.
 
 ### 4.3 Runtime and safety semantics
 
