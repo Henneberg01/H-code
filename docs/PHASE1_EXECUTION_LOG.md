@@ -25,3 +25,11 @@ Feature branch: `feat/phase1-symbol-conformance`
 - Added Rust compiler integration suite; `cargo test` passed 35/35 GREEN. The Rust test passed immediately because it verifies existing compiler semantics, so no unproven Rust behavioral fix is claimed.
 - Tests compare canonical linked JS AST, direct JS-reference output, emitted Rust-JS equivalence and stdout. Sign execution requires no Studio or AI services.
 - No compiler source changed in Task 1.
+
+## Task 2 — Unicode and package-sign validation
+
+- Added JS tests for unbound/reserved symbols, bidi/default-ignorable controls, changed manifest hash, NFKC-unstable glyph and colliding package glyph imports.
+- Added matching Rust checks including two temporary locked packages with the same glyph and explicit qualification.
+- Tests verified **existing safe behavior** on first run, not a new compiler change. No source code modified.
+- Fresh `npm test`: 48/48 GREEN; fresh Rust `cargo test`: 39/39 GREEN.
+- Ruling: additional security controls were not introduced where preexisting validators already rejected these cases. This avoids changing semantics; cost if wrong: uncovered cases remain, requiring further audit.
