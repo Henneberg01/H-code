@@ -4,12 +4,12 @@ export const CORE_GLYPHS = Object.freeze({
   '\u2190': '=', '\u22a4': 'true', '\u22a5': 'false',
   '\u2227': 'and', '\u2228': 'or', '\u00ac': 'not',
   '\u2261': '==', '\u2260': '!=', '\u2264': '<=', '\u2265': '>=',
-  '\u2237': '::', '\u25b7': '|>', '\u2218': '<<', '\u25c7': '?'
+  '\u2237': '::', '\u25b7': '|>', '\u2218': '<<', '\u25c7': '?', '\u27e6': '[[', '\u27e7': ']]', '\u2317': '#', '\u29fa': '++'
 });
 export const RESERVED_USER_GLYPHS = new Set(['\u2205', '\u2200', '\u2208', ...Object.keys(CORE_GLYPHS)]);
 const RESERVED = new Set(['fn','let','return','true','false','if','else','while','and','or','not','use','as']);
-const TWO = new Set(['==','!=','<=','>=','->','::','|>','<<']);
-const ONE = new Set(['+','-','*','/','%','<','>','=','(',')','{','}',',',';',':','?']);
+const TWO = new Set(['==','!=','<=','>=','->','::','|>','<<','[[',']]','++']);
+const ONE = new Set(['+','-','*','/','%','<','>','=','(',')','{','}',',',';',':','?','#']);
 const ILLEGAL = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]|\p{Default_Ignorable_Code_Point}/u;
 const SYMBOL_CHARACTER = /^\p{S}$/u;
 
@@ -166,10 +166,16 @@ class Parser {
     let left;
     if(this.accept('not'))left={kind:'Unary',operator:'not',value:this.expr(8)};
     else if(this.accept('-'))left={kind:'Unary',operator:'-',value:this.expr(8)};
+    else if(this.accept('#'))left={kind:'Length',value:this.expr(8)};
     else if(this.at('number'))left={kind:'Literal',value:this.expect('number').value};
     else if(this.at('string'))left={kind:'Literal',value:this.expect('string').value};
     else if(this.accept('true'))left={kind:'Literal',value:true};
     else if(this.accept('false'))left={kind:'Literal',value:false};
+    else if(this.accept('[[')){
+      const items=[];
+      if(!this.at(']]')){do{items.push(this.expr());}while(this.accept(','));}
+      this.expect(']]');left={kind:'Sequence',items};
+    }
     else if(this.at('ident')){
       const t=this.expect('ident');
       if(this.accept('::')){
@@ -183,6 +189,10 @@ class Parser {
     else if(this.accept('(')){left=this.expr();this.expect(')');}
     else {const t=this.peek();throw new HCodeError(`Expected expression, got ${t.type}`,t.line,t.column);}
     while(true){
+      if(this.at('[[')&&9>=min){
+        this.expect('[[');const index=this.expr();this.expect(']]');
+        left={kind:'Index',sequence:left,index};continue;
+      }
       if(this.at('(')&&9>=min){
         this.expect('(');const args=[];
         if(!this.at(')')){do{args.push(this.expr());}while(this.accept(','));}
@@ -206,7 +216,7 @@ class Parser {
         continue;
       }
       const op=this.peek().type;
-      const power={or:1,and:2,'==':3,'!=':3,'<':4,'>':4,'<=':4,'>=':4,'+':5,'-':5,'*':6,'/':6,'%':6,'<<':7}[op];
+      const power={or:1,and:2,'==':3,'!=':3,'<':4,'>':4,'<=':4,'>=':4,'+':5,'-':5,'*':6,'/':6,'%':6,'<<':7,'++':5}[op];
       if(power===undefined||power<min)break;
       this.i++;const right=this.expr(power+1);left={kind:'Binary',operator:op,left,right};
     }
@@ -260,6 +270,9 @@ export function linkProgram(ast, registry=new Map()) {
   function expression(node){
     if(node.kind==='GlyphOperation'||node.kind==='QualifiedOperation')return resolveRef(node);
     if(node.kind==='Unary')return {...node,value:expression(node.value)};
+    if(node.kind==='Sequence')return {...node,items:node.items.map(expression)};
+    if(node.kind==='Index')return {...node,sequence:expression(node.sequence),index:expression(node.index)};
+    if(node.kind==='Length')return {...node,value:expression(node.value)};
     if(node.kind==='Binary')return {...node,left:expression(node.left),right:expression(node.right)};
     if(node.kind==='Choice')return {...node,condition:expression(node.condition),whenTrue:expression(node.whenTrue),whenFalse:expression(node.whenFalse)};
     if(node.kind==='Call'){
@@ -300,15 +313,39 @@ class Scope {
 class ReturnSignal{constructor(value){this.value=value;}}
 const runtimeType=value=>value===null?'Unit':typeof value==='number'?'Number':typeof value==='string'?'String':typeof value==='boolean'?'Bool':'unsupported';
 
-export function evaluate(ast,{stdout=()=>{},maxSteps=200000,registry=new Map()}={}){
+export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=16384,registry=new Map()}={}){
   const root=new Scope(),operations=new Map(),loadedLibraries=new Set();let steps=0;
   const step=()=>{if(++steps>maxSteps)throw Error('Execution step limit exceeded');};
   root.define('print',(...args)=>{stdout(args.map(x=>x===null?'none':String(x)).join(' '));return null;});
   const truth=v=>{if(typeof v!=='boolean')throw Error('Condition must be Boolean');return v;};
+  const seqElementType=v=>{
+    if(Array.isArray(v)){
+      if(v.length===0)return 'Sequence<?>';
+      const inner=v.map(seqElementType);
+      const known=inner.find(t=>t!=='Sequence<?>')??inner[0];
+      if(inner.some(t=>t!==known&&t!=='Sequence<?>'))throw Error('Sequence elements must have matching types');
+      return 'Sequence<'+known+'>';
+    }
+    return typeof v;
+  };
+  const validateSequence=v=>{
+    if(!Array.isArray(v))throw Error('Expected sequence');
+    if(v.length>maxSequenceItems)throw Error('Sequence allocation limit exceeded');
+    if(v.length>0){const types=v.map(seqElementType),first=types[0];
+      if(types.some(t=>t!==first))throw Error('Sequence elements must have matching types');}
+    return v;
+  };
   function expr(node,scope){
     step();
     switch(node.kind){
       case 'Literal':return node.value;
+      case 'Sequence':return validateSequence(node.items.map(x=>expr(x,scope)));
+      case 'Index':{
+        const seq=validateSequence(expr(node.sequence,scope)),i=expr(node.index,scope);
+        if(typeof i!=='number'||!Number.isInteger(i)||i<0||i>=seq.length)throw Error('Sequence index out of bounds or not an integer');
+        return seq[i];
+      }
+      case 'Length':return validateSequence(expr(node.value,scope)).length;
       case 'Identifier':return scope.get(node.name);
       case 'OperationRef':{
         const fn=operations.get(node.id);
@@ -326,6 +363,12 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,registry=new Map()}=
       }
       case 'Binary':{
         const a=expr(node.left,scope),op=node.operator;
+        if(op==='++'){
+          const b=expr(node.right,scope);
+          const x=validateSequence(a),y=validateSequence(b);
+          if(x.length+y.length>maxSequenceItems)throw Error('Sequence allocation limit exceeded');
+          return validateSequence([...x,...y]);
+        }
         if(op==='<<'){
           const b=expr(node.right,scope);
           if(typeof a!=='function'||typeof b!=='function')throw Error('Composition expects unary functions');
