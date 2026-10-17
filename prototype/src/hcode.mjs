@@ -102,6 +102,14 @@ class Parser {
   expect(kind){const got=this.accept(kind);if(got)return got;const t=this.peek();throw new HCodeError(`Expected ${kind}; got ${t.type}`,t.line,t.column);}
   program(){const body=[];while(!this.at('eof'))body.push(this.stmt(true));return {kind:'Program',body};}
   block(){this.expect('{');const body=[];while(!this.at('}')){if(this.at('eof'))this.expect('}');body.push(this.stmt(false));}this.expect('}');return {kind:'Block',body};}
+  typeName(){
+    if(this.accept('[[')){
+      const element=this.typeName();
+      this.expect(']]');
+      return '⟦'+element+'⟧';
+    }
+    return this.expect('ident').value;
+  }
   stmt(topLevel=false){
     if(this.at('use')){
       const t=this.expect('use');
@@ -110,12 +118,17 @@ class Parser {
       this.expect('as');const alias=this.expect('ident').value;this.expect(';');
       return {kind:'Use',spec,alias,line:t.line,column:t.column};
     }
-    if(this.accept('let')){const name=this.expect('ident').value;this.expect('=');const value=this.expr();this.expect(';');return {kind:'Let',name,value};}
+    if(this.accept('let')){
+      const name=this.expect('ident').value;
+      const annotation=this.accept(':')?this.typeName():null;
+      this.expect('=');const value=this.expr();this.expect(';');
+      return annotation?{kind:'Let',name,annotation,value}:{kind:'Let',name,value};
+    }
     if(this.accept('return')){const value=this.expr();this.expect(';');return {kind:'Return',value};}
     if(this.accept('fn')){
       const name=this.expect('ident').value;this.expect('(');const params=[];
-      if(!this.at(')')){do{const p=this.expect('ident').value;let type=null;if(this.accept(':'))type=this.expect('ident').value;params.push({name:p,type});}while(this.accept(','));}
-      this.expect(')');let returnType=null;if(this.accept('->'))returnType=this.expect('ident').value;
+      if(!this.at(')')){do{const p=this.expect('ident').value;let type=null;if(this.accept(':'))type=this.typeName();params.push({name:p,type});}while(this.accept(','));}
+      this.expect(')');let returnType=null;if(this.accept('->'))returnType=this.typeName();
       let body;
        if(this.at('{')) body=this.block();
        else {
@@ -304,7 +317,7 @@ export function linkProgram(ast, registry=new Map()) {
 }
 
 class Scope {
-  constructor(parent=null){this.parent=parent;this.values=new Map();}
+  constructor(parent=null){this.parent=parent;this.values=new Map();this.returnType=parent?.returnType??null;}
   define(name,value){if(this.values.has(name))throw Error(`Duplicate name ${name}`);this.values.set(name,value);}
   find(name){if(this.values.has(name))return this;if(this.parent)return this.parent.find(name);throw Error(`Unknown name ${name}`);}
   get(name){return this.find(name).values.get(name);}
@@ -335,11 +348,17 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
       if(types.some(t=>t!==first))throw Error('Sequence elements must have matching types');}
     return v;
   };
-  function expr(node,scope){
+  function expr(node,scope,expectedType=null){
     step();
     switch(node.kind){
       case 'Literal':return node.value;
-      case 'Sequence':return validateSequence(node.items.map(x=>expr(x,scope)));
+      case 'Sequence':{
+        if(node.items.length===0 && !(typeof expectedType==='string'&&expectedType.startsWith('⟦')&&expectedType.endsWith('⟧'))){
+          throw Error('Cannot infer empty sequence type; add a type annotation');
+        }
+        const elementHint=typeof expectedType==='string' && expectedType.startsWith('⟦')?expectedType.slice(1,-1):null;
+        return validateSequence(node.items.map(x=>expr(x,scope,elementHint)));
+      }
       case 'Index':{
         const seq=validateSequence(expr(node.sequence,scope)),i=expr(node.index,scope);
         if(typeof i!=='number'||!Number.isInteger(i)||i<0||i>=seq.length)throw Error('Sequence index out of bounds or not an integer');
@@ -399,15 +418,16 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
     step();
     switch(node.kind){
       case 'Use':break;
-      case 'Let':scope.define(node.name,expr(node.value,scope));break;
+      case 'Let':scope.define(node.name,expr(node.value,scope,node.annotation??null));break;
       case 'Assign':scope.assign(node.name,expr(node.value,scope));break;
       case 'ExpressionStatement':expr(node.value,scope);break;
-      case 'Return':throw new ReturnSignal(expr(node.value,scope));
+      case 'Return':throw new ReturnSignal(expr(node.value,scope,scope.returnType));
       case 'Function':{
         const fn=(...args)=>{
           step();
           if(args.length!==node.params.length)throw Error(`${node.name} expects ${node.params.length} arguments`);
-          const inner=new Scope(scope);for(let j=0;j<args.length;j++)inner.define(node.params[j].name,args[j]);
+          const inner=new Scope(scope);inner.returnType=node.returnType;
+          for(let j=0;j<args.length;j++)inner.define(node.params[j].name,args[j]);
           try{for(const statement of node.body.body)stmt(statement,inner);}catch(e){if(e instanceof ReturnSignal)return e.value;throw e;}
           return null;
         };
