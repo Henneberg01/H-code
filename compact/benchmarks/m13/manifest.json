@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "id": "M13-SAME-M11-TASKS-2026-10-18-v1",
+  "sourceDataset": "M11-SEQ-SUM-MAP-FILTER-2026-10-18-v1",
+  "comparisonCases": [
+    {
+      "id": "sum-typed-sequence",
+      "expected": "10\n",
+      "originalHCodePath": "compact/benchmarks/m11/sum-typed-sequence.hc",
+      "originalHCodeSha": "23824383ce47a287e1ff83fb21a6ec05e4749e4c",
+      "typescriptPath": "compact/benchmarks/m11/sum-typed-sequence.ts",
+      "typescriptSha": "b0c5696caf64ed15211ef380026129f7ac3bd51b",
+      "newHCodePath": "compact/benchmarks/m13/sum-typed-sequence.hc",
+      "newHCodeSha": "4407ad4043c29f10fbeafbbd60070ee2ae6daabc"
+    },
+    {
+      "id": "map-typed-sequence",
+      "expected": "20\n22\n",
+      "originalHCodePath": "compact/benchmarks/m11/map-typed-sequence.hc",
+      "originalHCodeSha": "467a0b18544b1721683d68421cf870d03a5451dc",
+      "typescriptPath": "compact/benchmarks/m11/map-typed-sequence.ts",
+      "typescriptSha": "aa2382e406b8e96ae5a80d2b500bb33aa09c0e6d",
+      "newHCodePath": "compact/benchmarks/m13/map-typed-sequence.hc",
+      "newHCodeSha": "da5a3e90268f53217e84483ba1f811352fda7111"
+    },
+    {
+      "id": "filter-typed-sequence",
+      "expected": "2\n2\n3\n",
+      "originalHCodePath": "compact/benchmarks/m11/filter-typed-sequence.hc",
+      "originalHCodeSha": "e26c0d6a6e2bdda05091113040168e3f98947b11",
+      "typescriptPath": "compact/benchmarks/m11/filter-typed-sequence.ts",
+      "typescriptSha": "45b9ad1726aeb3eda2f65046233c5b65813b6a89",
+      "newHCodePath": "compact/benchmarks/m13/filter-typed-sequence.hc",
+      "newHCodeSha": "8bf23da122c2e7ce1db0107d3607cce5aa7a3506"
+    }
+  ]
+}
