@@ -175,3 +175,19 @@ Reduktion (%) = 100 × (1 − H-Code kodepunkter / idiomatisk TypeScript kodepun
 ## Ejergodkendt kurskorrektion 2026-10-18 — TEGN først
 
 M11-planen blev tidligere teksttung med `List<T>`, `len`, `append` som primær demonstration. Dette var i strid med H-Codes formål. Den reviderede, **ikke implementerede** grammatik fremhæver `⟦`, `⟧`, `⌗`, `⧺`; M13 kræver ægte generiske `∑`, `⌕` og `⇢`. Interne typer er stadig tilladt, men kildeeksempler og release-accept skal bruge tegn. Hver milepæl måles på sammenlignelige, låste programpar; datasæt udskiftes aldrig uden nyt versions-ID.
+
+## Tekniske implementeringsresultater (18. oktober 2026) — ikke endelig M13-godkendelse
+
+På `feat/m13-core-collection-signs` er `∑`, `⌕`, `⇢` nu oprettet som **rigtige operatorer** i Rust-lexer, AST, typechecker og JavaScript-codegen samt JS-referencefortolker og Studio. Deres semantik er generel og typed. De bruger nu kernelignende, kontrollerede runtime-primitiver — det er **ikke** en implementering af det planlagte SHA-låste, brugerdefinerbare manifest-v2 bibliotek, som stadig er åbent.
+
+De **samme tre M11-opgaver og identiske, SHA-låste TypeScript-programmer** blev genkørt i JS-referencefortolkeren og en TypeScript-udførelse:
+
+| Samme opgave | M11 H-Code | M13 H-Code | Uændret TypeScript | M13 besparelse vs TypeScript |
+|---|---:|---:|---:|---:|
+| Sum | 113 | 17 | 100 | +83,00% |
+| Map | 159 | 57 | 130 | +56,15% |
+| Filter | 185 | 77 | 167 | +53,89% |
+
+Median **+56,15% i Unicode-kodepunkter**, median **+40,12% i UTF-8-bytes**, kun **tre foruddefinerede opgaver**, ikke universel 70%. Alle kilders Git SHA og forventet output findes i `compact/benchmarks/m13/manifest.json`. Reproducerbar kørsel: `npm run m13:measure` på Node 22+.
+
+**M13 release gate fortsat åben:** Cargo/Rust, fuld Node/Studio CI, gamle programmer, opdateret manifest-v2 og publiceret generisk operator-binding. M0–M9 og `main` er urørte. Inkludér ALLE 20 kanoniske programmer, også de dårlige, før universelle effektivitets-påstande.

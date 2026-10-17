@@ -91,3 +91,17 @@ print(fact(5));
 ```
 
 Expected `120`. The compiler checks Boolean conditions and matching arm types; only the chosen arm executes. ASCII fallback: `?`. See `docs/SYMBOL-CHOICE.md` for semantics and **same-task** source-count evidence. This feature is on a draft branch, **not merged or fully Rust-tested**.
+
+## Experimental higher-order collection signs — `∑`, `⌕`, `⇢` (unreleased)
+
+These are real Unicode-first H-Code operations in both compilers' source code, using typed, general-purpose array semantics, not AI or hardcoded commerce tasks:
+
+```hcode
+ƒ positive(n) ↩ n>0;
+ƒ twice(n) ↩ n*2;
+print(∑(⟦-1,2,3,-2⟧⌕positive⇢twice));
+```
+
+Expected output: `10`. Real static type constraints: `⌕:⟦T⟧×(T→Bool)→⟦T⟧`, `⇢:⟦T⟧×(T→U)→⟦U⟧` and `∑:⟦Number⟧→Number`. Accessible ASCII aliases exist but are not the primary language. Full Rust/Cargo tests and upstream PR integration are still pending; `main` remains unchanged.
+
+Same-task SHA-pinned benchmark: `compact/benchmarks/m13/`, run `npm run m13:measure`. This **three-task** source-only comparison shows a provisional **56.15% median fewer Unicode code points versus the unchanged TypeScript programs**; it is not the final 20-task 70% result. See `docs/M13-COLLECTION-SIGNS.md`.

@@ -26,15 +26,18 @@
 | 20 | ⟧ | `]]` | **CSE-2 experimental branch** | Close a typed sequence or index |
 | 21 | ⌗ | `#` | **CSE-2 experimental branch** | Pure sequence length, checked in both frontends |
 | 22 | ⧺ | `++` | **CSE-2 experimental branch** | Pure, typed, capacity-limited sequence concatenation |
-| 23 | ∅ | `none` | Reserved | Future Option/absence value |
-| 24 | ∀ | `for` | Reserved | Future iteration |
-| 25 | ∈ | `in` | Reserved | Future membership separator |
-| 26 | ⊕ | `packageAlias::operation` | **Demo package** | `demo.math@1.0.0::add`, two Numbers to Number |
-| 27 | ▦ | `packageAlias::operation` | **Demo package** | `demo.math@1.0.0::repeat2`, String to String |
-| 28 | ⊙ | `packageAlias::operation` | **Demo package** | `demo.math@1.0.0::is_positive`, Number to Bool |
-| 29 | ⊗ | `packageAlias::operation` | **Demo package** | `demo.math@1.0.0::factorial`, Number to Number |
+| 23 | ∑ | `@+` | **M13 core prototype; Rust tests pending** | Reduce any numeric sequence to its sum, including an empty one |
+| 24 | ⌕ | `@?` | **M13 core prototype; Rust tests pending** | Stable typed filtering by a unary H-Code predicate returning Bool |
+| 25 | ⇢ | `@>` | **M13 core prototype; Rust tests pending** | Stable generic transformation by a unary H-Code function, type-changing allowed |
+| 26 | ∅ | `none` | Reserved | Future Option/absence value |
+| 27 | ∀ | `for` | Reserved | Future iteration |
+| 28 | ∈ | `in` | Reserved | Future membership separator |
+| 29 | ⊕ | `packageAlias::operation` | **Demo package** | `demo.math@1.0.0::add`, two Numbers to Number |
+| 30 | ▦ | `packageAlias::operation` | **Demo package** | `demo.math@1.0.0::repeat2`, String to String |
+| 31 | ⊙ | `packageAlias::operation` | **Demo package** | `demo.math@1.0.0::is_positive`, Number to Bool |
+| 32 | ⊗ | `packageAlias::operation` | **Demo package** | `demo.math@1.0.0::factorial`, Number to Number |
 
-Note: The symbols in rows 26–29 have **no language-global meaning**. These bindings are examples provided by a specifically imported, versioned demonstration library. Any permitted nonreserved symbol can represent a different operation in a different package. Two packages exporting the same glyph require explicit qualified access.
+Note: The symbols in rows 29–32 have **no language-global meaning**. These bindings are examples provided by a specifically imported, versioned demonstration library. Any permitted nonreserved symbol can represent a different operation in a different package. Two packages exporting the same glyph require explicit qualified access.
 
 ## M1 behavior
 
@@ -94,3 +97,17 @@ The primary source forms are `⟦1,2,3⟧`, `xs⟦0⟧`, `⌗xs`, and `xs ⧺ �
 The implementation has distinct Rust AST and typechecker variants, with homogeneous-element inference, checked index type/bounds and immutable concatenation. Typed empty sequences require context, e.g. `≔ xs:⟦Number⟧ ← ⟦⟧;`. Runtime length/allocation is bounded; sequence operation side effects are not exposed. The JavaScript reference has runtime annotation checks; Rust is the authoritative static checker.
 
 **Status:** implemented on isolated `feat/m11-symbol-sequences-spike` with reference checks, not compiled or released. See `docs/CSE2_IMPLEMENTATION.md` for limits and verification gates. `⌕`, `⇢`, `∑` remain future **separate**, typed general-purpose signs, not built-in shortcuts or implemented syntax.
+
+## M13 core collection signs — implemented in feature branch, unreleased
+
+`∑`, `⌕` and `⇢` are **real compiler operators**, not textual replacements for TypeScript calls.
+
+- `∑xs` requires `xs:⟦Number⟧`, returns Number, sums left-to-right, and returns `0` for an empty number sequence. ASCII fallback `@+`.
+- `xs ⌕ pred` takes `xs:⟦T⟧` and a **unary H-Code function** `pred:T→Bool`; returns `⟦T⟧`, preserving order. ASCII fallback `@?`.
+- `xs ⇢ f` takes `xs:⟦T⟧` and unary `f:T→U`; returns `⟦U⟧` even when the element type changes. ASCII fallback `@>`.
+- `⌕` and `⇢` bind with the same precedence as `⧺`, process left-to-right, and require parentheses when indexing the *result* of an expression: `(xs⇢f)⟦0⟧`. Prefix `∑` binds tightly, so combine signs as `∑(xs⌕pred⇢f)`.
+- No hidden AI, no external host access, no per-task hardcoding. Resource accounting ticks once per element; sequence sizes are bounded to 16,384 in the current prototype. H-Code compiler typechecks callable arity and types.
+- Rust, JS reference and Studio changes have been authored; **Rust/Cargo and complete CI have not yet been executed**. The sign operators are not in `main`.
+- These are **core primitives**, not a claim that M13's larger generic package-manifest-v2/user-defined operator work is finished.
+
+See `docs/M13-COLLECTION-SIGNS.md` and the locked, same-task `compact/benchmarks/m13/` comparison.
