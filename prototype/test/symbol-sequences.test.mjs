@@ -60,6 +60,12 @@ test('mixed type and unannotated empty sequences are not accepted silently',()=>
   assert.throws(()=>run('ƒ f() → Number ↩ ⟦⟧;print(f());'),/Cannot infer empty sequence/);
   assert.throws(()=>tokenize('print(⟦1,\u200b2⟧);'),/Forbidden control/);
 });
+test('nested empty sequences unify against sibling element types rather than failing prematurely',()=>{
+  assert.equal(run('≔ xs←⟦⟦⟧,⟦1⟧⟧;print(⌗xs);print(⌗xs⟦0⟧);'),'2\n0');
+  assert.equal(run('≔ xs:⟦⟦Number⟧⟧←⟦⟦⟧⟧;print(⌗xs);'),'1');
+  assert.throws(()=>run('≔ xs←⟦⟦⟧⟧;'),/Cannot infer empty sequence/);
+  assert.throws(()=>run('≔ xs←⟦⟦1⟧,⟦"bad"⟧⟧;'),/Sequence elements must have matching types/);
+});
 test('new symbols respect sequence allocation budgets and do not expose host JavaScript',()=>{
   assert.throws(()=>run('print(⟦1,2,3⟧);',{maxSequenceItems:2}),/Sequence allocation limit exceeded/);
   assert.throws(()=>run('≔ x←⟦1,2⟧;print(x ⧺ ⟦3⟧);',{maxSequenceItems:2}),/Sequence allocation limit exceeded/);

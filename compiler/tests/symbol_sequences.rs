@@ -37,6 +37,8 @@ fn typed_sequences_have_real_lexer_tokens_and_canonical_ascii_ast(){
 #[test]
 fn rust_infers_recursive_type_safe_sequences_and_contextual_empty_lists(){
     let code="≔ xs←⟦1,2,3⟧;≔ ys←⟦⟦1⟧,⟦2⟧⟧;print(xs⟦0⟧);print(⌗ys);";
+    let nested_empty="≔ xs←⟦⟦⟧,⟦1⟧⟧;print(⌗xs);print(⌗xs⟦0⟧);";
+    assert_eq!(run(nested_empty).unwrap(),"2\n0\n");
     let typed=check(&parse(code).unwrap(),&PackageRegistry::default(),true).unwrap();
     if let TypedStmtKind::Let{value,..}=&typed.statements[0].kind{
         assert_eq!(value.ty,Type::Sequence(Box::new(Type::Number)));

@@ -341,33 +341,46 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
     const actual=value===null?'Unit':typeof value==='number'?'Number':typeof value==='string'?'String':typeof value==='boolean'?'Bool':'Unknown';
     if(actual!==type)throw Error('Annotated type mismatch: expected '+type+', got '+actual);
   };
+  const unifySequenceTypes=(left,right)=>{
+    if(left==='?')return right;
+    if(right==='?')return left;
+    if(left.startsWith('Sequence<') && right.startsWith('Sequence<')){
+      return 'Sequence<'+unifySequenceTypes(left.slice(9,-1),right.slice(9,-1))+'>';
+    }
+    if(left!==right)throw Error('Sequence elements must have matching types');
+    return left;
+  };
   const seqElementType=v=>{
     if(Array.isArray(v)){
-      if(v.length===0)return 'Sequence<?>';
-      const inner=v.map(seqElementType);
-      const known=inner.find(t=>t!=='Sequence<?>')??inner[0];
-      if(inner.some(t=>t!==known&&t!=='Sequence<?>'))throw Error('Sequence elements must have matching types');
-      return 'Sequence<'+known+'>';
+      let element='?';
+      for(const item of v)element=unifySequenceTypes(element,seqElementType(item));
+      return 'Sequence<'+element+'>';
     }
     return typeof v;
   };
   const validateSequence=v=>{
     if(!Array.isArray(v))throw Error('Expected sequence');
     if(v.length>maxSequenceItems)throw Error('Sequence allocation limit exceeded');
-    if(v.length>0){const types=v.map(seqElementType),first=types[0];
-      if(types.some(t=>t!==first))throw Error('Sequence elements must have matching types');}
+    let element='?';
+    for(const item of v)element=unifySequenceTypes(element,seqElementType(item));
     return v;
   };
-  function expr(node,scope,expectedType=null){
+  function expr(node,scope,expectedType=null,deferredEmpty=false){
     step();
     switch(node.kind){
       case 'Literal':return node.value;
       case 'Sequence':{
-        if(node.items.length===0 && !(typeof expectedType==='string'&&expectedType.startsWith('⟦')&&expectedType.endsWith('⟧'))){
+        const typed=typeof expectedType==='string' && expectedType.startsWith('⟦') && expectedType.endsWith('⟧');
+        if(node.items.length===0){
+          if(!typed && !deferredEmpty)throw Error('Cannot infer empty sequence type; add a type annotation');
+          return validateSequence([]);
+        }
+        const inner=typed?expectedType.slice(1,-1):null;
+        const values=validateSequence(node.items.map(x=>expr(x,scope,inner,true)));
+        if(!typed&&!deferredEmpty&&seqElementType(values).includes('?')){
           throw Error('Cannot infer empty sequence type; add a type annotation');
         }
-        const elementHint=typeof expectedType==='string' && expectedType.startsWith('⟦')?expectedType.slice(1,-1):null;
-        return validateSequence(node.items.map(x=>expr(x,scope,elementHint)));
+        return values;
       }
       case 'Index':{
         const seq=validateSequence(expr(node.sequence,scope)),i=expr(node.index,scope);
