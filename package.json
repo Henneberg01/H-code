@@ -1,0 +1,17 @@
+{
+  "name": "h-code-language",
+  "version": "0.0.2",
+  "private": true,
+  "type": "module",
+  "description": "H-Code M1 reference interpreter, symbol linker and offline library contract verification",
+  "scripts": {
+    "test": "node --test prototype/test/*.test.mjs",
+    "demo": "node prototype/bin/hcode.mjs run examples/user_symbols.hc --lock hcode.lock.json",
+    "check": "node prototype/bin/hcode.mjs check examples/user_symbols.hc --lock hcode.lock.json",
+    "studio": "node studio/server.mjs",
+    "studio:test": "node --test studio/test/*.test.mjs",
+    "bench": "node studio/benchmark.mjs",
+    "release:check": "node scripts/release-check.mjs"
+  },
+  "engines": { "node": ">=20" }
+}

@@ -1,0 +1,17 @@
+[package]
+name = "hcode-compiler"
+version = "0.2.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "H-Code M2 compiler frontend: Unicode lexer, parser, typed AST and static analysis"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+sha2 = "0.10"
+unicode-normalization = "0.1"
+unicode-general-category = "1.1"
+
+[[bin]]
+name = "hcodec"
+path = "src/main.rs"

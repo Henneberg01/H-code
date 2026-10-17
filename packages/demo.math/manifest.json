@@ -1,0 +1,12 @@
+{
+  "format": 1,
+  "name": "demo.math",
+  "version": "1.0.0",
+  "source": "lib.hc",
+  "operations": [
+    {"name":"add","glyph":"⊕","parameters":[{"name":"a","type":"Number"},{"name":"b","type":"Number"}],"returns":"Number","effects":[],"implementation":"add"},
+    {"name":"repeat2","glyph":"▦","parameters":[{"name":"value","type":"String"}],"returns":"String","effects":[],"implementation":"repeat2"},
+    {"name":"is_positive","glyph":"⊙","parameters":[{"name":"value","type":"Number"}],"returns":"Bool","effects":[],"implementation":"is_positive"},
+    {"name":"factorial","glyph":"⊗","parameters":[{"name":"n","type":"Number"}],"returns":"Number","effects":[],"implementation":"factorial"}
+  ]
+}

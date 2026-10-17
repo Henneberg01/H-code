@@ -1,0 +1,12 @@
+{
+  "lockVersion": 1,
+  "packages": [
+    {
+      "name": "demo.math",
+      "version": "1.0.0",
+      "manifest": "packages/demo.math/manifest.json",
+      "manifestSha256": "b36d26ece419cd6a82c57eebf66dae6d10588693845a39294be9336ad1f235ce",
+      "sourceSha256": "00318b0c192345f7c3ac87db18fdbd619b5f4f4963eb6f99d241241665c4894c"
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+node_modules/
+compiler/target/
+target/
+dist/
+coverage/
+.DS_Store
+*.log
+.env
+.env.*
+!.env.example
+studio/output.mjs
+.m9-backup-*/

@@ -1,0 +1,10 @@
+import "./rules.hc" as invoice;
+let subtotal = invoice::line_total(1250, 4) + invoice::line_total(500, 2);
+let discount = invoice::discount_cents(subtotal, 10);
+let taxable = subtotal - discount;
+let vat = invoice::tax_cents(taxable, 25);
+print("INVOICE");
+print("subtotal_cents", subtotal);
+print("discount_cents", discount);
+print("vat_cents", vat);
+print("total_cents", invoice::grand_total(subtotal, discount, vat));
