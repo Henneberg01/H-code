@@ -37,3 +37,15 @@ Measure Unicode code points and UTF-8 bytes **separately**; fewer visible charac
 - Copyright © 2026 Jonas Fogh Henneberg, operating as Fastsell.net (CVR 46614887), Denmark.
 
 **Do not rename H-Code, reduce it to shortcuts for JavaScript, redefine the signs as visual-only UI, or advertise unmeasured performance.** Any proposed deviation requires an explicit, reviewed change to this document and the language specification.
+
+## Symbol-first invariant reaffirmed (2026-10-18)
+
+**OWNER DIRECTION: HOLD DIG TIL TEGN.** This is a binding product constraint on future milestones, reviews and code changes.
+
+- H-Code syntax must be **sign-first** in source, not a rebranded collection of English keywords. ASCII spellings are accessibility fallbacks, not the design centre.
+- Prioritize signs that represent **meaningful typed computation** (e.g. `▷` pipelines, `∘` higher-order composition, proposed `⌕` filter, `⇢` map and `∑` reduction), not superficial abbreviation or syntax translated word-for-word from JavaScript/TypeScript.
+- Data types and runtime internals may use conventional names *internally* but developer-facing examples, tutorials and acceptance cases must lead with signs and show that one sign carries an inspectable, general-purpose semantic operation.
+- No built-in "webshop" / "paid order" shortcuts used to fake high compression. Typed signs must work with arbitrary user data and user-authored functions; no hidden AI invocation.
+- The **70%** goal concerns developer-written source-code Unicode code points versus equivalent working idiomatic code, with UTF-8 bytes/dependencies reported separately. No claims of achievement without matching executable benchmarks.
+- Never treat results from **different benchmark corpora** as before/after results for the same code. Fix exact source pairs and revision SHAs, report provenance and version any altered tasks. Keep wins and losses in the same corpus, without retroactively replacing historical results.
+- Freeze and preserve M0–M9 milestones and old program behavior; keep additions on development branches with independent parity tests and never imply successful Rust builds before a real run.
