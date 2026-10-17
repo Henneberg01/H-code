@@ -43,7 +43,7 @@ One sign produces an entire webshop/API/game scene from a hidden preset, or AI w
 H-Code follows a **small syntax core** and a **rich, versioned, typed library ecosystem**:
 
 1. **CSE-1: compact expressions and pipelines (first implementation unit).** Add a single-expression function declaration plus a native pipeline operator. Use existing Type/Function and Call AST/typed semantics where possible. Do not add or rename the existing core 15 signs, change package formats, or add new builtins.
-2. **CSE-2: general-purpose typed sequences.** Introduce List literals, List<T> type, explicit bounds-checked indexing, length operation, and sufficient static inference to define ordinary iteration functions in user-written H-Code. Implement consistently in reference interpreter and Rust compiler; keep output deterministic.
+2. **CSE-2: symbol-first typed sequences.** Proposed primary source signs: `⟦...⟧` for typed sequence values, `xs⟦i⟧` for bounds-checked indexed access, `⌗xs` for length and `xs ⧺ ys` for pure typed concatenation. Implement with a real AST/static checker. Internal type nodes may use List<T> nomenclature but developer-facing syntax is signs. Implement consistently in reference interpreter and Rust compiler; keep output deterministic.
 3. **CSE-3: records and reusable collection operators.** Introduce record types/field access, simple typed function selectors, and a SHA-locked **hcode.collections@1.0.0** pure library. Define map/filter/sum as discoverable operations with explicit contracts; extend library manifest format versionfully for generic contracts rather than breaking existing package v1.
 4. **CSE-4: representative measurements and developer ergonomics.** Build 20 matched real tasks, provenance/CI reports and Editor/Language Server support when available. Publish outcomes whether or not 70% is reached. Optimize only proven bottlenecks; don't fabricate execution speedup.
 
@@ -120,11 +120,11 @@ print(answer);
 
 This means the **locked** `demo.math@1.0.0::add(20,22)`, not an unqualified arbitrary global built-in. Resolve ambiguity and effects exactly as today.
 
-## 5. CSE-2 typed sequence contract (next independent unit)
+## 5. CSE-2 symbolic sequence contract (next independent unit)
 
-CSE-2 introduces `List<T>`, list literals `[1,2,3]`, integer-indexed read access `xs[i]`, and list-length access through an explicit typed standard operation. Inference for `[1,2,3]` yields `List<Number>`; `[]` requires an annotated expected type (otherwise report an ambiguous empty-list error). Homogeneous value types unify, heterogeneous values fail unless an explicit future union type exists. Index access must reject non-integer indices and fail predictably on out-of-bounds, never silently return JS `undefined`. No implicit ambient file/network APIs. Use the established compiler/runtime resource budgets.
+**Normative 2026-10-18 correction:** H-Code remains a sign-first language. Primary proposed syntax is `⟦1,2,3⟧`, `xs⟦i⟧`, `⌗xs`, `xs ⧺ ys`, and `⟦Number⟧` in explicit type positions. Internal compiler types may use conventional names, but source language cannot default to `List<T>`, `len` or `append` as primary examples. See `docs/superpowers/specs/2026-10-18-hcode-cse2-typed-sequences-design.md`.
 
-The list primitives are sufficient to define reusable sum/map/filter algorithms as **ordinary H-Code library functions**; they must not require secret compiler-specific handlers for domain tasks. Generic operation contracts must be designed/tested before `hcode.collections` release. Existing locked `demo.math` continues to work unchanged.
+The operator `⧺` provides a pure, general-purpose way to build variable-length typed sequences by composing with singleton sequences, without a hardcoded app builder. `∑`, `⌕`, and `⇢` require a separately checked general operator-binding scheme in CSE-3: they are not implemented or globally reserved by this design. All sign semantics must be inspectable, typed and compatible with existing locked packages. Existing Rust/JS conformance and execution tests must pass before promoting this from design to compiler capability.
 
 ## 6. CSE-3 records and package-defined operators (future, independently reviewed)
 
@@ -143,10 +143,10 @@ Conceptual goal (NOT currently executable, dependent on CSE-2/3):
 ```hcode
 use "hcode.collections@1.0.0" as c;
 record Order { paid: Bool, amount: Number }
-ƒ total(orders: List<Order>) ↩ orders ▷ ⌕(?paid) ▷ ⇢(.amount) ▷ ∑;
+ƒ total(os: ⟦Order⟧) ↩ ∑(os ⌕ isPaid ⇢ amount);
 ```
 
-This has explicit typed semantics: `⌕(?paid)` filters orders whose `paid` field is true, `⇢(.amount)` maps each remaining order to a number, and `∑` sums the resulting List<Number>. It must not be accepted before record/selectors/contracts are implemented. Do not reuse `?` or `.` for unrelated purposes without a compatibility review.
+In the proposed sign syntax, `isPaid` and `amount` are ordinary user-authored typed H-Code functions; `⌕` filters by the former, `⇢` transforms via the latter, and `∑` sums the resulting typed numbers. This is conceptual until records, generic infix operator binding and locked collection contracts are implemented. It must not be accepted before record/selectors/contracts are implemented. Do not reuse `?` or `.` for unrelated purposes without a compatibility review.
 
 ## 7. Correctness, diagnostics and protection
 
