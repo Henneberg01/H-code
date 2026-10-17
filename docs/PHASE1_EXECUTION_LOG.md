@@ -33,3 +33,12 @@ Feature branch: `feat/phase1-symbol-conformance`
 - Tests verified **existing safe behavior** on first run, not a new compiler change. No source code modified.
 - Fresh `npm test`: 48/48 GREEN; fresh Rust `cargo test`: 39/39 GREEN.
 - Ruling: additional security controls were not introduced where preexisting validators already rejected these cases. This avoids changing semantics; cost if wrong: uncovered cases remain, requiring further audit.
+
+## Task 3 — reproducible symbol measurements
+
+- Added RED-first tests for `measureSource`/`measurePair`; first `npm run phase1:test` failed with `ERR_MODULE_NOT_FOUND` as expected.
+- Implemented offline `scripts/phase1-metrics.mjs` with UTF-8 byte and Unicode code-point measurements, explicit negative regressions, allowlisted output file path and output verification against the real interpreter.
+- Fresh `npm run phase1:test` GREEN (4/4); `npm test` GREEN (48/48); release checker green.
+- Generated `phase1/results/source-metrics.json`: character reductions 11.39%, 18.92%, 13%, 14.71%; byte reductions 0%, 4.05%, 4%, 5.88%.
+- `npm run bench`: 5 iterations per sample; compiler CLI startup+static-check medians 9.49–10.32ms, **not** a cross-language runtime comparison.
+- Ruling: AI token and developer-time fields are `null` instead of fictitious numbers. No external network/API calls. Cost if wrong: revenue/marketing claims must wait for independent validated studies.

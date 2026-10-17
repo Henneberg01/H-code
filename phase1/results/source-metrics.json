@@ -1,0 +1,94 @@
+{
+  "format": 1,
+  "metric": "H-Code source compactness; negative percentages mean a regression",
+  "toolVersions": {
+    "node": "v24.17.0",
+    "platform": "win32",
+    "arch": "x64"
+  },
+  "meaningsVerified": true,
+  "aiTokens": null,
+  "developerTime": null,
+  "pairs": [
+    {
+      "id": "functions",
+      "glyph": {
+        "codePoints": 70,
+        "utf8Bytes": 79,
+        "nonBlankLines": 5
+      },
+      "ascii": {
+        "codePoints": 79,
+        "utf8Bytes": 79,
+        "nonBlankLines": 5
+      },
+      "changes": {
+        "codePointsPercent": 11.39,
+        "utf8BytesPercent": 0
+      },
+      "outputVerified": true,
+      "generatedJsBytes": null,
+      "runtimeMs": null
+    },
+    {
+      "id": "booleans",
+      "glyph": {
+        "codePoints": 60,
+        "utf8Bytes": 71,
+        "nonBlankLines": 2
+      },
+      "ascii": {
+        "codePoints": 74,
+        "utf8Bytes": 74,
+        "nonBlankLines": 2
+      },
+      "changes": {
+        "codePointsPercent": 18.92,
+        "utf8BytesPercent": 4.05
+      },
+      "outputVerified": true,
+      "generatedJsBytes": null,
+      "runtimeMs": null
+    },
+    {
+      "id": "recursion",
+      "glyph": {
+        "codePoints": 87,
+        "utf8Bytes": 96,
+        "nonBlankLines": 5
+      },
+      "ascii": {
+        "codePoints": 100,
+        "utf8Bytes": 100,
+        "nonBlankLines": 5
+      },
+      "changes": {
+        "codePointsPercent": 13,
+        "utf8BytesPercent": 4
+      },
+      "outputVerified": true,
+      "generatedJsBytes": null,
+      "runtimeMs": null
+    },
+    {
+      "id": "package",
+      "glyph": {
+        "codePoints": 58,
+        "utf8Bytes": 64,
+        "nonBlankLines": 3
+      },
+      "ascii": {
+        "codePoints": 68,
+        "utf8Bytes": 68,
+        "nonBlankLines": 3
+      },
+      "changes": {
+        "codePointsPercent": 14.71,
+        "utf8BytesPercent": 5.88
+      },
+      "outputVerified": true,
+      "generatedJsBytes": null,
+      "runtimeMs": null
+    }
+  ]
+}

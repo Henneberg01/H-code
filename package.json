@@ -11,7 +11,11 @@
     "studio": "node studio/server.mjs",
     "studio:test": "node --test studio/test/*.test.mjs",
     "bench": "node studio/benchmark.mjs",
-    "release:check": "node scripts/release-check.mjs"
+    "release:check": "node scripts/release-check.mjs",
+    "phase1:measure": "node scripts/phase1-metrics.mjs",
+    "phase1:test": "node --test scripts/test/*.test.mjs"
   },
-  "engines": { "node": ">=20" }
+  "engines": {
+    "node": ">=20"
+  }
 }

@@ -43,3 +43,20 @@
 20. Incremental feature on existing app
 
 Only the first two are within the M1 reference interpreter's basic capability; it also runs small pure functions through offline symbol libraries. The others are future goals; they must not be marked passed.
+
+## Phase 1 symbol-first measurements — 2026-10-17
+
+Command: `npm run phase1:test`; `npm run phase1:measure -- --output phase1/results/source-metrics.json`. Dataset: four executable pairs under `phase1/fixtures/`, not an artificial competitors' JavaScript or TypeScript baseline. Node v24.17.0 on Windows x64. The harness verifies equivalent linked JavaScript ASTs and outputs; the separate Rust integration test checks compiled JavaScript output equivalence. `phase1/results/source-metrics.json` is machine-readable source data.
+
+| Equivalent task | Glyph Unicode code points | Alias code points | Code point reduction | Glyph UTF-8 bytes | Alias UTF-8 bytes | Byte reduction |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Typed function | 70 | 79 | 11.39% | 79 | 79 | 0% |
+| Boolean expression | 60 | 74 | 18.92% | 71 | 74 | 4.05% |
+| Recursive function | 87 | 100 | 13.00% | 96 | 100 | 4.00% |
+| Locked library sign | 58 | 68 | 14.71% | 64 | 68 | 5.88% |
+
+**Interpretation:** H-Code signs save source **code points**, but Unicode frequently uses multiple UTF-8 bytes. In isolation `≡` takes three bytes while `==` takes two. Measurements do **not** demonstrate the 70% smaller-source aspiration across real applications; symbol-powered typed reusable operations require much larger workbench comparisons.
+
+**AI tokens**: not measured (no specified/pinned tokenizer). **Developer speed**: not measured. **Generated JS byte size** and **execution runtime comparison**: not measured. Do not conflate them with source compression.
+
+Independent existing CLI startup/parse+typecheck benchmark: `npm run bench` (run five samples per case) reported the following **median process wall-times**, with Windows x64 and Node v24.17.0: Fibonacci 9.49 ms, invoice 9.88 ms, inventory 10.32 ms, savings 9.78 ms. These numbers have **no comparative baseline** and cannot demonstrate H-Code executes faster than Rust, JavaScript or other languages. Reproduce with `cargo build --manifest-path compiler/Cargo.toml` then `npm run bench`.
