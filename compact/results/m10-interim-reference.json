@@ -1,0 +1,90 @@
+{
+  "title": "H-Code CSE-1: preliminary eight-pair source-density report",
+  "date": "2026-10-18",
+  "sourceBranch": "feat/m10-cse1-compact-syntax",
+  "sourceBaselineSha": "c7fe0d97ea496449c7ee5aeb0da409a95764e4ce",
+  "status": "PRELIMINARY, Rust compiler parity unverified; NOT the canonical 20-case benchmark",
+  "methodology": "Handwritten source including all whitespace. Unicode code points counted by JS string iteration; UTF-8 bytes counted separately. Equivalent stdout executed in JS reference and TypeScript stripped-JS evaluator, with separate manual Node22 TypeScript strip-types smoke tests. Rust not executed. Dependencies, generated bundles, developer time and AI tokens not included.",
+  "medianUnicodeCodePointReductionPercent": 2.27,
+  "medianUtf8ByteReductionPercent": -5.85,
+  "regressions": [
+    "recursive-fibonacci",
+    "counter-loop",
+    "recursive-factorial",
+    "conditional-branch"
+  ],
+  "cases": [
+    {
+      "id": "typed-function",
+      "hcodePoints": 55,
+      "typescriptPoints": 80,
+      "hcodeUtf8Bytes": 60,
+      "typescriptUtf8Bytes": 80,
+      "codePointReductionPercent": 31.25,
+      "byteReductionPercent": 25
+    },
+    {
+      "id": "chained-functions",
+      "hcodePoints": 61,
+      "typescriptPoints": 117,
+      "hcodeUtf8Bytes": 71,
+      "typescriptUtf8Bytes": 117,
+      "codePointReductionPercent": 47.86,
+      "byteReductionPercent": 39.32
+    },
+    {
+      "id": "recursive-fibonacci",
+      "hcodePoints": 96,
+      "typescriptPoints": 94,
+      "hcodeUtf8Bytes": 105,
+      "typescriptUtf8Bytes": 94,
+      "codePointReductionPercent": -2.13,
+      "byteReductionPercent": -11.7
+    },
+    {
+      "id": "counter-loop",
+      "hcodePoints": 52,
+      "typescriptPoints": 44,
+      "hcodeUtf8Bytes": 58,
+      "typescriptUtf8Bytes": 44,
+      "codePointReductionPercent": -18.18,
+      "byteReductionPercent": -31.82
+    },
+    {
+      "id": "string-greeting",
+      "hcodePoints": 70,
+      "typescriptPoints": 75,
+      "hcodeUtf8Bytes": 75,
+      "typescriptUtf8Bytes": 75,
+      "codePointReductionPercent": 6.67,
+      "byteReductionPercent": 0
+    },
+    {
+      "id": "boolean-check",
+      "hcodePoints": 84,
+      "typescriptPoints": 113,
+      "hcodeUtf8Bytes": 95,
+      "typescriptUtf8Bytes": 113,
+      "codePointReductionPercent": 25.66,
+      "byteReductionPercent": 15.93
+    },
+    {
+      "id": "recursive-factorial",
+      "hcodePoints": 90,
+      "typescriptPoints": 88,
+      "hcodeUtf8Bytes": 99,
+      "typescriptUtf8Bytes": 88,
+      "codePointReductionPercent": -2.27,
+      "byteReductionPercent": -12.5
+    },
+    {
+      "id": "conditional-branch",
+      "hcodePoints": 105,
+      "typescriptPoints": 87,
+      "hcodeUtf8Bytes": 112,
+      "typescriptUtf8Bytes": 87,
+      "codePointReductionPercent": -20.69,
+      "byteReductionPercent": -28.74
+    }
+  ]
+}

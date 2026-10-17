@@ -48,3 +48,9 @@ Eight handwritten, varied TypeScript/H-Code pairs are included under `compact/be
 ## Eight-task interim benchmark protocol (expanded without hiding losses)
 
 The preliminary `compact/benchmarks/paired` set now covers a typed function, composed functions, recursive Fibonacci, a counter loop, a string operation, a Boolean operation, recursive factorial and a conditional branch. Some implementations are *expected to be longer in H-Code*; negative results must remain visible. This set is **not** the 20-task final suite and is not independently verified by Rust yet. Run `npm run compact:ts-parity` before reporting executable TypeScript parity. The compiler-feature priorities are determined by actual regressions; adding arbitrary one-symbol task-specific shortcuts is prohibited.
+
+## Expanded eight-case preliminary source metrics — 2026-10-18
+
+The repository's paired source programs currently have a **median 2.27% shorter H-Code Unicode code-point count** and a **median 5.85% larger H-Code UTF-8 byte count**. Four of eight cases are LONGER in H-Code: `recursive-fibonacci`, `counter-loop`, `recursive-factorial` and `conditional-branch`. These are intentionally not hidden.
+
+All eight H-Code examples ran in the JavaScript reference interpreter and equivalent TypeScript programs produced matching output in isolated evaluations. **Rust compiler and full GitHub CI parity remain unverified**. Source-count details, caveats and base SHA are in `compact/results/m10-interim-reference.json`. The 70% research target is NOT achieved; M11 onward should prioritize general-purpose typed collection operations and compact control flow, not task-specific macro tricks.
