@@ -116,7 +116,15 @@ class Parser {
       const name=this.expect('ident').value;this.expect('(');const params=[];
       if(!this.at(')')){do{const p=this.expect('ident').value;let type=null;if(this.accept(':'))type=this.expect('ident').value;params.push({name:p,type});}while(this.accept(','));}
       this.expect(')');let returnType=null;if(this.accept('->'))returnType=this.expect('ident').value;
-      return {kind:'Function',name,params,returnType,body:this.block()};
+      let body;
+       if(this.at('{')) body=this.block();
+       else {
+         this.expect('return');
+         const value=this.expr();
+         this.expect(';');
+         body={kind:'Block',body:[{kind:'Return',value}]};
+       }
+       return {kind:'Function',name,params,returnType,body};
     }
     if(this.accept('if')){this.expect('(');const condition=this.expr();this.expect(')');const then=this.block();const otherwise=this.accept('else')?this.block():null;return {kind:'If',condition,then,otherwise};}
     if(this.accept('while')){this.expect('(');const condition=this.expr();this.expect(')');return {kind:'While',condition,body:this.block()};}

@@ -82,7 +82,12 @@ impl Parser {
                 }
                 self.expect(&TokenKind::RightParen)?;
                 let returns=if self.accept(&TokenKind::Arrow).is_some(){Some(self.ident()?.0)} else {None};
-                let body=self.block()?;
+                let body=if self.at(&TokenKind::LeftBrace) {self.block()?} else {
+                    let ret=self.expect(&TokenKind::Return)?;
+                    let value=self.expression(0)?;
+                    self.expect(&TokenKind::Semicolon)?;
+                    vec![Stmt{kind:StmtKind::Return(value),span:ret.span}]
+                };
                 StmtKind::Function{name,parameters,returns,body}
             }
             TokenKind::Return=>{

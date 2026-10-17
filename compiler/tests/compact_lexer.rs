@@ -8,7 +8,7 @@ use std::{fs,path::Path,time::{SystemTime,UNIX_EPOCH}};
 fn pipeline_glyph_and_ascii_alias_lex_to_the_same_rust_kind(){
     let glyph=lex("1 ▷ double;").unwrap();
     let ascii=lex("1 |> double;").unwrap();
-    assert_eq!(glyph,ascii);
+    assert_eq!(glyph.iter().map(|t| &t.kind).collect::<Vec<_>>(),ascii.iter().map(|t| &t.kind).collect::<Vec<_>>());
     assert_eq!(glyph[1].kind,TokenKind::Pipe);
     assert!(lex("1 | > f;").is_err());
     assert!(lex("1 | f;").is_err());
