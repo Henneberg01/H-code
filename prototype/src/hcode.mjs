@@ -4,12 +4,12 @@ export const CORE_GLYPHS = Object.freeze({
   '\u2190': '=', '\u22a4': 'true', '\u22a5': 'false',
   '\u2227': 'and', '\u2228': 'or', '\u00ac': 'not',
   '\u2261': '==', '\u2260': '!=', '\u2264': '<=', '\u2265': '>=',
-  '\u2237': '::', '\u25b7': '|>', '\u2218': '<<'
+  '\u2237': '::', '\u25b7': '|>', '\u2218': '<<', '\u25c7': '?'
 });
 export const RESERVED_USER_GLYPHS = new Set(['\u2205', '\u2200', '\u2208', ...Object.keys(CORE_GLYPHS)]);
 const RESERVED = new Set(['fn','let','return','true','false','if','else','while','and','or','not','use','as']);
 const TWO = new Set(['==','!=','<=','>=','->','::','|>','<<']);
-const ONE = new Set(['+','-','*','/','%','<','>','=','(',')','{','}',',',';',':']);
+const ONE = new Set(['+','-','*','/','%','<','>','=','(',')','{','}',',',';',':','?']);
 const ILLEGAL = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]|\p{Default_Ignorable_Code_Point}/u;
 const SYMBOL_CHARACTER = /^\p{S}$/u;
 
@@ -197,6 +197,14 @@ class Parser {
           throw new HCodeError('Parenthesize pipeline before another operator',t.line,t.column);
         continue;
       }
+      if(this.at('?')&&min===0){
+        this.expect('?');
+        const whenTrue=this.expr();
+        this.expect(':');
+        const whenFalse=this.expr();
+        left={kind:'Choice',condition:left,whenTrue,whenFalse};
+        continue;
+      }
       const op=this.peek().type;
       const power={or:1,and:2,'==':3,'!=':3,'<':4,'>':4,'<=':4,'>=':4,'+':5,'-':5,'*':6,'/':6,'%':6,'<<':7}[op];
       if(power===undefined||power<min)break;
@@ -253,6 +261,7 @@ export function linkProgram(ast, registry=new Map()) {
     if(node.kind==='GlyphOperation'||node.kind==='QualifiedOperation')return resolveRef(node);
     if(node.kind==='Unary')return {...node,value:expression(node.value)};
     if(node.kind==='Binary')return {...node,left:expression(node.left),right:expression(node.right)};
+    if(node.kind==='Choice')return {...node,condition:expression(node.condition),whenTrue:expression(node.whenTrue),whenFalse:expression(node.whenFalse)};
     if(node.kind==='Call'){
       const callee=expression(node.callee),args=node.args.map(expression);
       if(callee.kind==='OperationRef'){
@@ -310,6 +319,10 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,registry=new Map()}=
         const v=expr(node.value,scope);
         if(node.operator==='not')return !truth(v);
         if(typeof v!=='number')throw Error('Unary minus expects Number');return -v;
+      }
+      case 'Choice':{
+        const test=truth(expr(node.condition,scope));
+        return test?expr(node.whenTrue,scope):expr(node.whenFalse,scope);
       }
       case 'Binary':{
         const a=expr(node.left,scope),op=node.operator;
