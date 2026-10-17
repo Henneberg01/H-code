@@ -9,7 +9,7 @@
 - [x] M6 — local web Studio editor (files/edit/save/check/build/run/glyph palette; 4/4 API tests, visual browser QA pending)
 - [x] M7 — AI edits with optional OpenAI API-key startup/test and review/apply (12/12 Studio tests; live key test pending)
 - [x] M8 — local runtime budgets, Origin/Host checks and reproducible benchmarks (sandboxing incomplete)
-- [x] M9 — private public-beta release candidate prepared (GitHub review and public release are separate gates)
+- [x] M9 — beta source/governance merged via PR #2; repository now public, but no official tagged GitHub Release or production certification
 - [ ] M10 — optional paid AI Studio
 - [ ] M11 — stable 1.0 release
 - [ ] M12 — WebAssembly/native/platform expansion
@@ -17,7 +17,7 @@
 
 ## Immediate actions
 
-M9's candidate is staged for private review; no public release or production certification is implied.
+M9's source was merged via GitHub PR #2; `Henneberg01/H-code` is publicly visible. This is not the same as a tagged production release or a security guarantee. Phase-1 symbol-first conformance and measurements are tracked separately in `docs/PHASE1_STATUS.md`.
 
 1. M0-M3 local gates passed: Node M1 39/39, Rust M2 15/15, Rust M3 8/8.
 2. Fuel and recursion limits added in M8; generated JavaScript still runs with Node privileges and is not safe for untrusted programs.

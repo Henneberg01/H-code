@@ -42,3 +42,13 @@ Feature branch: `feat/phase1-symbol-conformance`
 - Generated `phase1/results/source-metrics.json`: character reductions 11.39%, 18.92%, 13%, 14.71%; byte reductions 0%, 4.05%, 4%, 5.88%.
 - `npm run bench`: 5 iterations per sample; compiler CLI startup+static-check medians 9.49–10.32ms, **not** a cross-language runtime comparison.
 - Ruling: AI token and developer-time fields are `null` instead of fictitious numbers. No external network/API calls. Cost if wrong: revenue/marketing claims must wait for independent validated studies.
+
+## Task 4 — H-Code Studio and durable documentation
+
+- Added Studio palette integration tests **before** editing the UI: `npm run studio:test` RED (2 failed), witnessing the original 11-entry palette, missing comparison signs and missing accessible button labels.
+- Expanded `studio/public/app.js` to the exact 15 language-level signs with accurate aliases, clickable literal insertion, `title` and `aria-label`; rewrote the UI's callout to emphasize signs are **real H-Code source syntax**.
+- `npm run studio:test` turned GREEN (15/15). Test invokes the actual palette click listener in a controlled simulated DOM and checks insertion, source focus, cursor, and disabled behavior.
+- Added `H-CODE-PRINCIPLES.md` to persist Morse-inspired signs-as-code identity, Apache 2.0 owner/licensing, unproven research targets and general-purpose vision.
+- Updated README, symbol registry, historical M9/public-state wording, milestone journal, Phase-1 status, local ignored continuity file, and manual-only GitHub CI to include the new offline metric tests.
+- Fresh comprehensive regression after Studio edits: **48/48 Node**, **39/39 Rust**, **15/15 Studio**, **4/4 metrics**, release check PASS and `npm run demo` PASS; **106/106 tests** total. No language/ABI/builtin breaking changes.
+- Ruling: `docs/PROJECT_CONTINUITY.md` stays local/ignored due to private Windows host paths. Durable *public* H-Code project principles and progress live in safe tracked documentation; cost if wrong: local-only details will not travel with a Git clone, deliberately limiting sensitive context.

@@ -1,8 +1,30 @@
 # H-Code
 
-**H-Code** is an experimental typed, symbolic programming language. Unicode glyphs and their ASCII spellings can identify the same operations. H-Code is an independent project, not a FastSell platform feature.
+**H-Code** is an experimental typed, symbol-first programming language inspired by Morse-code-style information density: a real Unicode sign can stand for a precise, reusable, typed operation. The glyph is actual compiler-recognized source syntax, **not** a visual replacement for JavaScript. ASCII aliases are secondary accessibility spellings with the same semantics. H-Code is an independent project, not a FastSell platform feature.
 
 Copyright © 2026 **Jonas Fogh Henneberg**, operating as **Fastsell.net** (CVR **46614887**), Denmark.
+
+**Project identity and durable language rules:** [H-CODE-PRINCIPLES.md](H-CODE-PRINCIPLES.md). Signs are source code — never only visual shortcuts.
+
+## Write H-Code with real signs
+
+These are executable H-Code programs using the same imported typed operation:
+
+```hcode
+use "demo.math@1.0.0" as math;
+≔ answer ← ⊕(20, 22);
+print(answer);
+```
+
+Accessible alternative:
+
+```hcode
+use "demo.math@1.0.0" as math;
+let answer = math::add(20, 22);
+print(answer);
+```
+
+Both print `42`. The imported `⊕` denotes an inspected, version-locked function and is **not** globally hardcoded. See [symbol reference](docs/SYMBOLS.md) and [phase-1 results](docs/PHASE1_STATUS.md). Signs are the preferred spelling; every core sign has a searchable alias.
 
 ## Start locally
 
@@ -29,6 +51,10 @@ Studio runs at **http://127.0.0.1:4317/** on the local computer. It can open, sa
 - **M7:** model-assisted structured edits with diff review and explicit approval.
 - **M8:** basic loop and recursion limits and local HTTP safeguards — **not** a sandbox.
 - **M9:** beta staging and governance, **not yet a public release**.
+
+## Symbol compactness: measurements, not promises
+
+Four equivalent programs reduced Unicode code points by **11.39–18.92%** but UTF-8 bytes by only **0–5.88%**. The 70% smaller code, 2–5× developer speed and 25% fewer AI tokens are research targets **not yet verified**. Run `npm run phase1:test` and `npm run phase1:measure` for reproducible evidence. See [raw data](phase1/results/source-metrics.json) and [measurement policy](docs/BENCHMARKS.md). Runtime speed and AI tokens were **not** measured by this compactness experiment.
 
 ## License and commercial offering
 

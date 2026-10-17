@@ -14,5 +14,6 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - run: npm test
       - run: npm run studio:test
+      - run: npm run phase1:test
       - run: cargo test --manifest-path compiler/Cargo.toml
       - run: npm run release:check

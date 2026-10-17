@@ -1,6 +1,6 @@
-# H-Code symbol registry - M1 snapshot
+# H-Code symbol registry — primary language syntax
 
-Every operation has a canonical semantic identity. ASCII is the accessible input path; symbols are optional and interchangeable notations. **User-defined glyphs are package-scoped**, not a collection of magic builtins. Reference implementations are version-locked and inspectable.
+**H-Code uses signs as its primary real source-code syntax**, inspired by Morse-code-style compact information encoding. Each sign maps to an explicitly defined, inspectable semantic operation. A secondary ASCII spelling is always available for accessibility, keyboards, code review and AI; these are two spellings of the **same language**, not editor macros. Compactness is measured in code points and UTF-8 bytes independently. **User-defined glyphs are package-scoped**, not a collection of magic builtins. Reference implementations are version-locked and inspectable.
 
 | # | Glyph | Alias / textual form | Status | Definition |
 |---:|:---:|---|---|---|
@@ -38,5 +38,9 @@ Note: The symbols in rows 19–22 have **no language-global meaning**. These bin
 - Unknown or ambiguous glyphs produce useful linkage errors rather than silently choosing an implementation.
 - Core/reserved symbols cannot be redefined by packages.
 - Source normalization is NFC; user glyphs additionally require NFKC stability, and invisible directional controls are prohibited.
+
+The H-Code Studio palette inserts literal Unicode characters in `.hc` source and displays the textual alias of all 15 implemented core glyphs. Reserved symbols `∅`, `∀`, and `∈` are **not yet executable features**. Version-locked user signs such as `⊕`, `▦`, `⊙`, and `⊗` are only available after an explicit package import, not as global builtin operations.
+
+For real cross-compiler tests, see `phase1/fixtures/` and `prototype/test/phase1-parity.test.mjs` / `compiler/tests/phase1_parity.rs`. For source-size data, see `phase1/results/source-metrics.json`. `≡` is one Unicode code point but **three bytes** in UTF-8, more than the two bytes of `==`; never mistake fewer visible characters for guaranteed binary size or runtime speed.
 
 See [`LIBRARIES.md`](./LIBRARIES.md) for runnable examples and a full authoring guide.
