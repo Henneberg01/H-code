@@ -56,9 +56,9 @@ H-Code skal være et **nyt, generelt programmeringssprog**, hvor **Unicode-tegn 
 | Milestone | Konkrete leverance | Objektiv accepttest / definition of done | Afhænger af |
 |---|---|---|---|
 | **M10** | CSE-1: korte funktioner og pipeline `▷` / `|>` | Begge frontends: ≥6 glyph/ASCII-par, ≥6 negative cases, korrekt typesystem, CLI og ingen regressionsfejl | M9 + PR #3 |
-| **M11** | CSE-2: typede lister | `List<T>`, literals, bounds-checked indexing, `[]`-inferensfejl og paritet i Rust/JS | M10 |
-| **M12** | CSE-3a: records og felter | Records kan deklareres, typesikre felter læses/skriveadgang afgrænses; ingen skjult JS | M11 |
-| **M13** | CSE-3b: generiske samlingsoperationer | Versioneret manifest v2 og åbne, typede `∑`, `⌕`, `⇢` i et SHA-låst bibliotek | M11–M12 |
+| **M11** | CSE-2: **TEGN-sekvenser** | `⟦...⟧` typed sekvens, `xs⟦i⟧` bounds-sikker adgang, `⌗xs` længde, `xs ⧺ ys` typed sammensætning; verificeret Rust/JS-glyphparitet | M10 |
+| **M12** | CSE-3a: tegn-records og felter | Tegn-drevet oprettelse og felttilgang typesikres; ingen skjult JS | M11 |
+| **M13** | CSE-3b: generiske samlingsoperationer | Versioneret generisk operator-binding med åbne, typede `∑`, `⌕`, `⇢` i et SHA-låst bibliotek; tegn er primær syntaks | M11–M12 |
 | **M14** | Higher-order funktioner og selectors | Lamdas/funktionsværdier og `?felt`/`.felt` bevares som kontrollerbare typede AST-noder | M13 |
 | **M15** | Kort bloksyntaks og delimiter-regler | Valgfrie afslutninger/kompakte blokke kan parses entydigt, formatteres og bagudkompatibelt | M14 |
 | **M16** | Egne tegn i almindelig H-Code | Brugere definerer dokumenterede operationer med typede signaturer, eksporterer og versionlåser tegn uden compilerpatch | M13–M15 |
@@ -141,7 +141,7 @@ H-Code skal være et **nyt, generelt programmeringssprog**, hvor **Unicode-tegn 
 | Leverance | Første ændring | Resultat inden næste start |
 |---|---|---|
 | **M10 / CSE-1** | Korte expression-return funktioner og `▷` / `|>`-pipeline i eksisterende compiler | Seks fælles positive glyph-/aliasprogrammer, mindst seks fejltilfælde, typekontrol, runtimeækvivalens, alle eksisterende tests grønne, draft PR |
-| **M11 / CSE-2** | `List<T>`, literal-lister og kontrollerede indeksoperationer | Inferens, grænser, fejlhåndtering, begge frontends grønne |
+| **M11 / CSE-2** | Sign-first `⟦` `⟧` `⌗` `⧺`: typede sekvenser og kontrolleret indeks | Semantiske Rust/JS-paritetstests, grænser og kompatibilitet grønne |
 | **M12 / CSE-3a** | Records, felter og statisk validering | Type-/semantiske integrationstests |
 | **M13 / CSE-3b** | Rent, åbent samlingsbibliotek med `∑`, `⌕`, `⇢` og versioneret manifest | Generiske kontrakter, signaturer, kollisioner og låste kilder verficeret |
 | **M14–M19 / syntaksudbygning og CSE-4** | Lambda/selectors, syntaks, egne tegn, dokumentation og reproducerbar målemotor | Baseline inkl. både gevinster og regressioner, men ingen global 70 %-påstand |
@@ -171,3 +171,7 @@ Reduktion (%) = 100 × (1 − H-Code kodepunkter / idiomatisk TypeScript kodepun
 
 - V1: historisk `MILESTONES.md` med M0–M13, samt tidligere mundtlig M0–M59-projektvision.
 - V2 2026-10-17: samlet M0–M59 plan baseret på den godkendte kompakthedsretning; kun **uimplementerede** numre M10+ er prioriteret på ny. Bevar dette mappingspor ved alle senere ændringer.
+
+## Ejergodkendt kurskorrektion 2026-10-18 — TEGN først
+
+M11-planen blev tidligere teksttung med `List<T>`, `len`, `append` som primær demonstration. Dette var i strid med H-Codes formål. Den reviderede, **ikke implementerede** grammatik fremhæver `⟦`, `⟧`, `⌗`, `⧺`; M13 kræver ægte generiske `∑`, `⌕` og `⇢`. Interne typer er stadig tilladt, men kildeeksempler og release-accept skal bruge tegn. Hver milepæl måles på sammenlignelige, låste programpar; datasæt udskiftes aldrig uden nyt versions-ID.
