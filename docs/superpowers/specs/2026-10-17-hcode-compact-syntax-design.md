@@ -124,7 +124,7 @@ This means the **locked** `demo.math@1.0.0::add(20,22)`, not an unqualified arbi
 
 CSE-2 introduces `List<T>`, list literals `[1,2,3]`, integer-indexed read access `xs[i]`, and list-length access through an explicit typed standard operation. Inference for `[1,2,3]` yields `List<Number>`; `[]` requires an annotated expected type (otherwise report an ambiguous empty-list error). Homogeneous value types unify, heterogeneous values fail unless an explicit future union type exists. Index access must reject non-integer indices and fail predictably on out-of-bounds, never silently return JS `undefined`. No implicit ambient file/network APIs. Use the established compiler/runtime resource budgets.
 
-The list primitives are sufficient to define reusable sum/map/filter algorithms as **ordinary H-Code library functions**; they must not require secret compiler-specific handlers for domain tasks. Generic operation contracts must be designed/tested before `hcode.collections` release. Existing locked `demo.math` continues to work unchanged.
+The list primitives, together with a typed empty-list context and a pure typed append/builder primitive (see 2026-10-18 M11 addendum), are sufficient to define reusable sum/map/filter algorithms as **ordinary H-Code library functions**; they must not require secret compiler-specific handlers for domain tasks. Generic operation contracts must be designed/tested before `hcode.collections` release. Existing locked `demo.math` continues to work unchanged.
 
 ## 6. CSE-3 records and package-defined operators (future, independently reviewed)
 

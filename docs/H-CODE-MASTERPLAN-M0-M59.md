@@ -56,7 +56,7 @@ H-Code skal være et **nyt, generelt programmeringssprog**, hvor **Unicode-tegn 
 | Milestone | Konkrete leverance | Objektiv accepttest / definition of done | Afhænger af |
 |---|---|---|---|
 | **M10** | CSE-1: korte funktioner og pipeline `▷` / `|>` | Begge frontends: ≥6 glyph/ASCII-par, ≥6 negative cases, korrekt typesystem, CLI og ingen regressionsfejl | M9 + PR #3 |
-| **M11** | CSE-2: typede lister | `List<T>`, literals, bounds-checked indexing, `[]`-inferensfejl og paritet i Rust/JS | M10 |
+| **M11** | CSE-2: typede lister | `List<T>`, literals, bounds-checked indexing, typed empty lists, pure len/append og paritet i Rust/JS; normalt H-Code kan bygge variable lister | M10 |
 | **M12** | CSE-3a: records og felter | Records kan deklareres, typesikre felter læses/skriveadgang afgrænses; ingen skjult JS | M11 |
 | **M13** | CSE-3b: generiske samlingsoperationer | Versioneret manifest v2 og åbne, typede `∑`, `⌕`, `⇢` i et SHA-låst bibliotek | M11–M12 |
 | **M14** | Higher-order funktioner og selectors | Lamdas/funktionsværdier og `?felt`/`.felt` bevares som kontrollerbare typede AST-noder | M13 |
