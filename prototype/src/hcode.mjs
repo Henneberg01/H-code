@@ -317,8 +317,8 @@ export function linkProgram(ast, registry=new Map()) {
 }
 
 class Scope {
-  constructor(parent=null){this.parent=parent;this.values=new Map();this.returnType=parent?.returnType??null;}
-  define(name,value){if(this.values.has(name))throw Error(`Duplicate name ${name}`);this.values.set(name,value);}
+  constructor(parent=null){this.parent=parent;this.values=new Map();this.annotations=new Map();this.returnType=parent?.returnType??null;}
+  define(name,value,type=null){if(this.values.has(name))throw Error(`Duplicate name ${name}`);this.values.set(name,value);this.annotations.set(name,type);}
   find(name){if(this.values.has(name))return this;if(this.parent)return this.parent.find(name);throw Error(`Unknown name ${name}`);}
   get(name){return this.find(name).values.get(name);}
   assign(name,value){this.find(name).values.set(name,value);}
@@ -331,6 +331,16 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
   const step=()=>{if(++steps>maxSteps)throw Error('Execution step limit exceeded');};
   root.define('print',(...args)=>{stdout(args.map(x=>x===null?'none':String(x)).join(' '));return null;});
   const truth=v=>{if(typeof v!=='boolean')throw Error('Condition must be Boolean');return v;};
+  const requireType=(value,type)=>{
+    if(!type)return;
+    if(type.startsWith('⟦')&&type.endsWith('⟧')){
+      if(!Array.isArray(value))throw Error('Annotated type mismatch: expected '+type);
+      for(const element of value)requireType(element,type.slice(1,-1));
+      return;
+    }
+    const actual=value===null?'Unit':typeof value==='number'?'Number':typeof value==='string'?'String':typeof value==='boolean'?'Bool':'Unknown';
+    if(actual!==type)throw Error('Annotated type mismatch: expected '+type+', got '+actual);
+  };
   const seqElementType=v=>{
     if(Array.isArray(v)){
       if(v.length===0)return 'Sequence<?>';
@@ -418,8 +428,20 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
     step();
     switch(node.kind){
       case 'Use':break;
-      case 'Let':scope.define(node.name,expr(node.value,scope,node.annotation??null));break;
-      case 'Assign':scope.assign(node.name,expr(node.value,scope));break;
+      case 'Let':{
+        const val=expr(node.value,scope,node.annotation??null);
+        requireType(val,node.annotation??null);
+        scope.define(node.name,val,node.annotation??null);
+        break;
+      }
+      case 'Assign':{
+        const binding=scope.find(node.name);
+        const type=binding.annotations.get(node.name);
+        const val=expr(node.value,scope,type);
+        requireType(val,type);
+        scope.assign(node.name,val);
+        break;
+      }
       case 'ExpressionStatement':expr(node.value,scope);break;
       case 'Return':throw new ReturnSignal(expr(node.value,scope,scope.returnType));
       case 'Function':{
@@ -427,8 +449,11 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
           step();
           if(args.length!==node.params.length)throw Error(`${node.name} expects ${node.params.length} arguments`);
           const inner=new Scope(scope);inner.returnType=node.returnType;
-          for(let j=0;j<args.length;j++)inner.define(node.params[j].name,args[j]);
-          try{for(const statement of node.body.body)stmt(statement,inner);}catch(e){if(e instanceof ReturnSignal)return e.value;throw e;}
+          for(let j=0;j<args.length;j++){
+            requireType(args[j],node.params[j].type);
+            inner.define(node.params[j].name,args[j],node.params[j].type);
+          }
+          try{for(const statement of node.body.body)stmt(statement,inner);}catch(e){if(e instanceof ReturnSignal){requireType(e.value,node.returnType);return e.value;}throw e;}
           return null;
         };
         scope.define(node.name,fn);break;
