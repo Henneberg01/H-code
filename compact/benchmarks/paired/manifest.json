@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "description": "Limited, idiomatic TypeScript vs handwritten H-Code parity tasks; not the 20-task study",
+  "pairs": [
+    {
+      "id": "typed-function",
+      "expected": "42\n"
+    },
+    {
+      "id": "chained-functions",
+      "expected": "42\n"
+    }
+  ]
+}

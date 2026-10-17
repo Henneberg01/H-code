@@ -40,3 +40,7 @@ If any test fails: fix code on the feature branch; do **not** claim M10 complete
 Current fixture measurement compares glyph H-Code **to ASCII H-Code**. This is not a TypeScript comparison, not a 20-task benchmark, and not a verified ≥70% gain. Rust-compiled Node JS still inherits host privileges; M37 sandboxing remains future work.
 
 **Next:** verify CI/test evidence; add matched, runnable idiomatic TypeScript programs and dependency accounting; review M10 draft PR; only then schedule CSE-2 typed lists.
+
+## Limited TypeScript-to-H-Code functional comparisons (NOT VERIFIED)
+
+Two handcrafted idiomatic TypeScript/H-Code pairs are included under `compact/benchmarks/paired/`. The manual CI job now runs `npm run compact:ts-parity` **after Cargo builds/tests**; this only emits metric results if both programs execute and output matches. The report is explicitly marked **PRELIMINARY** and excludes dependency/runtime footprint. No parity execution result has been obtained in this authoring session.

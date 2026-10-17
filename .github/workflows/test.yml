@@ -17,4 +17,5 @@ jobs:
       - run: npm run phase1:test
       - run: npm run compact:test
       - run: cargo test --manifest-path compiler/Cargo.toml
+      - run: npm run compact:ts-parity
       - run: npm run release:check

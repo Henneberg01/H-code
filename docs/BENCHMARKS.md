@@ -64,3 +64,7 @@ Independent existing CLI startup/parse+typecheck benchmark: `npm run bench` (run
 ## CSE-1 source metrics (feature branch, pending execution)
 
 Run `npm run compact:measure` for seven Unicode/ASCII **H-Code-only** fixture pairs and `npm run compact:test` for the measurement code. This reports separate code-point and UTF-8 byte reductions. It does **not** compare against TypeScript or establish the project's 70% goal. See `docs/CSE1_STATUS.md` for conformance and review gates.
+
+## Two preliminary H-Code vs TypeScript executable baselines (M10)
+
+`compact/benchmarks/paired` contains two idiomatic TypeScript implementations and equivalent H-Code sources. Run `npm run compact:ts-parity` with Node 22+ and cargo; the script checks exact stdout parity and fails rather than counting incompatible implementations. **No verified result is asserted yet**, and neither pair counts as a completed 20-task study.
