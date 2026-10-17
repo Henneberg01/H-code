@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "id": "M10-EIGHT-2026-10-18-v1",
+  "baseCommit": "c7fe0d97ea496449c7ee5aeb0da409a95764e4ce",
+  "intent": "One frozen eight-pair corpus; NOT interchangeable with older 2-program results or Phase-1 glyph-vs-ASCII results",
+  "pairs": [
+    {
+      "id": "typed-function",
+      "hcodePath": "compact/benchmarks/paired/typed-function.hc",
+      "hcodeBlobSha": "33f0a9315f70b11c46dd16922c45b18d3f106ad9",
+      "tsPath": "compact/benchmarks/paired/typed-function.ts",
+      "tsBlobSha": "c5c7d191d9b519cfa2e5a939479e0494a5ccb026"
+    },
+    {
+      "id": "chained-functions",
+      "hcodePath": "compact/benchmarks/paired/chained-functions.hc",
+      "hcodeBlobSha": "1298abb6b1ebf879f98279842590818860ca033c",
+      "tsPath": "compact/benchmarks/paired/chained-functions.ts",
+      "tsBlobSha": "947eaea51c395548539591bd3c50a561ca4725a9"
+    },
+    {
+      "id": "recursive-fibonacci",
+      "hcodePath": "compact/benchmarks/paired/recursive-fibonacci.hc",
+      "hcodeBlobSha": "66f02e2dce678b51f8d02766742d9d24aa5d66f7",
+      "tsPath": "compact/benchmarks/paired/recursive-fibonacci.ts",
+      "tsBlobSha": "2a4e6ac1ef469a6e0c64381b79f901ee26085125"
+    },
+    {
+      "id": "counter-loop",
+      "hcodePath": "compact/benchmarks/paired/counter-loop.hc",
+      "hcodeBlobSha": "e8ec1ef3b9b39ded9071444fbc1e7cf6db3789f3",
+      "tsPath": "compact/benchmarks/paired/counter-loop.ts",
+      "tsBlobSha": "d66cb19178b452bf1a37357dca3b4cb03c1ce163"
+    },
+    {
+      "id": "string-greeting",
+      "hcodePath": "compact/benchmarks/paired/string-greeting.hc",
+      "hcodeBlobSha": "c48e8b2a6cfe4fac778d3d76c42906f0270a6e0a",
+      "tsPath": "compact/benchmarks/paired/string-greeting.ts",
+      "tsBlobSha": "02d3c8dcf385f25e592a44e1f6230755e4b4a96d"
+    },
+    {
+      "id": "boolean-check",
+      "hcodePath": "compact/benchmarks/paired/boolean-check.hc",
+      "hcodeBlobSha": "af3787b3dc81eb7f9e543dc9ef645844d641d7cd",
+      "tsPath": "compact/benchmarks/paired/boolean-check.ts",
+      "tsBlobSha": "89c50f14fc9edd04a9970017b9071c478d357b2b"
+    },
+    {
+      "id": "recursive-factorial",
+      "hcodePath": "compact/benchmarks/paired/recursive-factorial.hc",
+      "hcodeBlobSha": "d6be5bdc1cd3d6f3cf29c1485756f4234a4af585",
+      "tsPath": "compact/benchmarks/paired/recursive-factorial.ts",
+      "tsBlobSha": "d06e5209341b98937157b3b0259a2d1af2388a7d"
+    },
+    {
+      "id": "conditional-branch",
+      "hcodePath": "compact/benchmarks/paired/conditional-branch.hc",
+      "hcodeBlobSha": "d1d504fb7421dc0d5854f4181c12a909400de70f",
+      "tsPath": "compact/benchmarks/paired/conditional-branch.ts",
+      "tsBlobSha": "d1dd9db0f047658326cd424ef28e69d8dcc1feb1"
+    }
+  ]
+}
