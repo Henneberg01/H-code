@@ -18,12 +18,15 @@ impl Emitter {
     }
     TypedExprKind::Index{sequence,index}=>format!("__hc_index({}, {})",self.expr(sequence),self.expr(index)),
     TypedExprKind::Length(value)=>format!("__hc_len({})",self.expr(value)),
+    TypedExprKind::Sum(value)=>format!("__hc_sum({})",self.expr(value)),
     TypedExprKind::Bool(b)=>b.to_string(),TypedExprKind::Identifier(s)=>if matches!(e.ty,Type::BuiltinPrint) {"__hc_print".into()}else{name(s)},
    TypedExprKind::OperationRef{id}=>format!("__hc_operations[{}]",q(id)),
    TypedExprKind::Unary{op,operand}=>format!("({}{})",match op{UnaryOp::Not=>"!",UnaryOp::Negate=>"-"},self.expr(operand)),
    TypedExprKind::Binary{op,left,right}=>{
     let a=self.expr(left);let b=self.expr(right);
     match op {
+     BinaryOp::Filter=>format!("__hc_filter({a},{b})"),
+     BinaryOp::Map=>format!("__hc_map({a},{b})"),
      BinaryOp::Concat=>format!("__hc_concat({a},{b})"),
      BinaryOp::Compose=>format!("__hc_compose({a},{b})"),
      BinaryOp::Divide=>format!("__hc_div({a},{b})"),
@@ -89,7 +92,10 @@ pub fn emit(program:&TypedProgram,registry:&PackageRegistry)->Result<String,Stri
  output.push_str("const __hc_index = (xs,i) => { __hc_tick(); __hc_seq(xs); if (!Number.isInteger(i) || i<0 || i>=xs.length) throw Error('Sequence index out of bounds or not an integer'); return xs[i]; };\n");
  output.push_str("const __hc_len = (xs) => { __hc_tick(); return __hc_seq(xs).length; };\n");
  output.push_str("const __hc_concat = (a,b) => { __hc_tick(); __hc_seq(a); __hc_seq(b); if (a.length+b.length>16384) throw Error('Sequence allocation limit exceeded'); return __hc_seq([...a,...b]); };\n");
- output.push_str("const __hc_operations = Object.create(null);\n");
+ output.push_str("const __hc_sum = (xs) => { __hc_seq(xs); let total=0; for (const item of xs) { __hc_tick(); if (typeof item !== 'number') throw Error('∑ requires a numeric sequence'); total+=item; } return total; };\n");
+  output.push_str("const __hc_filter = (xs,fn) => { __hc_seq(xs); if (typeof fn!=='function') throw Error('⌕ requires a unary predicate'); const output=[]; for (const item of xs) { __hc_tick(); const keep=fn(item); if (typeof keep!=='boolean') throw Error('⌕ predicate must return Bool'); if (keep) output.push(item); if (output.length>16384) throw Error('Sequence allocation limit exceeded'); } return __hc_seq(output); };\n");
+  output.push_str("const __hc_map = (xs,fn) => { __hc_seq(xs); if (typeof fn!=='function') throw Error('⇢ requires a unary transform'); const output=[]; for (const item of xs) { __hc_tick(); output.push(fn(item)); if (output.length>16384) throw Error('Sequence allocation limit exceeded'); } return __hc_seq(output); };\n");
+  output.push_str("const __hc_operations = Object.create(null);\n");
  let mut imported=BTreeMap::<String,()>::new();
  for stmt in &program.statements { if let TypedStmtKind::Use{package,..}=&stmt.kind {imported.insert(package.clone(),());}}
  // Recursively include imports used by module bodies (without executing imports at compile time).

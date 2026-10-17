@@ -47,6 +47,7 @@ pub enum ExprKind {
     Sequence(Vec<Expr>),
     Index { sequence: Box<Expr>, index: Box<Expr> },
     Length(Box<Expr>),
+    Sum(Box<Expr>),
     Identifier(String),
     Operation { alias: Option<String>, name_or_glyph: String, is_glyph: bool },
     Unary { op: UnaryOp, operand: Box<Expr> },
@@ -60,7 +61,7 @@ pub enum UnaryOp { Negate, Not }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum BinaryOp {
-    Add, Subtract, Multiply, Divide, Modulo, Compose, Concat, Equal, NotEqual,
+    Add, Subtract, Multiply, Divide, Modulo, Compose, Concat, Filter, Map, Equal, NotEqual,
     Less, Greater, LessEqual, GreaterEqual, And, Or,
 }
 
@@ -71,7 +72,7 @@ impl BinaryOp {
             Self::And => 2,
             Self::Equal | Self::NotEqual => 3,
             Self::Less | Self::Greater | Self::LessEqual | Self::GreaterEqual => 4,
-            Self::Add | Self::Subtract | Self::Concat => 5,
+            Self::Add | Self::Subtract | Self::Concat | Self::Filter | Self::Map => 5,
             Self::Multiply | Self::Divide | Self::Modulo => 6,
             Self::Compose => 7,
         }

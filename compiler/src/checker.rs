@@ -56,6 +56,7 @@ pub enum TypedExprKind {
     Sequence(Vec<TypedExpr>),
     Index { sequence:Box<TypedExpr>,index:Box<TypedExpr> },
     Length(Box<TypedExpr>),
+    Sum(Box<TypedExpr>),
 }
 
 #[derive(Clone)]
@@ -308,6 +309,11 @@ impl Checker {
                 self.unify(&seq.ty,&Type::Sequence(Box::new(elem.clone())),sequence.span,"Sequence index requires sequence")?;
                 (TypedExprKind::Index{sequence:Box::new(seq),index:Box::new(offset)},elem)
             }
+            ExprKind::Sum(value)=>{
+                let seq=self.expression(value)?;
+                self.unify(&seq.ty,&Type::Sequence(Box::new(Type::Number)),value.span,"∑ requires a numeric sequence")?;
+                (TypedExprKind::Sum(Box::new(seq)),Type::Number)
+            }
             ExprKind::Length(value)=>{
                 let seq=self.expression(value)?;
                 let elem=self.fresh();
@@ -342,6 +348,23 @@ impl Checker {
             ExprKind::Binary{op,left,right}=>{
                 let l=self.expression(left)?;let r=self.expression(right)?;
                 let ty=match op {
+                    BinaryOp::Filter=>{
+                        let element=self.fresh();
+                        let seq=Type::Sequence(Box::new(element.clone()));
+                        self.unify(&l.ty,&seq,left.span,"⌕ requires a typed sequence")?;
+                        let callback=Type::Function(vec![element],Box::new(Type::Bool));
+                        self.unify(&r.ty,&callback,right.span,"⌕ predicate must be unary and return Bool")?;
+                        seq
+                    }
+                    BinaryOp::Map=>{
+                        let input=self.fresh();
+                        let output=self.fresh();
+                        let seq=Type::Sequence(Box::new(input.clone()));
+                        self.unify(&l.ty,&seq,left.span,"⇢ requires a typed sequence")?;
+                        let callback=Type::Function(vec![input],Box::new(output.clone()));
+                        self.unify(&r.ty,&callback,right.span,"⇢ transformer must be unary")?;
+                        Type::Sequence(Box::new(output))
+                    }
                     BinaryOp::Concat=>{
                         let elem=self.fresh();
                         let list=Type::Sequence(Box::new(elem.clone()));
@@ -452,6 +475,7 @@ impl Checker {
             TypedExprKind::Sequence(items)=>{for item in items {self.finalize_expr(item)?;}},
             TypedExprKind::Index{sequence,index}=>{self.finalize_expr(sequence)?;self.finalize_expr(index)?;},
             TypedExprKind::Length(value)=>self.finalize_expr(value)?,
+            TypedExprKind::Sum(value)=>self.finalize_expr(value)?,
             TypedExprKind::Unary{operand,..}=>self.finalize_expr(operand)?,
             TypedExprKind::Binary{left,right,..}=>{self.finalize_expr(left)?;self.finalize_expr(right)?;},
             TypedExprKind::Choice{condition,when_true,when_false}=>{

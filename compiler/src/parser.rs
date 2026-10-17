@@ -139,7 +139,8 @@ impl Parser {
             TokenKind::Plus=>BinaryOp::Add,TokenKind::Minus=>BinaryOp::Subtract,
             TokenKind::Star=>BinaryOp::Multiply,TokenKind::Slash=>BinaryOp::Divide,
             TokenKind::Percent=>BinaryOp::Modulo,TokenKind::Compose=>BinaryOp::Compose,
-            TokenKind::SeqConcat=>BinaryOp::Concat,_=>return None
+            TokenKind::SeqConcat=>BinaryOp::Concat,
+            TokenKind::Filter=>BinaryOp::Filter,TokenKind::Map=>BinaryOp::Map,_=>return None
         })
     }
     fn expression(&mut self,min_power:u8)->Result<Expr,Diagnostic>{
@@ -152,6 +153,7 @@ impl Parser {
                 self.index+=1; ExprKind::Unary{op:UnaryOp::Negate,operand:Box::new(self.expression(8)?)}
             }
             TokenKind::SeqLength=>{self.index+=1;ExprKind::Length(Box::new(self.expression(8)?))}
+            TokenKind::Sum=>{self.index+=1;ExprKind::Sum(Box::new(self.expression(8)?))}
             TokenKind::SeqOpen=>{
                 self.index+=1;
                 let mut items=Vec::new();
