@@ -1,0 +1,41 @@
+{
+  "format": 1,
+  "description": "CSE-1 symbol/ASCII paired executable source fixtures",
+  "pairs": [
+    {
+      "id": "short-function",
+      "output": "42\n",
+      "locked": false
+    },
+    {
+      "id": "direct-pipeline",
+      "output": "42\n",
+      "locked": false
+    },
+    {
+      "id": "chain",
+      "output": "42\n",
+      "locked": false
+    },
+    {
+      "id": "extra-args",
+      "output": "42\n",
+      "locked": false
+    },
+    {
+      "id": "precedence",
+      "output": "42\n",
+      "locked": false
+    },
+    {
+      "id": "locked-package",
+      "output": "42\n",
+      "locked": true
+    },
+    {
+      "id": "single-evaluation",
+      "output": "1\n42\n",
+      "locked": false
+    }
+  ]
+}
