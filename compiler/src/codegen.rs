@@ -12,12 +12,19 @@ impl Emitter {
  fn expr(&self,e:&TypedExpr)->String {
   match &e.kind {
    TypedExprKind::Number(s)=>s.clone(),TypedExprKind::String(s)=>q(s),
-   TypedExprKind::Bool(b)=>b.to_string(),TypedExprKind::Identifier(s)=>if matches!(e.ty,Type::BuiltinPrint) {"__hc_print".into()}else{name(s)},
+   TypedExprKind::Sequence(items)=>{
+     let values=items.iter().map(|x|self.expr(x)).collect::<Vec<_>>().join(", ");
+     format!("__hc_seq([{values}])")
+    }
+    TypedExprKind::Index{sequence,index}=>format!("__hc_index({}, {})",self.expr(sequence),self.expr(index)),
+    TypedExprKind::Length(value)=>format!("__hc_len({})",self.expr(value)),
+    TypedExprKind::Bool(b)=>b.to_string(),TypedExprKind::Identifier(s)=>if matches!(e.ty,Type::BuiltinPrint) {"__hc_print".into()}else{name(s)},
    TypedExprKind::OperationRef{id}=>format!("__hc_operations[{}]",q(id)),
    TypedExprKind::Unary{op,operand}=>format!("({}{})",match op{UnaryOp::Not=>"!",UnaryOp::Negate=>"-"},self.expr(operand)),
    TypedExprKind::Binary{op,left,right}=>{
     let a=self.expr(left);let b=self.expr(right);
     match op {
+     BinaryOp::Concat=>format!("__hc_concat({a},{b})"),
      BinaryOp::Compose=>format!("__hc_compose({a},{b})"),
      BinaryOp::Divide=>format!("__hc_div({a},{b})"),
      BinaryOp::Modulo=>format!("__hc_mod({a},{b})"),
@@ -78,6 +85,10 @@ pub fn emit(program:&TypedProgram,registry:&PackageRegistry)->Result<String,Stri
  output.push_str("const __hc_div = (a,b) => { if (b === 0) throw Error('Division by zero'); return a/b; };\n");
  output.push_str("const __hc_mod = (a,b) => { if (b === 0) throw Error('Division by zero'); return a%b; };\n");
  output.push_str("const __hc_compose = (outer,inner) => { if (typeof outer !== 'function' || typeof inner !== 'function') throw Error('Composition expects unary functions'); return (x) => { __hc_tick(); return outer(inner(x)); }; };\n");
+ output.push_str("const __hc_seq = (xs) => { __hc_tick(); if (!Array.isArray(xs)) throw Error('Expected sequence'); if (xs.length > 16384) throw Error('Sequence allocation limit exceeded'); return xs; };\n");
+ output.push_str("const __hc_index = (xs,i) => { __hc_tick(); __hc_seq(xs); if (!Number.isInteger(i) || i<0 || i>=xs.length) throw Error('Sequence index out of bounds or not an integer'); return xs[i]; };\n");
+ output.push_str("const __hc_len = (xs) => { __hc_tick(); return __hc_seq(xs).length; };\n");
+ output.push_str("const __hc_concat = (a,b) => { __hc_tick(); __hc_seq(a); __hc_seq(b); if (a.length+b.length>16384) throw Error('Sequence allocation limit exceeded'); return __hc_seq([...a,...b]); };\n");
  output.push_str("const __hc_operations = Object.create(null);\n");
  let mut imported=BTreeMap::<String,()>::new();
  for stmt in &program.statements { if let TypedStmtKind::Use{package,..}=&stmt.kind {imported.insert(package.clone(),());}}
