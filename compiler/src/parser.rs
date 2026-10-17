@@ -34,6 +34,13 @@ impl Parser {
         self.expect(&TokenKind::RightBrace)?;
         Ok(body)
     }
+    fn type_name(&mut self)->Result<String,Diagnostic>{
+        if self.accept(&TokenKind::SeqOpen).is_some(){
+            let inner=self.type_name()?;
+            self.expect(&TokenKind::SeqClose)?;
+            Ok(format!("⟦{inner}⟧"))
+        } else {Ok(self.ident()?.0)}
+    }
     fn statement(&mut self,top_level:bool)->Result<Stmt,Diagnostic>{
         let span=self.peek().span;
         let kind=match &self.peek().kind {
@@ -64,9 +71,10 @@ impl Parser {
             }
             TokenKind::Let=>{
                 self.index+=1;let (name,_)=self.ident()?;
+                let annotation=if self.accept(&TokenKind::Colon).is_some(){Some(self.type_name()?)}else{None};
                 self.expect(&TokenKind::Assign)?;
                 let value=self.expression(0)?;self.expect(&TokenKind::Semicolon)?;
-                StmtKind::Let{name,value}
+                StmtKind::Let{name,annotation,value}
             }
             TokenKind::Fn=>{
                 self.index+=1;let (name,_)=self.ident()?;
@@ -75,13 +83,13 @@ impl Parser {
                 if !self.at(&TokenKind::RightParen) {
                     loop {
                         let (name,param_span)=self.ident()?;
-                        let annotation=if self.accept(&TokenKind::Colon).is_some(){Some(self.ident()?.0)} else {None};
+                        let annotation=if self.accept(&TokenKind::Colon).is_some(){Some(self.type_name()?)} else {None};
                         parameters.push(Parameter{name,annotation,span:param_span});
                         if self.accept(&TokenKind::Comma).is_none(){break;}
                     }
                 }
                 self.expect(&TokenKind::RightParen)?;
-                let returns=if self.accept(&TokenKind::Arrow).is_some(){Some(self.ident()?.0)} else {None};
+                let returns=if self.accept(&TokenKind::Arrow).is_some(){Some(self.type_name()?)} else {None};
                 let body=if self.at(&TokenKind::LeftBrace) {self.block()?} else {
                     let ret=self.expect(&TokenKind::Return)?;
                     let value=self.expression(0)?;
@@ -130,7 +138,8 @@ impl Parser {
             TokenKind::LessEqual=>BinaryOp::LessEqual,TokenKind::GreaterEqual=>BinaryOp::GreaterEqual,
             TokenKind::Plus=>BinaryOp::Add,TokenKind::Minus=>BinaryOp::Subtract,
             TokenKind::Star=>BinaryOp::Multiply,TokenKind::Slash=>BinaryOp::Divide,
-            TokenKind::Percent=>BinaryOp::Modulo,TokenKind::Compose=>BinaryOp::Compose,_=>return None
+            TokenKind::Percent=>BinaryOp::Modulo,TokenKind::Compose=>BinaryOp::Compose,
+            TokenKind::SeqConcat=>BinaryOp::Concat,_=>return None
         })
     }
     fn expression(&mut self,min_power:u8)->Result<Expr,Diagnostic>{
@@ -141,6 +150,19 @@ impl Parser {
             }
             TokenKind::Minus=>{
                 self.index+=1; ExprKind::Unary{op:UnaryOp::Negate,operand:Box::new(self.expression(8)?)}
+            }
+            TokenKind::SeqLength=>{self.index+=1;ExprKind::Length(Box::new(self.expression(8)?))}
+            TokenKind::SeqOpen=>{
+                self.index+=1;
+                let mut items=Vec::new();
+                if !self.at(&TokenKind::SeqClose){
+                    loop{
+                        items.push(self.expression(0)?);
+                        if self.accept(&TokenKind::Comma).is_none(){break;}
+                    }
+                }
+                self.expect(&TokenKind::SeqClose)?;
+                ExprKind::Sequence(items)
             }
             TokenKind::Number(value)=>{self.index+=1;ExprKind::Number(value)}
             TokenKind::String(value)=>{self.index+=1;ExprKind::String(value)}
@@ -210,6 +232,14 @@ impl Parser {
     }
     fn suffixes(&mut self,mut left:Expr,min_power:u8)->Result<Expr,Diagnostic>{
         loop {
+            if self.at(&TokenKind::SeqOpen) && 9>=min_power {
+                self.index+=1;
+                let index=self.expression(0)?;
+                self.expect(&TokenKind::SeqClose)?;
+                let span=left.span;
+                left=Expr{kind:ExprKind::Index{sequence:Box::new(left),index:Box::new(index)},span};
+                continue;
+            }
             if self.at(&TokenKind::LeftParen) && 9>=min_power {
                 let span=left.span;
                 self.index+=1;
