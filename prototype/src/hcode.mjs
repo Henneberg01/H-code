@@ -391,7 +391,7 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
       }
       case 'Length':return validateSequence(expr(node.value,scope)).length;
       case 'Sum':{
-        const xs=validateSequence(expr(node.value,scope));
+        const xs=validateSequence(expr(node.value,scope,'⟦Number⟧'));
         let total=0;
         for(const v of xs){
           step();
@@ -416,7 +416,8 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
         return test?expr(node.whenTrue,scope):expr(node.whenFalse,scope);
       }
       case 'Binary':{
-        const a=expr(node.left,scope),op=node.operator;
+        const op=node.operator;
+        const a=expr(node.left,scope,null,op==='@?'||op==='@>');
         if(op==='@?'||op==='@>'){
           const source=validateSequence(a);
           const fn=expr(node.right,scope);
