@@ -43,4 +43,8 @@ Current fixture measurement compares glyph H-Code **to ASCII H-Code**. This is n
 
 ## Limited TypeScript-to-H-Code functional comparisons (NOT VERIFIED)
 
-Two handcrafted idiomatic TypeScript/H-Code pairs are included under `compact/benchmarks/paired/`. The manual CI job now runs `npm run compact:ts-parity` **after Cargo builds/tests**; this only emits metric results if both programs execute and output matches. The report is explicitly marked **PRELIMINARY** and excludes dependency/runtime footprint. No parity execution result has been obtained in this authoring session.
+Eight handwritten, varied TypeScript/H-Code pairs are included under `compact/benchmarks/paired/`. The manual CI job now runs `npm run compact:ts-parity` **after Cargo builds/tests**; this only emits metric results if both programs execute and output matches. The report is explicitly marked **PRELIMINARY** and excludes dependency/runtime footprint. No parity execution result has been obtained in this authoring session.
+
+## Eight-task interim benchmark protocol (expanded without hiding losses)
+
+The preliminary `compact/benchmarks/paired` set now covers a typed function, composed functions, recursive Fibonacci, a counter loop, a string operation, a Boolean operation, recursive factorial and a conditional branch. Some implementations are *expected to be longer in H-Code*; negative results must remain visible. This set is **not** the 20-task final suite and is not independently verified by Rust yet. Run `npm run compact:ts-parity` before reporting executable TypeScript parity. The compiler-feature priorities are determined by actual regressions; adding arbitrary one-symbol task-specific shortcuts is prohibited.

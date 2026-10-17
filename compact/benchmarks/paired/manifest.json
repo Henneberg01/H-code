@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "description": "Limited, idiomatic TypeScript vs handwritten H-Code parity tasks; not the 20-task study",
+  "description": "Eight preliminary, varied TypeScript and handwritten H-Code parity cases, including H-Code regressions; still not the canonical 20-task study",
   "pairs": [
     {
       "id": "typed-function",
@@ -9,6 +9,30 @@
     {
       "id": "chained-functions",
       "expected": "42\n"
+    },
+    {
+      "id": "recursive-fibonacci",
+      "expected": "13\n"
+    },
+    {
+      "id": "counter-loop",
+      "expected": "0\n1\n2\n3\n"
+    },
+    {
+      "id": "string-greeting",
+      "expected": "Hi world\n"
+    },
+    {
+      "id": "boolean-check",
+      "expected": "true\n"
+    },
+    {
+      "id": "recursive-factorial",
+      "expected": "120\n"
+    },
+    {
+      "id": "conditional-branch",
+      "expected": "negative\n"
     }
   ]
 }

@@ -1,6 +1,6 @@
 // CSE-1 preliminary paired-language measurement. No result unless both programs run and agree.
 // Requires Node 22+ (strip-types) and installed Rust stable/cargo.
-// Do not advertise this two-task sample as the 70%-on-20 benchmark.
+// Do not advertise this eight-task interim corpus as the 70%-on-20 benchmark.
 import {spawnSync} from 'node:child_process';
 import {readFileSync} from 'node:fs';
 import {join} from 'node:path';
@@ -18,6 +18,12 @@ function run(program,args,label){
 }
 
 const samples=[];
+const median=values=>{
+  if(values.length===0)return null;
+  const sorted=[...values].sort((a,b)=>a-b);
+  const mid=Math.floor(sorted.length/2);
+  return Number((sorted.length%2?sorted[mid]:(sorted[mid-1]+sorted[mid])/2).toFixed(2));
+};
 for(const item of manifest.pairs){
   if(typeof item.id!=='string'||!/^[a-z0-9-]+$/.test(item.id))throw Error('Unsafe sample ID');
   const fileBase=join(root,'compact/benchmarks/paired',item.id);
@@ -31,7 +37,10 @@ for(const item of manifest.pairs){
     codePointReductionPercent:reduction(hc.codePoints,ts.codePoints),
     utf8ReductionPercent:reduction(hc.utf8Bytes,ts.utf8Bytes)});
 }
-console.log(JSON.stringify({kind:'PRELIMINARY: 2 handwritten standalone tasks; NOT 20-program benchmark',
-  comparison:'H-Code vs idiomatic TypeScript',samples,
+console.log(JSON.stringify({kind:'PRELIMINARY: eight varied handwritten standalone tasks; NOT 20-program benchmark',
+  comparison:'H-Code vs idiomatic TypeScript',sampleCount:samples.length,
+  codePointMedianReductionPercent:median(samples.map(p=>p.codePointReductionPercent)),
+  utf8MedianReductionPercent:median(samples.map(p=>p.utf8ReductionPercent)),
+  hcodeSourceRegressions:samples.filter(p=>p.codePointReductionPercent<0).map(p=>p.id),samples,
   caveats:{independentReview:false,dependencyFootprintMeasured:false,
     compilerRuntimeNodeDependencyIncluded:false,tokenConsumptionMeasured:false}},null,2));

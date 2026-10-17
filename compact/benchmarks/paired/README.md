@@ -1,12 +1,11 @@
-# CSE-1 preliminary H-Code / TypeScript parity samples
+# H-Code / idiomatic TypeScript — eight-case interim corpus
 
-Two handwritten programs, not the project's canonical 20-program target and not representative of typical applications.
+This is an honest *interim* research benchmark, **not** the canonical 20-task corpus, not proof of the 70% goal, and not a representative study of complete applications.
 
-- `typed-function`: one typed arithmetic function.
-- `chained-functions`: two ordinary typed arithmetic functions composed in a call chain.
+The eight implemented case IDs are: `typed-function`, `chained-functions`, `recursive-fibonacci`, `counter-loop`, `string-greeting`, `boolean-check`, `recursive-factorial`, `conditional-branch`.
 
-Run `npm run compact:ts-parity` from repository root with Node 22+ and Rust stable installed. It uses Node's TypeScript type stripping and compiles H-Code through the real Rust `hcodec` CLI, then checks **exact output parity** before producing a measured code-point/UTF-8 comparison.
+They intentionally cover success cases **and** cases where contemporary TypeScript syntax is shorter (native for loops, ternary expressions, recursive functions). No padding, minification, hidden task-specific libraries or omitted source files.
 
-The task deliberately gives TypeScript ordinary concise, idiomatic arrow functions and core `console.log`. It does not pad TypeScript with needless boilerplate or omit handwritten H-Code source. Dependencies, generated bundles and runtime resources are **not accounted for** by this preliminary script, so none of these figures count toward the final research objective.
+Run `npm run compact:ts-parity` with Node 22+ and Rust cargo installed. It runs both sides and checks *exact stdout parity* before reporting results. It reports Unicode code-point counts, UTF-8-byte counts and median reduction, including negative percentages.
 
-If either side fails, the script fails rather than publishing numbers. Results must be independently reviewed. The full 20-task benchmark requires many later H-Code language and library milestones.
+Limits: Eight simple programs, one toolchain, no independent reviewer, no complete dependency/build-size accounting, no AI token or developer-time measurements. A future 20-task benchmark must include real programs requiring lists, records, networking and other general-language features. Outputs are preliminary until the actual Rust compiler test runner is green.
