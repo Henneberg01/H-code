@@ -1,41 +1,25 @@
-# H-Code execution milestones - AI-first plan
+# H-Code milestones
 
-Milestones are gated by verified deliverables, not dates. Target cadence assumes intensive human-led AI-assisted development. **Dates are targets, not promises.**
+- [x] M0 — initial project foundation (working prototype created in previous session)
+- [x] M1 — initial language grammar, glyph registry, reference interpreter, offline packages (reference implementation only)
+- [x] M2 — Rust lexer, parser, typed AST and semantic analyzer (15/15 local Rust integration tests; remote CI remains separate)
+- [x] M3 — JavaScript code generation and executable hcodec build/run CLI (8/8 M3 tests; 11 examples match M1 reference)
+- [x] M4 — local .hc modules, recursive imports, starter math/text stdlib and interoperability with locked symbol packages (6/6 local M4 tests; full package manager remains future work)
+- [x] M5 — three executable multi-file calculation workflows (invoice, inventory, savings), tested via Rust/Node CLI (2/2 integration tests; not production apps)
+- [x] M6 — local web Studio editor (files/edit/save/check/build/run/glyph palette; 4/4 API tests, visual browser QA pending)
+- [x] M7 — AI edits with optional OpenAI API-key startup/test and review/apply (12/12 Studio tests; live key test pending)
+- [x] M8 — local runtime budgets, Origin/Host checks and reproducible benchmarks (sandboxing incomplete)
+- [x] M9 — private public-beta release candidate prepared (GitHub review and public release are separate gates)
+- [ ] M10 — optional paid AI Studio
+- [ ] M11 — stable 1.0 release
+- [ ] M12 — WebAssembly/native/platform expansion
+- [ ] M13 — commercial teams/cloud ecosystem
 
-| ID | Target | Outcome | Exit gate | Status |
-|---|---|---|---|---|
-| M0 | Day 1 | Independent GitHub repository, docs, CI, clean build | Repo created, cloneable, CI green | IN PROGRESS - remote Henneberg01/H-code now exists; branch pending verified upload |
-| M1 | Days 2-3 | Grammar, symbols, typed offline library prototype, spec | Alias/glyph AST equivalence, locked user-defined operations and tests | IN PROGRESS - symbol linker operational |
-| M2 | Days 4-5 | Rust compiler frontend: lexer, parser, typed AST | Syntax conformance tests green | IN PROGRESS - Rust frontend and conformance tests written, pending verified CI |
-| M3 | Days 6-7 | JS backend and CLI executable | .hc files compiled to JS and run | NOT STARTED |
-| M4 | Days 8-11 | General modules, reusable package tooling and versioned packages | External package import beyond the M1 offline prototype | NOT STARTED - M1 local-package subset available |
-| M5 | Days 12-15 | Core libraries: files, HTTP, async, JS interop | CLI and minimal server run | NOT STARTED |
-| M6 | Days 16-19 | H-Code Studio MVP (editor integration, diagnostics) | Install, edit, check, debug | NOT STARTED |
-| M7 | Days 20-24 | Full-stack web app SDK + sample | Standalone app builds/deploys | NOT STARTED |
-| M8 | Days 25-27 | AI structured code edits and tests | Reproducible edit + regression check | NOT STARTED |
-| M9 | Days 28-30 | Private alpha release | Third party installs and completes project | NOT STARTED |
-| M10 | Days 31-40 | Registry, package signing/locking | Versioned packages resolve reliably | NOT STARTED |
-| M11 | Days 41-50 | Desktop target proof of concept | Small desktop app runs | NOT STARTED |
-| M12 | Days 51-60 | WebAssembly performance prototype | Benchmark report with caveats | NOT STARTED |
-| M13 | Days 61-70 | AI agent advanced workflow | Safe bounded refactor with tests | NOT STARTED |
-| M14 | Days 71-80 | Security, correctness, stabilization | External alpha test report | NOT STARTED |
-| M15 | Days 81-90 | Public beta and documentation | Docs, CI, reproducible release | NOT STARTED |
+## Immediate actions
 
-## M1 work breakdown
+M9's candidate is staged for private review; no public release or production certification is implied.
 
-- [x] Create a draft grammar with explicit statement termination and precedence.
-- [x] Canonical glyph/ASCII operator mapping for the executable subset.
-- [x] Initial language reference prototype, CLI, samples and unit tests.
-- [ ] Review and approve all reserved symbol semantics for future versions.
-- [x] Build offline reference symbol registration, import grammar, library contracts and version-locking into parser/linker.
-- [ ] Define full static type system and conformance suite (M1 decisions, M2 implementation). Current runtime library contracts do not replace static checking.
-- [ ] Compare H-Code syntax vs traditional languages on fair benchmark workloads.
-
-## Non-negotiable acceptance
-
-- Correctness first. Never equate compact glyphs with faster runtime by assumption.
-- Glyph and alias spellings must have identical AST semantics.
-- Invalid programs must fail predictably with useful diagnostics.
-- Symbol packages must not be permitted to acquire hidden privileges.
-- Stable version locks and reproducibility are required before public launch.
-- AI use must be optional for building/running apps.
+1. M0-M3 local gates passed: Node M1 39/39, Rust M2 15/15, Rust M3 8/8.
+2. Fuel and recursion limits added in M8; generated JavaScript still runs with Node privileges and is not safe for untrusted programs.
+3. M4 + M5 local gates passed: recursive modules, starter stdlib and 3 multi-file application workflows (6/6 M4 tests, 2/2 M5 tests; 70 tests total including M1 Node suite).
+4. M7 includes an OpenAI API-key test and model-backed proposal workflow (12/12 Studio tests). Live API credential verification, sandboxing, visual QA and GitHub sync remain pending.

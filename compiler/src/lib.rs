@@ -1,8 +1,10 @@
 //! H-Code M2 static frontend, independent of the M1 JavaScript reference runtime.
 pub mod ast;
 pub mod checker;
+pub mod codegen;
 pub mod lexer;
 pub mod packages;
+pub mod modules;
 pub mod parser;
 
 use lexer::Span;

@@ -13,7 +13,7 @@ pub struct Token { pub kind: TokenKind, pub span: Span }
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum TokenKind {
-    Fn, Let, Return, If, Else, While, Use, As, True, False, And, Or, Not,
+    Fn, Let, Return, If, Else, While, Use, Import, Export, As, True, False, And, Or, Not,
     Identifier(String), Number(String), String(String), Glyph(char),
     LeftParen, RightParen, LeftBrace, RightBrace, Comma, Semicolon, Colon, DoubleColon,
     Assign, Arrow, Plus, Minus, Star, Slash, Percent,
@@ -120,7 +120,7 @@ pub fn lex(source: &str) -> Result<Vec<Token>, Diagnostic> {
             let kind = match word.as_str() {
                 "fn"=>TokenKind::Fn, "let"=>TokenKind::Let, "return"=>TokenKind::Return,
                 "if"=>TokenKind::If,"else"=>TokenKind::Else,"while"=>TokenKind::While,
-                "use"=>TokenKind::Use,"as"=>TokenKind::As,
+                "use"=>TokenKind::Use,"import"=>TokenKind::Import,"export"=>TokenKind::Export,"as"=>TokenKind::As,
                 "true"=>TokenKind::True,"false"=>TokenKind::False,"and"=>TokenKind::And,
                 "or"=>TokenKind::Or,"not"=>TokenKind::Not,
                 _=>TokenKind::Identifier(word)

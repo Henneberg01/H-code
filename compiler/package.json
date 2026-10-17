@@ -1,0 +1,11 @@
+{
+  "name": "h-code-rust-frontend-checks",
+  "version": "0.2.0",
+  "private": true,
+  "scripts": {
+    "test": "cargo test --manifest-path Cargo.toml",
+    "check": "cargo check --manifest-path Cargo.toml",
+    "cli": "cargo run --manifest-path Cargo.toml -- check ../examples/user_symbols.hc --lock ../hcode.lock.json",
+    "m4": "cargo run --manifest-path Cargo.toml -- run ../m4/main.hc --lock ../hcode.lock.json"
+  }
+}

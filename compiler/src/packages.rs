@@ -3,16 +3,16 @@ use std::{collections::{HashMap,HashSet},fs,path::{Path,PathBuf}};
 use serde::Deserialize;
 use sha2::{Digest,Sha256};
 use unicode_normalization::UnicodeNormalization;
-use crate::{ast::StmtKind,checker::{check,Type},lexer::{is_symbol,Span},parser::parse,Diagnostic};
+use crate::{ast::StmtKind,checker::{check,Type,TypedProgram},lexer::{is_symbol,Span},parser::parse,Diagnostic};
 
 #[derive(Clone,Debug,Default)]
 pub struct PackageRegistry { pub packages:HashMap<String,PackageDef> }
 #[derive(Clone,Debug)]
-pub struct PackageDef { pub operations:Vec<OperationSig> }
+pub struct PackageDef { pub operations:Vec<OperationSig>, pub typed_source:TypedProgram }
 #[derive(Clone,Debug)]
 pub struct OperationSig {
     pub id:String,pub name:String,pub glyph:String,
-    pub parameters:Vec<Type>,pub returns:Type,
+    pub parameters:Vec<Type>,pub returns:Type,pub implementation:String,
 }
 
 #[derive(Deserialize)]
@@ -63,7 +63,7 @@ fn ident(v:&str)->bool {
     matches!(cs.next(),Some(c) if c.is_ascii_alphabetic()||c=='_') && cs.all(|c|c.is_ascii_alphanumeric()||c=='_')
 }
 fn keyword(v:&str)->bool {
-    matches!(v,"fn"|"let"|"return"|"true"|"false"|"if"|"else"|"while"|"and"|"or"|"not"|"use"|"as")
+    matches!(v,"fn"|"let"|"return"|"true"|"false"|"if"|"else"|"while"|"and"|"or"|"not"|"use"|"import"|"export"|"as")
 }
 fn package_name(v:&str)->bool{
     !v.is_empty() && v.as_bytes()[0].is_ascii_lowercase() &&
@@ -110,7 +110,7 @@ pub fn load_lockfile(path:&Path)->Result<PackageRegistry,Diagnostic>{
             return Err(failure(format!("{key}: only top-level functions permitted in a pure package")));
         }
         // Entire library body is statically checked with no ambient I/O functions.
-        check(&ast,&PackageRegistry::default(),false)?;
+        let typed_source=check(&ast,&PackageRegistry::default(),false)?;
         let mut operations=Vec::new();let mut names=HashSet::new();let mut glyphs=HashSet::new();
         if manifest.operations.is_empty()||manifest.operations.len()>100 {return Err(failure("Package must export 1..100 operations"));}
         for op in manifest.operations {
@@ -146,9 +146,9 @@ pub fn load_lockfile(path:&Path)->Result<PackageRegistry,Diagnostic>{
             if implementation.1.as_deref()!=Some(op.returns.as_str()){
                 return Err(failure(format!("{}: return contract mismatch",op.name)));
             }
-            operations.push(OperationSig{id:format!("{key}::{}",op.name),name:op.name,glyph:op.glyph,parameters,returns});
+            operations.push(OperationSig{id:format!("{key}::{}",op.name),name:op.name,glyph:op.glyph,parameters,returns,implementation:op.implementation});
         }
-        registry.packages.insert(key,PackageDef{operations});
+        registry.packages.insert(key,PackageDef{operations,typed_source});
     }
     Ok(registry)
 }

@@ -47,6 +47,21 @@ impl Parser {
                 self.expect(&TokenKind::Semicolon)?;
                 StmtKind::Use{package,alias}
             }
+            TokenKind::Import=>{
+                self.index+=1;
+                if !top_level {return Err(Diagnostic::new("PARSE","Module imports must be top-level".into(),span));}
+                let source=match self.expect(&TokenKind::String(String::new()))?.kind{TokenKind::String(s)=>s,_=>unreachable!()};
+                self.expect(&TokenKind::As)?;
+                let (alias,_)=self.ident()?;
+                self.expect(&TokenKind::Semicolon)?;
+                StmtKind::Import{source,alias}
+            }
+            TokenKind::Export=>{
+                self.index+=1;
+                if !top_level {return Err(Diagnostic::new("PARSE","Exports must be top-level".into(),span));}
+                if !self.at(&TokenKind::Fn) && !self.at(&TokenKind::Let){return Err(Diagnostic::new("PARSE","Only functions and values may be exported".into(),span));}
+                StmtKind::Export{declaration:Box::new(self.statement(true)?)}
+            }
             TokenKind::Let=>{
                 self.index+=1;let (name,_)=self.ident()?;
                 self.expect(&TokenKind::Assign)?;

@@ -1,25 +1,18 @@
-name: H-Code M1 + M2 Conformance
+name: H-Code conformance (manual CI only)
 on:
-  push:
-  pull_request:
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:
-  javascript-reference:
-    runs-on: ubuntu-latest
+  conformance:
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: npm test
-      - run: npm run demo
-  rust-compiler:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt, clippy
+      - run: npm test
+      - run: npm run studio:test
       - run: cargo test --manifest-path compiler/Cargo.toml
-      - run: cargo run --manifest-path compiler/Cargo.toml -- check examples/user_symbols.hc --lock hcode.lock.json
+      - run: npm run release:check

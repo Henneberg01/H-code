@@ -15,6 +15,8 @@ pub struct Stmt {
 #[derive(Clone, Debug, PartialEq)]
 pub enum StmtKind {
     Use { package: String, alias: String },
+    Import { source: String, alias: String },
+    Export { declaration: Box<Stmt> },
     Let { name: String, value: Expr },
     Assign { name: String, value: Expr },
     Function { name: String, parameters: Vec<Parameter>, returns: Option<String>, body: Vec<Stmt> },

@@ -27,6 +27,8 @@ pub struct TypedStmt { pub kind: TypedStmtKind, pub span: Span }
 #[derive(Clone,Debug,PartialEq)]
 pub enum TypedStmtKind {
     Use { package:String, alias:String },
+    Import { source:String, alias:String },
+    Export { declaration:Box<TypedStmt> },
     Let { name:String, value:TypedExpr },
     Assign { name:String, value:TypedExpr },
     Function { name:String, parameters:Vec<(String,Type)>, returns:Type, body:Vec<TypedStmt> },
@@ -126,7 +128,7 @@ impl Checker {
             let Some(def)=registry.packages.get(package) else {
                 return Err(Diagnostic::new("IMPORT",format!("Package {package} is not present in the verified lockfile"),stmt.span));
             };
-            if !valid_package_spec(package) {
+            if !package.starts_with("local:") && !valid_package_spec(package) {
                 return Err(Diagnostic::new("IMPORT",format!("Invalid exact-version package specifier {package}"),stmt.span));
             }
             if self.imported.contains_key(alias) || (alias=="print" && self.allow_print) {
@@ -160,6 +162,11 @@ impl Checker {
     fn statement(&mut self,node:&Stmt)->Result<TypedStmt,Diagnostic>{
         let kind=match &node.kind {
             StmtKind::Use{package,alias}=>TypedStmtKind::Use{package:package.clone(),alias:alias.clone()},
+            StmtKind::Import{source,alias}=>return Err(Diagnostic::new("IMPORT",format!("Local module {source} as {alias} requires M4 module resolution"),node.span)),
+            StmtKind::Export{declaration}=>{
+                let typed=self.statement(declaration)?;
+                TypedStmtKind::Export{declaration:Box::new(typed)}
+            },
             StmtKind::Let{name,value}=>{
                 if self.scopes.len()==1 && self.imported.contains_key(name) {
                     return Err(Diagnostic::new("TYPE",format!("Declaration {name} conflicts with package alias"),node.span));
@@ -344,7 +351,8 @@ impl Checker {
     }
     fn finalize_stmt(&self,s:&mut TypedStmt)->Result<(),Diagnostic>{
         match &mut s.kind {
-            TypedStmtKind::Use{..}=>{},
+            TypedStmtKind::Use{..}|TypedStmtKind::Import{..}=>{},
+            TypedStmtKind::Export{declaration}=>self.finalize_stmt(declaration)?,
             TypedStmtKind::Let{value,..}|TypedStmtKind::Assign{value,..}|TypedStmtKind::Return(value)|TypedStmtKind::Expression(value)=>self.finalize_expr(value)?,
             TypedStmtKind::Function{parameters,returns,body,..}=>{
                 for (_,p) in parameters { *p=self.require_known(p,s.span)?; }
@@ -382,6 +390,7 @@ fn contains_variable(t:&Type)->bool {
 }
 fn statement_returns(s:&Stmt)->bool {
     match &s.kind{
+        StmtKind::Export{declaration}=>statement_returns(declaration),
         StmtKind::Return(_)=>true,
         StmtKind::If{then_body,else_body:Some(other),..}=>{
             body_returns(then_body)&&body_returns(other)
