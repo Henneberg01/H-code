@@ -45,6 +45,7 @@ pub enum TypedExprKind {
     OperationRef { id:String },
     Unary { op:UnaryOp,operand:Box<TypedExpr> },
     Binary { op:BinaryOp,left:Box<TypedExpr>,right:Box<TypedExpr> },
+    Choice { condition:Box<TypedExpr>,when_true:Box<TypedExpr>,when_false:Box<TypedExpr> },
     Call { callee:Box<TypedExpr>,arguments:Vec<TypedExpr> },
 }
 
@@ -282,6 +283,14 @@ impl Checker {
                 self.unify(&expected,&inner.ty,expr.span,"Invalid unary operand")?;
                 (TypedExprKind::Unary{op:*op,operand:Box::new(inner)},result)
             }
+            ExprKind::Choice{condition,when_true,when_false}=>{
+                let test=self.expression(condition)?;
+                self.unify(&Type::Bool,&test.ty,condition.span,"Choice condition must be Bool")?;
+                let positive=self.expression(when_true)?;
+                let negative=self.expression(when_false)?;
+                let ty=self.unify(&positive.ty,&negative.ty,expr.span,"Choice branches must have matching types")?;
+                (TypedExprKind::Choice{condition:Box::new(test),when_true:Box::new(positive),when_false:Box::new(negative)},ty)
+            }
             ExprKind::Binary{op,left,right}=>{
                 let l=self.expression(left)?;let r=self.expression(right)?;
                 let ty=match op {
@@ -387,6 +396,11 @@ impl Checker {
         match &mut e.kind {
             TypedExprKind::Unary{operand,..}=>self.finalize_expr(operand)?,
             TypedExprKind::Binary{left,right,..}=>{self.finalize_expr(left)?;self.finalize_expr(right)?;},
+            TypedExprKind::Choice{condition,when_true,when_false}=>{
+                self.finalize_expr(condition)?;
+                self.finalize_expr(when_true)?;
+                self.finalize_expr(when_false)?;
+            },
             TypedExprKind::Call{callee,arguments}=>{
                 self.finalize_expr(callee)?;
                 for a in arguments{self.finalize_expr(a)?;}

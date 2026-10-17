@@ -233,6 +233,14 @@ impl Parser {
                 }
                 continue;
             }
+            if min_power==0 && self.accept(&TokenKind::Choice).is_some(){
+                let yes=self.expression(0)?;
+                self.expect(&TokenKind::Colon)?;
+                let no=self.expression(0)?;
+                let span=left.span;
+                left=Expr{kind:ExprKind::Choice{condition:Box::new(left),when_true:Box::new(yes),when_false:Box::new(no)},span};
+                continue;
+            }
             let Some(op)=self.binary_operator() else {break};
             let precedence=op.precedence();
             if precedence<min_power {break;}

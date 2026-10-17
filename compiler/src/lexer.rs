@@ -15,7 +15,7 @@ pub struct Token { pub kind: TokenKind, pub span: Span }
 pub enum TokenKind {
     Fn, Let, Return, If, Else, While, Use, Import, Export, As, True, False, And, Or, Not,
     Identifier(String), Number(String), String(String), Glyph(char),
-    LeftParen, RightParen, LeftBrace, RightBrace, Comma, Semicolon, Colon, DoubleColon, Pipe, Compose,
+    LeftParen, RightParen, LeftBrace, RightBrace, Comma, Semicolon, Colon, DoubleColon, Pipe, Compose, Choice,
     Assign, Arrow, Plus, Minus, Star, Slash, Percent,
     Equal, NotEqual, Less, Greater, LessEqual, GreaterEqual, Eof,
 }
@@ -134,7 +134,7 @@ pub fn lex(source: &str) -> Result<Vec<Token>, Diagnostic> {
             '∧'=>Some(TokenKind::And),'∨'=>Some(TokenKind::Or),'¬'=>Some(TokenKind::Not),
             '≡'=>Some(TokenKind::Equal),'≠'=>Some(TokenKind::NotEqual),
             '≤'=>Some(TokenKind::LessEqual),'≥'=>Some(TokenKind::GreaterEqual),
-            '∷'=>Some(TokenKind::DoubleColon),'▷'=>Some(TokenKind::Pipe),'∘'=>Some(TokenKind::Compose),
+            '∷'=>Some(TokenKind::DoubleColon),'▷'=>Some(TokenKind::Pipe),'∘'=>Some(TokenKind::Compose),'◇'=>Some(TokenKind::Choice),
             _=>None,
         };
         if let Some(kind)=core { advance(&mut pos,&mut line,&mut column); result.push(Token{kind,span}); continue; }
@@ -153,7 +153,7 @@ pub fn lex(source: &str) -> Result<Vec<Token>, Diagnostic> {
         let single = match c {
             '('=>Some(TokenKind::LeftParen),')'=>Some(TokenKind::RightParen),
             '{'=>Some(TokenKind::LeftBrace),'}'=>Some(TokenKind::RightBrace),
-            ','=>Some(TokenKind::Comma),';'=>Some(TokenKind::Semicolon),
+            ','=>Some(TokenKind::Comma),';'=>Some(TokenKind::Semicolon),'?'=>Some(TokenKind::Choice),
             ':'=>Some(TokenKind::Colon),'='=>Some(TokenKind::Assign),
             '+'=>Some(TokenKind::Plus),'-'=>Some(TokenKind::Minus),
             '*'=>Some(TokenKind::Star),'/'=>Some(TokenKind::Slash),

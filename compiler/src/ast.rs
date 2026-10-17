@@ -48,6 +48,7 @@ pub enum ExprKind {
     Operation { alias: Option<String>, name_or_glyph: String, is_glyph: bool },
     Unary { op: UnaryOp, operand: Box<Expr> },
     Binary { op: BinaryOp, left: Box<Expr>, right: Box<Expr> },
+    Choice { condition: Box<Expr>, when_true: Box<Expr>, when_false: Box<Expr> },
     Call { callee: Box<Expr>, arguments: Vec<Expr> },
 }
 

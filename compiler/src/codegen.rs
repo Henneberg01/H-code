@@ -27,6 +27,10 @@ impl Emitter {
      }
     }
    }
+   TypedExprKind::Choice{condition,when_true,when_false}=>{
+    // Native conditional expression: unused branch is never evaluated.
+    format!("({} ? {} : {})",self.expr(condition),self.expr(when_true),self.expr(when_false))
+   }
    TypedExprKind::Call{callee,arguments}=>{
     let args=arguments.iter().map(|x|self.expr(x)).collect::<Vec<_>>().join(", ");
     if matches!(callee.ty,Type::BuiltinPrint){format!("__hc_print({args})")}else{format!("(__hc_tick(),{})({args})",self.expr(callee))}
