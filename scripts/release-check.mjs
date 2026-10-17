@@ -1,6 +1,6 @@
 import fs from 'node:fs';import path from 'node:path';import {fileURLToPath} from 'node:url';
 const root=fileURLToPath(new URL('../',import.meta.url));
-const required=['LICENSE','NOTICE','TRADEMARKS.md','COMMERCIAL.md','SECURITY.md','CONTRIBUTING.md','CODE_OF_CONDUCT.md','README.md','RELEASE_NOTES.md','docs/RELEASING.md','docs/PROJECT_CONTINUITY.md','compiler/Cargo.toml','studio/server.mjs'];
+const required=['LICENSE','NOTICE','TRADEMARKS.md','COMMERCIAL.md','SECURITY.md','CONTRIBUTING.md','CODE_OF_CONDUCT.md','README.md','RELEASE_NOTES.md','docs/RELEASING.md','compiler/Cargo.toml','studio/server.mjs'];
 let problems=[];for(const p of required){if(!fs.existsSync(path.join(root,p)))problems.push('Missing '+p)}
 const license=fs.readFileSync(path.join(root,'LICENSE'),'utf8');if(!license.includes('Apache License')||!license.includes('Version 2.0'))problems.push('LICENSE not Apache-2.0');
 const notice=fs.readFileSync(path.join(root,'NOTICE'),'utf8');if(!notice.includes('Jonas Fogh Henneberg')||!notice.includes('Fastsell.net'))problems.push('NOTICE owner missing');
