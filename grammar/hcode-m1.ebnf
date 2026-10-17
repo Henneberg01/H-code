@@ -1,0 +1,32 @@
+(* M1 reference subset with offline version-locked package imports and user glyphs. *)
+program       = { statement | import } ;
+import        = "use", STRING, "as", IDENT, ";" ;
+(* import STRING value: "package.name@MAJOR.MINOR.PATCH" *)
+statement     = declaration | assignment | function | conditional | loop | return_stmt | expr_stmt ;
+declaration   = "let", IDENT, "=", expression, ";" ;
+assignment    = IDENT, "=", expression, ";" ;
+function      = "fn", IDENT, "(", [ parameters ], ")", [ "->", IDENT ], block ;
+parameters    = parameter, { ",", parameter } ;
+parameter     = IDENT, [ ":", IDENT ] ;
+conditional   = "if", "(", expression, ")", block, [ "else", block ] ;
+loop          = "while", "(", expression, ")", block ;
+return_stmt   = "return", expression, ";" ;
+expr_stmt     = expression, ";" ;
+block         = "{", { statement }, "}" ;
+expression    = disjunction ;
+disjunction   = conjunction, { "or", conjunction } ;
+conjunction   = equality, { "and", equality } ;
+equality      = comparison, { ("==" | "!="), comparison } ;
+comparison    = addition, { ("<" | ">" | "<=" | ">="), addition } ;
+addition      = product, { ("+" | "-"), product } ;
+product       = unary, { ("*" | "/" | "%"), unary } ;
+unary         = ("not" | "-"), unary | call ;
+call          = primary, { "(", [ arguments ], ")" } ;
+arguments     = expression, { ",", expression } ;
+primary       = NUMBER | STRING | "true" | "false" | IDENT | user_glyph | qualified_operation | "(", expression, ")" ;
+qualified_operation = IDENT, ("::" | "∷"), (IDENT | user_glyph) ;
+user_glyph    = SYMBOL_CHARACTER ;
+(* SYMBOL_CHARACTER = one Unicode category-S codepoint, not a core glyph. *)
+(* Only imported, version-locked library symbols survive linking. *)
+(* Glyphs for core syntax are mapped to canonical ASCII tokens by the lexer. *)
+(* Details of allowed glyphs, types, collision handling: docs/LIBRARIES.md. *)
