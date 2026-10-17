@@ -1,78 +1,66 @@
-# H-Code M11 / CSE-2 — typed sequence architecture (draft)
-**Date:** 2026-10-18  
-**Review status:** Proposed design; NOT implemented; no M11 code is released.  
-**Upstream:** PR #3 (Phase-1), draft PR #5 (M10), tracked by issue #6.
+# H-Code CSE-2 / M11 — TEGN-først, typede sekvenser (revideret design)
 
-## Why this is necessary
-H-Code is a new, Unicode-sign-first, **general-purpose programming language**, not a short-name JavaScript dialect, an AI prompt system, or a FastSell app builder. The honest preliminary eight-case TypeScript comparison is only **2.27%** smaller in code points at the median and **5.85% larger** in UTF-8 bytes; four cases lose to TypeScript. The long-term, independent 20-task target is ≥70% fewer **developer-authored Unicode code points**. Lists are an enabling general-purpose primitive; they do NOT independently establish that target.
+**Dato:** 18. oktober 2026. **Status:** Foreslået sprogdesign; ikke implementeret.  
+**Ejers styrende beslutning:** H-Code er et *selvstændigt, universelt TEGN-sprog*. Tegn er det primære interface til programmeringslogik; ASCII er alene en tilgængelighedsalias. Den tidligere teksttunge M11-plan er **erstattet**.
 
-The earlier CSE-2 contract mentioned typed literals, indexed reads and length, then claimed map/filter could be written in H-Code. **That is incomplete**: arbitrarily sized output lists require a safe append/builder primitive. This addendum closes that design hole openly instead of hiding domain-specific compiler handlers.
+## 1. Hvad vi bygger — og hvad vi ikke bygger
 
-## Proposed user-facing source semantics
-```hcode
-≔ xs ← [1, 2, 3];
-print(xs[0]);              // 1
-print(xs ▷ len);           // 3
-≔ ys ← xs ▷ append(4);    // returns NEW List<Number>, xs stays unchanged
-ƒ empty() → List<Number> ↩ [];
-≔ out: List<Number> ← []; // annotated empty list
-```
+Vi udvikler ikke en minimificeret JavaScript/TypeScript-grammatik og markedsfører ikke engelsk `List<T>`, `len` eller `append` som H-Codes nye kerne. Intern typeanalyse må gerne bruge normale typebegreber, men *udvikleren skriver tegn*.
 
-```hcode
-ƒ sum(xs: List<Number>) → Number {
-  ≔ i ← 0;
-  ≔ total ← 0;
-  while (i < len(xs)) {
-    total ← total + xs[i];
-    i ← i + 1;
-  }
-  ↩ total;
-}
-print(sum([2,3,5])); // 10
-```
+Et tegn må beskrive reel **typesikker, generel semantik**, eksempelvis funktionel komposition `∘`, pipeline `▷` og senere `⌕`, `⇢`, `∑`. Tegn må ikke skjule AI-prompts, webshop-specialtilfælde eller uigennemsigtig genereret kode. Alle operationer skal kunne forklares, testes, profileres og debugges.
+
+Målet er **70% færre Unicode-kodepunkter i udviklerskrevet kildekode** (median af 20 fastlåste, funktionsækvivalente opgaver). Målet er ikke dokumenteret opnået. UTF-8, afhængigheder, AI-tokens og køretid måles hver for sig. Målegrundlaget ændres aldrig lydløst.
+
+## 2. Tegn i første sekvensfase — M11
+
+| Primært tegn | Foreslået funktion | Teknisk kontrakt |
+|---|---|---|
+| `⟦ … ⟧` | Typed sekvens, eksempel `⟦1,2,3⟧` | Ens elementtyper, også indlejrede sekvenser |
+| `xs⟦i⟧` | Kontrolleret elementadgang | Talindeks, runtime-heltal og bounds-check |
+| `⌗xs` | Antal elementer | Ren funktion, returtype Number |
+| `xs ⧺ ys` | Sammenkæd to sekvenser | Ens elementtype, nyt resultat uden mutation |
+| `⟦T⟧` i typeposition | Sekvenstype, eksempel `⟦Number⟧` | Den interne typechecker bruger en struktureret sekvenstype |
+
+**Disse tegn er forslag, ikke eksisterende features.** Verificér Unicode NFC/NFKC-stabilitet, tastatur og tilgængelighed, samt kollisioner mod pakkesymboler *før* lexeren ændres. Udviklere skal også have dokumenterede ASCII-aliaser for hele grammatikken; de er ikke primær undervisnings- eller eksempelstil.
+
+Foreslået fremtidig H-Code:
 
 ```hcode
-ƒ doubleEach(xs: List<Number>) → List<Number> {
-  ≔ out: List<Number> ← [];
-  ≔ i ← 0;
-  while (i < len(xs)) {
-    out ← append(out, xs[i]*2);
-    i ← i+1;
-  }
-  ↩ out;
-}
+≔ xs ← ⟦1,2,3⟧;
+print(⌗xs);          // 3
+print(xs⟦0⟧);         // 1
+≔ ys ← xs ⧺ ⟦4⟧;    // ny sekvens; xs er uændret
+ƒ empty() → ⟦Number⟧ ↩ ⟦⟧;
 ```
 
-These are design examples, **not working H-Code programs yet**. They demonstrate that reusable sum/map logic can be expressed by the language itself. The future package-scoped `∑`, `⌕`, `⇢` operations must have inspectable, versioned implementations and must not secretly generate applications.
+De typebestemte `⟦T⟧` og tomme `⟦⟧` skal have en entydig parsing og eksplicit forventet elementtype. `≔ xs ← ⟦⟧;` uden forventet type afvises.
 
-## Grammar (proposed)
-```ebnf
-type          = identifier | "List" "<" type ">" ;
-list-literal  = "[" [expression ("," expression)*] "]" ;
-postfix       = primary { "(" [arguments] ")" | "[" expression "]" } ;
-let-decl      = ("≔"|"let") identifier [":" type] ("←"|"=") expression ";" ;
+## 3. Symbolsk datalogik — M12/M13 (IKKE en del af M11)
+
+`⌕` er filter, `⇢` er map, `∑` er reduktion/sum. De er **generelle semantiske operationer**, ikke omskrivninger af sprogets nøgleord.
+
+```hcode
+ƒ positive(n) ↩ n>0;
+ƒ twice(n) ↩ n*2;
+≔ xs ← ⟦-1,2,3⟧;
+print(∑(xs ⌕ positive ⇢ twice));  // 10
 ```
-Whitespace is optional per normal H-Code lexical rules. The literal brackets are ordinary ASCII syntax, not symbolic packages. `List` in type position is parsed as a structured type, not a renamed JS array. Typed list expressions and indexed reads produce dedicated AST variants with original source spans. Existing `▷` / `|>` pipeline precedence remains unchanged.
 
-## Type contracts
-1. `[1,2,3]` infers `List<Number>`; `["a","b"]` infers `List<String>`; nested homogeneous lists infer `List<List<T>>`.
-2. `[1,true]` is a compile-time type error. Strings and numbers do not silently coerce. Distinct list element types cannot unify.
-3. `[]` has an unknown element type; require an explicitly annotated expected `List<T>` in return or binding context. Bare `≔ a ← [];` fails instead of creating `List<Any>`.
-4. `xs[i]` requires `xs:List<T>` and `i:Number`. A known fractional literal fails at compile-time; ALL indexes also undergo runtime integer and bounds validation (negative/out-of-range/fractional/NaN rejected). Empty and nested lists must behave deterministically.
-5. `len(List<T>) → Number` for every T. `append(List<T>, T) → List<T>` for every T. No mutation of the source list; result is a fresh list. Append and indexing evaluate arguments exactly once, left-to-right.
-6. `len` and `append` are **general-purpose sequence primitives**. They use a typed intrinsic fallback in the language core until package generics are available, never opaque task-specific AI or domain macros. User-defined functions with these identifiers must retain precedence over fallback intrinsics; existing code must not silently change.
-7. Existing package manifest v1 continues to allow its historical scalar contracts. The Rust checker must **not accidentally permit generic List parameters in manifest v1** merely because the language gains a List type. Manifest v2 generic contracts belong to M13.
-8. Existing function inference, recursion, shadowing, package locks, Unicode control checks, source positions, exports/modules and older programs remain unchanged.
+Konceptet kræver at vilkårlige versionlåste, typede pakkesymboler kan bruges som infix-opkald (ikke blot `⌕(xs,p)`), eller en compilerdefineret generisk alternativ syntaks med samme semantik. Hvis det ikke findes, **må ovenstående eksempel ikke beskrives som eksekverbart**. Alle `⌕`/`⇢`-funktioner skal kunne modtage almindelige H-Code-funktioner som argumenter. `∑` skal virke på enhver korrekt typet tal-sekvens. Brugerdefinerede samlinger og brugerdefinerede højereordensfunktioner skal være mulige uden nye specialtegn i kernesproget.
 
-## Runtime and resource model
-Both Rust-compiled JavaScript and JS reference interpreter must expose the same values, errors and observable evaluation order. The compiler emits safe helper calls, e.g. `__hc_checked_index`, `__hc_len` and `__hc_append`, not raw unguarded array access. Preserve instruction-fuel/depth budgets, add list allocation limits, and reject unknown host privileges. Append may be O(n) initially; explicitly measure this and leave algorithmic optimization to M28/M38. The generated JS is still **NOT a sandbox**.
+Records og felter er planlagt i M12; en senere ordreberegning skal på samme måde baseres på generelle felter og almindelige funktionsreferencer, ikke en hardcoded `paid`-regel.
 
-## Required negative and positive conformance
-- Success: scalar and nested literals, inferred and explicit list types, empty return/binding, integer indexing, len, append, pipeline into len/append, user-written sum and variable-length map, glyph/ASCII equivalence.
-- Failure: heterogeneous literal; non-list indexing; string index; fractional/negative/out-of-bounds index; inferred bare `[]`; wrong append element; append non-list; overriding package manifest v1 with generic contracts; use of hidden/invisible Unicode characters.
-- Error diagnostics must contain source span and stable error categories. The JS reference is not a complete static analyzer today; Rust owns the compile-time gate and reference must match runtime errors.
+## 4. Hårde acceptkrav
 
-## Test/benchmark policy
-At least twelve committed paired Unicode/ASCII fixtures plus negative test vectors, including package-lock compatibility and M0–M10 regression suites. Run actual compiled H-Code vs idiomatic TypeScript; report code points, UTF-8 bytes, generated JS and dependency sources separately. Include worse-performing cases; publish no 70% or speedup claims without the full canonical 20-task study.
+- Glyph- og ASCII-grammatik skal have **samme AST, typebetydning og output**; Unicode-sikkerhed fra M0–M10 skal bevares.
+- Hver tilføjet operator skal være én velbeskrevet statisk semantik i Rust-compilerens AST/typechecker. Den må ikke kun eksistere som editor-knap eller JS-strengerstatning.
+- Homogene sekvenser typesikres, blandede elementtyper afvises; dynamiske indeks checkes for negativt/uden for grænserne/ikke-heltal.
+- `⧺` evaluerer begge input én gang fra venstre mod højre, opretter nyt resultat, og har dokumenteret allokeringsgrænse.
+- Ingen netværk, IO eller AI som sideeffekt af sekvensoperatorer. JS-backend forbliver **ikke** en sandbox.
+- SHA-låste demo-pakker og eksisterende H-Code-programmer skal fortsat virke; en ny kernesymbol må ikke kollidere med gamle tilladte pakkesymboler uden en eksplicit migrationsplan.
+- M11 kræver dokumenterede **negative** og **positive** Rust/JS tests på signerede symbolpar. M13 kræver selvstændige tests af `∑`, `⌕`, `⇢` og generiske operationer.
+- Fair sammenligning: frys præcis samme programpar før ændring, gentest dem efter ændring og gem kildekode-revision og datasæt-ID; måling på nye opgaver betegnes *nyt datasæt*, aldrig regression fra tidligere tal.
 
-**Implementation gate:** Begin M11 compiler work only once M10 has a verified Rust/Node test run and Phase-1 lineage is reviewed. No merge, release or automatic paid CI is authorized by this design.
+## 5. Afhængigheder og sikkerhedsgate
+
+CSE-M10 (draft PR #5) samt `∘`-komposition (særskilt feature branch) bygger fundamentet. M11 compilerarbejde må først påbegyndes, når Rust/Cargo, JavaScript-reference, legacy tests og de eksakte programmer er verificeret. PR #3 er stadig umerget; review af ancestry kræves. Denne ændring er **kun en designkorrektion, ikke en implementeret kompileregenskab**.
