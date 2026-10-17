@@ -16,7 +16,8 @@
     "phase1:test": "node --test scripts/test/*.test.mjs",
     "compact:measure": "node scripts/compact-metrics.mjs",
     "compact:test": "node --test scripts/test/compact-*.test.mjs",
-    "compact:ts-parity": "node scripts/compact-ts-parity.mjs"
+    "compact:ts-parity": "node scripts/compact-ts-parity.mjs",
+    "m13:measure": "node scripts/m13-compare.mjs"
   },
   "engines": {
     "node": ">=20"

@@ -18,4 +18,5 @@ jobs:
       - run: npm run compact:test
       - run: cargo test --manifest-path compiler/Cargo.toml
       - run: npm run compact:ts-parity
+      - run: npm run m13:measure
       - run: npm run release:check
