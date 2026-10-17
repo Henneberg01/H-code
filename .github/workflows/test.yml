@@ -15,5 +15,6 @@ jobs:
       - run: npm test
       - run: npm run studio:test
       - run: npm run phase1:test
+      - run: npm run compact:test
       - run: cargo test --manifest-path compiler/Cargo.toml
       - run: npm run release:check
