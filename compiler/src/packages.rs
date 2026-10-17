@@ -78,7 +78,7 @@ fn parse_type(ty:&str)->Result<Type,Diagnostic>{
     Type::from_name(ty,Span::new(1,1)).map_err(|_|failure(format!("Unsupported package contract type {ty}")))
 }
 fn reserved_glyph(c:char)->bool {
-    matches!(c,'ƒ'|'≔'|'↩'|'→'|'←'|'⊤'|'⊥'|'∧'|'∨'|'¬'|'≡'|'≠'|'≤'|'≥'|'∷'|'∅'|'∀'|'∈')
+    matches!(c,'ƒ'|'≔'|'↩'|'→'|'←'|'⊤'|'⊥'|'∧'|'∨'|'¬'|'≡'|'≠'|'≤'|'≥'|'∷'|'▷'|'∅'|'∀'|'∈')
 }
 
 pub fn load_lockfile(path:&Path)->Result<PackageRegistry,Diagnostic>{

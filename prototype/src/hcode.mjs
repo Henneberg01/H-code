@@ -4,11 +4,11 @@ export const CORE_GLYPHS = Object.freeze({
   '\u2190': '=', '\u22a4': 'true', '\u22a5': 'false',
   '\u2227': 'and', '\u2228': 'or', '\u00ac': 'not',
   '\u2261': '==', '\u2260': '!=', '\u2264': '<=', '\u2265': '>=',
-  '\u2237': '::'
+  '\u2237': '::', '\u25b7': '|>'
 });
 export const RESERVED_USER_GLYPHS = new Set(['\u2205', '\u2200', '\u2208', ...Object.keys(CORE_GLYPHS)]);
 const RESERVED = new Set(['fn','let','return','true','false','if','else','while','and','or','not','use','as']);
-const TWO = new Set(['==','!=','<=','>=','->','::']);
+const TWO = new Set(['==','!=','<=','>=','->','::','|>']);
 const ONE = new Set(['+','-','*','/','%','<','>','=','(',')','{','}',',',';',':']);
 const ILLEGAL = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]|\p{Default_Ignorable_Code_Point}/u;
 const SYMBOL_CHARACTER = /^\p{S}$/u;

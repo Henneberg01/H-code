@@ -15,7 +15,7 @@ pub struct Token { pub kind: TokenKind, pub span: Span }
 pub enum TokenKind {
     Fn, Let, Return, If, Else, While, Use, Import, Export, As, True, False, And, Or, Not,
     Identifier(String), Number(String), String(String), Glyph(char),
-    LeftParen, RightParen, LeftBrace, RightBrace, Comma, Semicolon, Colon, DoubleColon,
+    LeftParen, RightParen, LeftBrace, RightBrace, Comma, Semicolon, Colon, DoubleColon, Pipe,
     Assign, Arrow, Plus, Minus, Star, Slash, Percent,
     Equal, NotEqual, Less, Greater, LessEqual, GreaterEqual, Eof,
 }
@@ -134,13 +134,14 @@ pub fn lex(source: &str) -> Result<Vec<Token>, Diagnostic> {
             '∧'=>Some(TokenKind::And),'∨'=>Some(TokenKind::Or),'¬'=>Some(TokenKind::Not),
             '≡'=>Some(TokenKind::Equal),'≠'=>Some(TokenKind::NotEqual),
             '≤'=>Some(TokenKind::LessEqual),'≥'=>Some(TokenKind::GreaterEqual),
-            '∷'=>Some(TokenKind::DoubleColon),
+            '∷'=>Some(TokenKind::DoubleColon),'▷'=>Some(TokenKind::Pipe),
             _=>None,
         };
         if let Some(kind)=core { advance(&mut pos,&mut line,&mut column); result.push(Token{kind,span}); continue; }
         let pair = match (c,next) {
             ('-',Some('>'))=>Some(TokenKind::Arrow),
             (':',Some(':'))=>Some(TokenKind::DoubleColon),
+            ('|',Some('>'))=>Some(TokenKind::Pipe),
             ('=',Some('='))=>Some(TokenKind::Equal),
             ('!',Some('='))=>Some(TokenKind::NotEqual),
             ('<',Some('='))=>Some(TokenKind::LessEqual),
