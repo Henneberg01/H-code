@@ -167,6 +167,41 @@ impl Parser {
         };
         self.suffixes(Expr{kind,span},min_power)
     }
+    fn pipe_target(&mut self)->Result<(Expr,Vec<Expr>),Diagnostic>{
+        let token=self.peek().clone();
+        let kind=match token.kind {
+            TokenKind::Identifier(name)=>{
+                self.index+=1;
+                if self.accept(&TokenKind::DoubleColon).is_some(){
+                    let member=self.peek().clone();
+                    let (name_or_glyph,is_glyph)=match member.kind{
+                        TokenKind::Identifier(s)=>(s,false),
+                        TokenKind::Glyph(c)=>(c.to_string(),true),
+                        _=>return Err(Diagnostic::new("PARSE","Expected operation name or symbol after ::".into(),member.span))
+                    };
+                    self.index+=1;
+                    ExprKind::Operation{alias:Some(name),name_or_glyph,is_glyph}
+                } else {ExprKind::Identifier(name)}
+            }
+            TokenKind::Glyph(g)=>{
+                self.index+=1;
+                ExprKind::Operation{alias:None,name_or_glyph:g.to_string(),is_glyph:true}
+            }
+            _=>return Err(Diagnostic::new("PARSE","Pipeline target must be a callable name or package operation".into(),token.span))
+        };
+        let callee=Expr{kind,span:token.span};
+        let mut args=Vec::new();
+        if self.accept(&TokenKind::LeftParen).is_some(){
+            if !self.at(&TokenKind::RightParen){
+                loop{
+                    args.push(self.expression(0)?);
+                    if self.accept(&TokenKind::Comma).is_none(){break;}
+                }
+            }
+            self.expect(&TokenKind::RightParen)?;
+        }
+        Ok((callee,args))
+    }
     fn suffixes(&mut self,mut left:Expr,min_power:u8)->Result<Expr,Diagnostic>{
         loop {
             if self.at(&TokenKind::LeftParen) && 9>=min_power {
@@ -178,6 +213,18 @@ impl Parser {
                 }
                 self.expect(&TokenKind::RightParen)?;
                 left=Expr{kind:ExprKind::Call{callee:Box::new(left),arguments},span};
+                continue;
+            }
+            if min_power==0 && self.accept(&TokenKind::Pipe).is_some(){
+                let (callee,mut explicit_args)=self.pipe_target()?;
+                let span=left.span;
+                let mut arguments=Vec::with_capacity(explicit_args.len()+1);
+                arguments.push(left);
+                arguments.append(&mut explicit_args);
+                left=Expr{kind:ExprKind::Call{callee:Box::new(callee),arguments},span};
+                if self.binary_operator().is_some(){
+                    return Err(Diagnostic::new("PARSE","Parenthesize pipeline before another operator".into(),self.peek().span));
+                }
                 continue;
             }
             let Some(op)=self.binary_operator() else {break};

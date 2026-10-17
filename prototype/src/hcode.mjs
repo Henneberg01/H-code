@@ -133,6 +133,31 @@ class Parser {
     }
     const value=this.expr();this.expect(';');return {kind:'ExpressionStatement',value};
   }
+  pipeTarget(){
+    const token=this.peek();
+    let callee;
+    if(this.at('ident')){
+      const head=this.expect('ident');
+      if(this.accept('::')){
+        const member=this.peek();
+        if(!['ident','glyph'].includes(member.type))
+          throw new HCodeError('Expected operation name or glyph after ::',member.line,member.column);
+        this.i++;
+        callee={kind:'QualifiedOperation',alias:head.value,member:member.value,isGlyph:member.type==='glyph',line:head.line,column:head.column};
+      } else callee={kind:'Identifier',name:head.value};
+    } else if(this.at('glyph')){
+      const glyph=this.expect('glyph');
+      callee={kind:'GlyphOperation',glyph:glyph.value,line:glyph.line,column:glyph.column};
+    } else {
+      throw new HCodeError('Pipeline target must be a callable name or package operation',token.line,token.column);
+    }
+    const args=[];
+    if(this.accept('(')){
+      if(!this.at(')')){do{args.push(this.expr());}while(this.accept(','));}
+      this.expect(')');
+    }
+    return {callee,args};
+  }
   expr(min=0){
     let left;
     if(this.accept('not'))left={kind:'Unary',operator:'not',value:this.expr(8)};
@@ -158,6 +183,15 @@ class Parser {
         this.expect('(');const args=[];
         if(!this.at(')')){do{args.push(this.expr());}while(this.accept(','));}
         this.expect(')');left={kind:'Call',callee:left,args};continue;
+      }
+      if(this.at('|>')&&min===0){
+        this.expect('|>');
+        const {callee,args}=this.pipeTarget();
+        left={kind:'Call',callee,args:[left,...args]};
+        const t=this.peek();
+        if(['or','and','==','!=','<','>','<=','>=','+','-','*','/','%'].includes(t.type))
+          throw new HCodeError('Parenthesize pipeline before another operator',t.line,t.column);
+        continue;
       }
       const op=this.peek().type;
       const power={or:1,and:2,'==':3,'!=':3,'<':4,'>':4,'<=':4,'>=':4,'+':5,'-':5,'*':6,'/':6,'%':6}[op];
