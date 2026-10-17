@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "corpus": "M10-CSE-CHOICE-2026-10-18-v1",
+  "upstreamCorpus": "M10-EIGHT-2026-10-18-v1",
+  "description": "Same three task IDs and original baseline files; separately versioned sign-first ◇ sources; not a new median of 20 programs",
+  "parentPhaseSha": "b906568cc853ae8ce3a162f06a621a0e953ddcf4",
+  "cases": [
+    {
+      "id": "recursive-fibonacci",
+      "expected": "13\n",
+      "oldPath": "compact/benchmarks/paired/recursive-fibonacci.hc",
+      "oldBlob": "66f02e2dce678b51f8d02766742d9d24aa5d66f7",
+      "typeScriptPath": "compact/benchmarks/paired/recursive-fibonacci.ts",
+      "typeScriptBlob": "2a4e6ac1ef469a6e0c64381b79f901ee26085125",
+      "glyphPath": "compact/benchmarks/symbol-choice/recursive-fibonacci.hc",
+      "glyphBlob": "07d003d70bf35c022bb2a0e8c8ac8c847d295fb7"
+    },
+    {
+      "id": "recursive-factorial",
+      "expected": "120\n",
+      "oldPath": "compact/benchmarks/paired/recursive-factorial.hc",
+      "oldBlob": "d6be5bdc1cd3d6f3cf29c1485756f4234a4af585",
+      "typeScriptPath": "compact/benchmarks/paired/recursive-factorial.ts",
+      "typeScriptBlob": "d06e5209341b98937157b3b0259a2d1af2388a7d",
+      "glyphPath": "compact/benchmarks/symbol-choice/recursive-factorial.hc",
+      "glyphBlob": "2a1da8056133fb7aa10791c2752d83ffea5635b4"
+    },
+    {
+      "id": "conditional-branch",
+      "expected": "negative\n",
+      "oldPath": "compact/benchmarks/paired/conditional-branch.hc",
+      "oldBlob": "d1d504fb7421dc0d5854f4181c12a909400de70f",
+      "typeScriptPath": "compact/benchmarks/paired/conditional-branch.ts",
+      "typeScriptBlob": "d1dd9db0f047658326cd424ef28e69d8dcc1feb1",
+      "glyphPath": "compact/benchmarks/symbol-choice/conditional-branch.hc",
+      "glyphBlob": "b44e8c269af561c7b1ae499dc147f1cb06caeeb0"
+    }
+  ]
+}
