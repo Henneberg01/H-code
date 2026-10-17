@@ -17,10 +17,10 @@ function loadPalette(){
   setRangeText(s,start,end,mode){assert.equal(mode,'end');this.value=this.value.slice(0,start)+s+this.value.slice(end);this.selectionStart=start+s.length;this.selectionEnd=this.selectionStart;},
   focus(){this.focused=true;}
  };
- let changed=0;
+ let changed=0,cleared=0;
  const doc={createElement(tag){return {tag,attributes:{},children:[],listeners:{},append(...children){this.children.push(...children);},addEventListener(type,cb){this.listeners[type]=cb;},setAttribute(name,value){this.attributes[name]=value;}};}};
- vm.runInNewContext(palette,{document:doc,el:()=>host,source,changed:()=>changed++});
- return {buttons:host.children,source,changes:()=>changed};
+ vm.runInNewContext(palette,{document:doc,el:()=>host,source,changed:()=>changed++,clearApproval:()=>cleared++});
+ return {buttons:host.children,source,changes:()=>changed,approvalsCleared:()=>cleared};
 }
 const pairs=[['ƒ','fn'],['≔','let'],['↩','return'],['→','->'],['←','='],['⊤','true'],['⊥','false'],['∧','and'],['∨','or'],['¬','not'],['≡','=='],['≠','!='],['≤','<='],['≥','>='],['∷','::']];
 test('palette provides every existing language-level sign with correct accessible alias',()=>{
@@ -48,4 +48,13 @@ test('click inserts actual sign at cursor without replacing source with JS',()=>
  sign.listeners.click();
  assert.equal(source.value,'x≤');
  assert.equal(changes(),1);
+});
+
+test('inserting a sign invalidates stale AI edit approval even without an input event',()=>{
+ const {buttons,source,approvalsCleared}=loadPalette();
+ buttons[0].listeners.click();
+ assert.equal(approvalsCleared(),1,'symbol insertion must clear prior AI approval');
+ source.disabled=true;
+ buttons[0].listeners.click();
+ assert.equal(approvalsCleared(),1,'disabled editor must not clear again');
 });

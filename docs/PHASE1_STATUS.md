@@ -7,7 +7,7 @@
 1. **Real Unicode signs in source:** four matched `phase1/fixtures/*.glyph.hc` and `*.ascii.hc` pairs (functions, Boolean logic, recursion and a version-locked library operation). Both JS reference runtime and Rust compiler verify equivalent meaning/output. This is true compiler syntax, not AI/editor text substitution.
 2. **Symbol safety:** new JS and Rust tests reject forbidden/invisible/bidi Unicode, unbound/reserved operations, invalid normalized glyphs, lockfile hash tampering and ambiguous glyphs in different packages. Qualified package references work. Existing core safety behavior was verified rather than advertised as a newly implemented sandbox.
 3. **Honest compactness measurements:** reproducible offline `npm run phase1:measure` emits `phase1/results/source-metrics.json`, distinguishing Unicode code points and UTF-8 bytes. Four pairs are comparable and output-checked.
-4. **H-Code Studio:** 15/15 implemented core signs exposed in the actual insertion palette with text aliases and accessible labels. UI tests call the real palette handlers and verify inserting a literal sign at the cursor.
+4. **H-Code Studio:** 16/16 implemented core signs exposed in the actual insertion palette with text aliases and accessible labels. UI tests call the real palette handlers and verify inserting a literal sign at the cursor; palette edits also invalidate stale AI-edit approval even when programmatic insertion does not fire a DOM input event.
 
 ## Fresh local verification
 
@@ -17,7 +17,7 @@
 | `cargo test --manifest-path compiler/Cargo.toml` | 39 passed; 0 failed |
 | `npm run studio:test` | 15 passed; 0 failed |
 | `npm run phase1:test` | 4 passed; 0 failed |
-| **Total** | **106 passed; 0 failed** |
+| **Total** | **107 passed; 0 failed** |
 | `npm run release:check` | PASS |
 | `npm run demo` | PASS, outputs `42, 42, 11, hihi, true, 120` |
 

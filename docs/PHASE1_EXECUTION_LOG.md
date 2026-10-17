@@ -50,5 +50,13 @@ Feature branch: `feat/phase1-symbol-conformance`
 - `npm run studio:test` turned GREEN (15/15). Test invokes the actual palette click listener in a controlled simulated DOM and checks insertion, source focus, cursor, and disabled behavior.
 - Added `H-CODE-PRINCIPLES.md` to persist Morse-inspired signs-as-code identity, Apache 2.0 owner/licensing, unproven research targets and general-purpose vision.
 - Updated README, symbol registry, historical M9/public-state wording, milestone journal, Phase-1 status, local ignored continuity file, and manual-only GitHub CI to include the new offline metric tests.
-- Fresh comprehensive regression after Studio edits: **48/48 Node**, **39/39 Rust**, **15/15 Studio**, **4/4 metrics**, release check PASS and `npm run demo` PASS; **106/106 tests** total. No language/ABI/builtin breaking changes.
+- Fresh comprehensive regression after Studio edits: **48/48 Node**, **39/39 Rust**, **16/16 Studio**, **4/4 metrics**, release check PASS and `npm run demo` PASS; **107/107 tests** total. No language/ABI/builtin breaking changes.
 - Ruling: `docs/PROJECT_CONTINUITY.md` stays local/ignored due to private Windows host paths. Durable *public* H-Code project principles and progress live in safe tracked documentation; cost if wrong: local-only details will not travel with a Git clone, deliberately limiting sensitive context.
+
+## Whole-branch self-review — no subagent reviewer available
+
+- Reviewed GitHub PR #3 file patches and the complete changed-file inventory. No unrelated compiler, package-lock, secrets or LICENSE changes were introduced; the only concurrent main changes were to LICENSE, which the feature branch does not overwrite. Apache 2.0 remains.
+- **Important finding identified and repaired:** palette insertion previously called `setRangeText()` without a DOM `input` event, leaving an existing AI edit approval enabled. Added `inserting a sign invalidates stale AI edit approval` regression case: RED (15 pass/1 fail), then added `clearApproval()` in the actual click handler, GREEN (16/16 Studio). Full suite rerun after change.
+- Ruling: visual browser QA, real provider-key call and independent security review remain open gates, not falsely counted as complete. Cost if wrong: a browser-specific or provider-specific problem can still exist; task scope promises automated local symbol parity, not production readiness.
+- Final review: **self-review (no subagent tool)**. This does not substitute for a separate reviewer before merge.
+- Draft PR: https://github.com/Henneberg01/H-code/pull/3 — **not merged**. Only feature branch updated.
