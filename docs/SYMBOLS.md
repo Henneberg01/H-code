@@ -22,15 +22,19 @@
 | 16 | ▷ | `|>` | **CSE-1 feature branch; tests pending** | Left-to-right typed pipeline, lowers to ordinary function calls |
 | 17 | ∘ | `<<` | **Symbol-composition draft branch, Rust tests pending** | Pure unary function composition; `(f ∘ g)(x)` computes `f(g(x))`, with real higher-order types |
 | 18 | ◇ | `?` | **Choice feature branch, Rust tests pending** | Lazy, typed conditional expression; `condition ◇ yes : no` selects exactly one branch |
-| 19 | ∅ | `none` | Reserved | Future Option/absence value |
-| 20 | ∀ | `for` | Reserved | Future iteration |
-| 21 | ∈ | `in` | Reserved | Future membership separator |
-| 22 | ⊕ | `packageAlias::operation` | **Demo package** | `demo.math@1.0.0::add`, two Numbers to Number |
-| 23 | ▦ | `packageAlias::operation` | **Demo package** | `demo.math@1.0.0::repeat2`, String to String |
-| 24 | ⊙ | `packageAlias::operation` | **Demo package** | `demo.math@1.0.0::is_positive`, Number to Bool |
-| 25 | ⊗ | `packageAlias::operation` | **Demo package** | `demo.math@1.0.0::factorial`, Number to Number |
+| 19 | ⟦ | `[[` | **CSE-2 experimental branch** | Begin a typed sequence or safe element-index operation |
+| 20 | ⟧ | `]]` | **CSE-2 experimental branch** | Close a typed sequence or index |
+| 21 | ⌗ | `#` | **CSE-2 experimental branch** | Pure sequence length, checked in both frontends |
+| 22 | ⧺ | `++` | **CSE-2 experimental branch** | Pure, typed, capacity-limited sequence concatenation |
+| 23 | ∅ | `none` | Reserved | Future Option/absence value |
+| 24 | ∀ | `for` | Reserved | Future iteration |
+| 25 | ∈ | `in` | Reserved | Future membership separator |
+| 26 | ⊕ | `packageAlias::operation` | **Demo package** | `demo.math@1.0.0::add`, two Numbers to Number |
+| 27 | ▦ | `packageAlias::operation` | **Demo package** | `demo.math@1.0.0::repeat2`, String to String |
+| 28 | ⊙ | `packageAlias::operation` | **Demo package** | `demo.math@1.0.0::is_positive`, Number to Bool |
+| 29 | ⊗ | `packageAlias::operation` | **Demo package** | `demo.math@1.0.0::factorial`, Number to Number |
 
-Note: The symbols in rows 22–25 have **no language-global meaning**. These bindings are examples provided by a specifically imported, versioned demonstration library. Any permitted nonreserved symbol can represent a different operation in a different package. Two packages exporting the same glyph require explicit qualified access.
+Note: The symbols in rows 26–29 have **no language-global meaning**. These bindings are examples provided by a specifically imported, versioned demonstration library. Any permitted nonreserved symbol can represent a different operation in a different package. Two packages exporting the same glyph require explicit qualified access.
 
 ## M1 behavior
 
@@ -82,3 +86,11 @@ print(fib(7));
 Three new source versions are kept separate under `compact/benchmarks/symbol-choice/`. They are compared **only** against the corresponding original three M10 frozen H-Code sources and existing TypeScript files, preserving task IDs, inputs and expected output. See `docs/SYMBOL-CHOICE.md`. Do **not** recalculate the historic eight-case median by silently overwriting its inputs.
 
 **Status:** JS-reference semantic probes passed on development branch; authored Rust test suite requires real Cargo execution before merge.
+
+## CSE-2 symbolic sequences — experimental, not yet released
+
+The primary source forms are `⟦1,2,3⟧`, `xs⟦0⟧`, `⌗xs`, and `xs ⧺ ⟦4⟧`; explicit type annotations are `⟦Number⟧`, recursively nestable. Accessible ASCII alternates are `[[1,2,3]]`, `xs[[0]]`, `#xs`, and `xs ++ [[4]]`. The source sign is the language; ASCII versions are accessibility alternatives.
+
+The implementation has distinct Rust AST and typechecker variants, with homogeneous-element inference, checked index type/bounds and immutable concatenation. Typed empty sequences require context, e.g. `≔ xs:⟦Number⟧ ← ⟦⟧;`. Runtime length/allocation is bounded; sequence operation side effects are not exposed. The JavaScript reference has runtime annotation checks; Rust is the authoritative static checker.
+
+**Status:** implemented on isolated `feat/m11-symbol-sequences-spike` with reference checks, not compiled or released. See `docs/CSE2_IMPLEMENTATION.md` for limits and verification gates. `⌕`, `⇢`, `∑` remain future **separate**, typed general-purpose signs, not built-in shortcuts or implemented syntax.

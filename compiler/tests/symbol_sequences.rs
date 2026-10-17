@@ -56,7 +56,7 @@ fn sequence_operations_work_in_compiled_node_js_and_do_not_mutate_inputs(){
         ("≔ xs←⟦1,2,3⟧;print(xs⟦0⟧);print(⌗xs);","1\n3\n"),
         ("≔ xs←[[1,2,3]];print(xs[[0]]);print(#xs);","1\n3\n"),
         ("≔ xs←⟦1,2⟧;≔ ys←xs ⧺ ⟦3,4⟧;print(⌗xs);print(⌗ys);print(ys⟦3⟧);","2\n4\n4\n"),
-        ("≔ xs←[[1,2]];≔ ys←xs ++ [[3,4]];print(#xs);print(ys[[3]]);","4\n"),
+        ("≔ xs←[[1,2]];≔ ys←xs ++ [[3,4]];print(#xs);print(ys[[3]]);","2\n4\n"),
         ("≔ xs←⟦⟦1,2⟧,⟦3,4⟧⟧;print(xs⟦1⟧⟦0⟧);","3\n"),
         ("ƒ twice(n) ↩ n*2;print(⟦20,21⟧⟦1⟧ ▷ twice);","42\n"),
         ("print(⊤ ◇ ⌗⟦1,2,3⟧ : 1/0);","3\n")
