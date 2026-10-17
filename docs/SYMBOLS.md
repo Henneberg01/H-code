@@ -21,15 +21,16 @@
 | 15 | ∷ | `::` | Implemented | Explicit qualified package-operation lookup |
 | 16 | ▷ | `|>` | **CSE-1 feature branch; tests pending** | Left-to-right typed pipeline, lowers to ordinary function calls |
 | 17 | ∘ | `<<` | **Symbol-composition draft branch, Rust tests pending** | Pure unary function composition; `(f ∘ g)(x)` computes `f(g(x))`, with real higher-order types |
-| 18 | ∅ | `none` | Reserved | Future Option/absence value |
-| 19 | ∀ | `for` | Reserved | Future iteration |
-| 20 | ∈ | `in` | Reserved | Future membership separator |
-| 21 | ⊕ | `packageAlias::operation` | **Demo package** | `demo.math@1.0.0::add`, two Numbers to Number |
-| 22 | ▦ | `packageAlias::operation` | **Demo package** | `demo.math@1.0.0::repeat2`, String to String |
-| 23 | ⊙ | `packageAlias::operation` | **Demo package** | `demo.math@1.0.0::is_positive`, Number to Bool |
-| 24 | ⊗ | `packageAlias::operation` | **Demo package** | `demo.math@1.0.0::factorial`, Number to Number |
+| 18 | ◇ | `?` | **Choice feature branch, Rust tests pending** | Lazy, typed conditional expression; `condition ◇ yes : no` selects exactly one branch |
+| 19 | ∅ | `none` | Reserved | Future Option/absence value |
+| 20 | ∀ | `for` | Reserved | Future iteration |
+| 21 | ∈ | `in` | Reserved | Future membership separator |
+| 22 | ⊕ | `packageAlias::operation` | **Demo package** | `demo.math@1.0.0::add`, two Numbers to Number |
+| 23 | ▦ | `packageAlias::operation` | **Demo package** | `demo.math@1.0.0::repeat2`, String to String |
+| 24 | ⊙ | `packageAlias::operation` | **Demo package** | `demo.math@1.0.0::is_positive`, Number to Bool |
+| 25 | ⊗ | `packageAlias::operation` | **Demo package** | `demo.math@1.0.0::factorial`, Number to Number |
 
-Note: The symbols in rows 21–24 have **no language-global meaning**. These bindings are examples provided by a specifically imported, versioned demonstration library. Any permitted nonreserved symbol can represent a different operation in a different package. Two packages exporting the same glyph require explicit qualified access.
+Note: The symbols in rows 22–25 have **no language-global meaning**. These bindings are examples provided by a specifically imported, versioned demonstration library. Any permitted nonreserved symbol can represent a different operation in a different package. Two packages exporting the same glyph require explicit qualified access.
 
 ## M1 behavior
 
@@ -68,3 +69,16 @@ See `docs/CSE1_STATUS.md` for current implementation and validation gates.
 - Rust checks arity and intermediate types statically. Both Rust-generated JS and the JS reference evaluate composition operands when composing them, not on each invocation.
 - The compiler reserves `∘`, preventing packages from taking over the operator. No domain-specific app templates.
 - Experimental implementation: `feat/cse-symbolic-composition`, stacked atop M10. JS reference checks pass; Rust and full CI remain pending.
+
+## Symbolic conditional choice — experimental, NOT released
+
+The core sign `◇` is an actual **lazy expression construct** with secondary ASCII alias `?`; colon separates alternatives. Example:
+```hcode
+ƒ fib(n) ↩ n≤1 ◇ n : fib(n-1)+fib(n-2);
+print(fib(7));
+```
+`◇` is **not** a textual replacement for `if`: it introduces an expression AST node with a Boolean-only condition, unification of both arm types, strict evaluation of the condition exactly once, and **lazy** evaluation of exactly one arm. Rust emits a JavaScript conditional expression and the reference interpreter uses the same lazy behavior. Nested choices are right-associative. It is weaker than arithmetic, Boolean operators, `∘`, and `▷`. The type checker must reject incompatible arms and non-Boolean conditions. The ASCII `?` spelling is secondary and is contextual; future prefix selectors must not change its existing infix semantics.
+
+Three new source versions are kept separate under `compact/benchmarks/symbol-choice/`. They are compared **only** against the corresponding original three M10 frozen H-Code sources and existing TypeScript files, preserving task IDs, inputs and expected output. See `docs/SYMBOL-CHOICE.md`. Do **not** recalculate the historic eight-case median by silently overwriting its inputs.
+
+**Status:** JS-reference semantic probes passed on development branch; authored Rust test suite requires real Cargo execution before merge.

@@ -80,3 +80,14 @@ print(21 ▷ double);
 Expected output: `42`. ASCII equivalent: `fn double(x) return x*2; print(21 |> double);`.
 
 See `docs/CSE1_STATUS.md`, `docs/SYMBOLS.md`, and the 60-milestone masterplan. This is **not merged into main**, has **no confirmed test pass** yet, and is not a sandbox or evidence of 70% shorter code.
+
+## Experimental sign-first conditional expressions (unreleased)
+
+The symbol `◇` is a typed, lazy *expression-level choice*, not a keyword abbreviation. For example:
+
+```hcode
+ƒ fact(n) ↩ n≤1 ◇ 1 : n*fact(n-1);
+print(fact(5));
+```
+
+Expected `120`. The compiler checks Boolean conditions and matching arm types; only the chosen arm executes. ASCII fallback: `?`. See `docs/SYMBOL-CHOICE.md` for semantics and **same-task** source-count evidence. This feature is on a draft branch, **not merged or fully Rust-tested**.
