@@ -1,5 +1,9 @@
 # H-Code milestones
 
+**Fuld roadmap (60 milestones):** [H-Code M0–M59 masterplan, v2](docs/H-CODE-MASTERPLAN-M0-M59.md). **Første konkrete opgave:** [M10/CSE-1 — implementeringsplan](docs/superpowers/plans/2026-10-17-hcode-cse1-compact-syntax.md); [arkitektur og grammatikspecifikation](docs/superpowers/specs/2026-10-17-hcode-compact-syntax-design.md).
+
+**Versionsbemærkning:** Listen nedenfor er den historiske M0–M13-journal. M0–M9 forbliver registreret i prototype-/betaomfang. De endnu **ikke startede** gamle M10–M13-overskrifter foreslås ændret i 60-milepæls-masterplanen: Studio Pro → M57, stabil 1.0 → M59, WASM/native → M30/M31, teams/cloud → M56. De nye M10–M13 skal først levere Compact Syntax Engine, typede lister, records og generiske biblioteker. **Ingen CSE-kode er implementeret som følge af denne plan.**
+
 - [x] M0 — initial project foundation (working prototype created in previous session)
 - [x] M1 — initial language grammar, glyph registry, reference interpreter, offline packages (reference implementation only)
 - [x] M2 — Rust lexer, parser, typed AST and semantic analyzer (15/15 local Rust integration tests; remote CI remains separate)
