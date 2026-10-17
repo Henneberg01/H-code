@@ -23,7 +23,7 @@ fn rust_pipeline_lexer_and_parser_lower_to_existing_checked_calls(){
     assert_eq!(lex("1 ▷ f;").unwrap()[1].kind,lex("1 |> f;").unwrap()[1].kind);
     if let StmtKind::Expression(print)=&glyph.statements[1].kind {
         if let ExprKind::Call{arguments,..}=&print.kind{
-            assert!(matches!(arguments[0].kind,ExprKind::Call{..}));
+            assert!(matches!(&arguments[0].kind,ExprKind::Call{..}));
         } else {panic!("Expected print call")}
     } else {panic!("Expected expression")}
     assert_eq!(compile("ƒ double(x) ↩ x*2; print(21 ▷ double);",&bare()).unwrap(),

@@ -23,7 +23,7 @@ fn expression_functions_preserve_the_existing_one_return_ast_and_output(){
         match &p.statements[0].kind {
             StmtKind::Function{body,returns,parameters,..}=>{
                 assert_eq!(body.len(),1);
-                assert!(matches!(body[0].kind,StmtKind::Return(_)));
+                assert!(matches!(&body[0].kind,StmtKind::Return(_)));
                 assert_eq!(returns.as_deref(),Some("Number"));
                 assert_eq!(parameters.len(),1);
             },

@@ -13,7 +13,9 @@
     "bench": "node studio/benchmark.mjs",
     "release:check": "node scripts/release-check.mjs",
     "phase1:measure": "node scripts/phase1-metrics.mjs",
-    "phase1:test": "node --test scripts/test/*.test.mjs"
+    "phase1:test": "node --test scripts/test/*.test.mjs",
+    "compact:measure": "node scripts/compact-metrics.mjs",
+    "compact:test": "node --test scripts/test/compact-metrics.test.mjs"
   },
   "engines": {
     "node": ">=20"

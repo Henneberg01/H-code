@@ -1,0 +1,42 @@
+# H-Code M10 / Compact Syntax Engine 1 — implementation status
+
+**Branch:** `feat/m10-cse1-compact-syntax` (based on the unmerged Phase-1 lineage, through `feat/cse-m0-benchmarks`)
+
+**Status:** Source implementation and tests committed; **end-to-end test execution still required**. Not merged, not released, not verified safe for untrusted inputs.
+
+## Implemented source changes (pending validation)
+- Canonical real lexer token `▷` (Unicode U+25B7) or `|>` (ASCII); both frontends map them identically.
+- Locked package manifests cannot export reserved `▷`, preventing glyph collisions.
+- Expression-return functions `ƒ f(x) ↩ expression;` or `fn f(x) return expression;` lower to existing `Function` with a `Return` statement.
+- Parser-level pipeline semantics: `x ▷ f` becomes `f(x)`, `x ▷ f(a)` becomes `f(x,a)`; pipelines chain left to right with exactly one evaluation of each left operand.
+- Precedence: weakly bound below arithmetic and Boolean; unparenthesized arithmetic after a pipeline is rejected.
+- Rust checker and JS backend reuse existing typed call semantics; no runtime JavaScript substitution or new ambient host privileges.
+- Editor's sign palette includes `▷` and its ASCII alias `|>`.
+
+## Authored automated checks
+- `prototype/test/compact-lexer.test.mjs`, `compact-functions.test.mjs`, `compact-pipeline.test.mjs`, `compact-conformance.test.mjs`.
+- Rust: `compiler/tests/compact_lexer.rs`, `compact_functions.rs`, `compact_pipeline.rs`, `compact_conformance.rs`.
+- Seven positive ASCII/Unicode source pairs under `compact/fixtures/`; negative parser/type cases and side-effect single-evaluation tests.
+- Developer-sourced code-point and UTF-8 report script `npm run compact:measure`, with `npm run compact:test` for numeric semantics.
+- Updated existing Studio palette test to expect 16 actual core glyphs on this branch.
+
+## Mandatory validation gate (NOT completed as of document creation)
+Run from repository root on Node 20+/Rust stable:
+
+```sh
+npm test
+npm run studio:test
+npm run phase1:test
+npm run compact:test
+npm run compact:measure
+cargo test --manifest-path compiler/Cargo.toml
+npm run demo
+npm run release:check
+```
+
+If any test fails: fix code on the feature branch; do **not** claim M10 complete, and do not merge into main. Verify locked-package collision tests, symbol normalization, source spans, legacy apps and seven paired compiled outputs. A manual-only Actions workflow already exists; do not enable paid automatic runs without approval.
+
+## Measurement integrity
+Current fixture measurement compares glyph H-Code **to ASCII H-Code**. This is not a TypeScript comparison, not a 20-task benchmark, and not a verified ≥70% gain. Rust-compiled Node JS still inherits host privileges; M37 sandboxing remains future work.
+
+**Next:** verify CI/test evidence; add matched, runnable idiomatic TypeScript programs and dependency accounting; review M10 draft PR; only then schedule CSE-2 typed lists.

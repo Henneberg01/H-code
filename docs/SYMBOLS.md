@@ -19,15 +19,16 @@
 | 13 | ≤ | `<=` | Implemented | Less-than-or-equal comparison |
 | 14 | ≥ | `>=` | Implemented | Greater-than-or-equal comparison |
 | 15 | ∷ | `::` | Implemented | Explicit qualified package-operation lookup |
-| 16 | ∅ | `none` | Reserved | Future Option/absence value |
-| 17 | ∀ | `for` | Reserved | Future iteration |
-| 18 | ∈ | `in` | Reserved | Future membership separator |
-| 19 | ⊕ | `packageAlias::operation` | **Demo package** | `demo.math@1.0.0::add`, two Numbers to Number |
-| 20 | ▦ | `packageAlias::operation` | **Demo package** | `demo.math@1.0.0::repeat2`, String to String |
-| 21 | ⊙ | `packageAlias::operation` | **Demo package** | `demo.math@1.0.0::is_positive`, Number to Bool |
-| 22 | ⊗ | `packageAlias::operation` | **Demo package** | `demo.math@1.0.0::factorial`, Number to Number |
+| 16 | ▷ | `|>` | **CSE-1 feature branch; tests pending** | Left-to-right typed pipeline, lowers to ordinary function calls |
+| 17 | ∅ | `none` | Reserved | Future Option/absence value |
+| 18 | ∀ | `for` | Reserved | Future iteration |
+| 19 | ∈ | `in` | Reserved | Future membership separator |
+| 20 | ⊕ | `packageAlias::operation` | **Demo package** | `demo.math@1.0.0::add`, two Numbers to Number |
+| 21 | ▦ | `packageAlias::operation` | **Demo package** | `demo.math@1.0.0::repeat2`, String to String |
+| 22 | ⊙ | `packageAlias::operation` | **Demo package** | `demo.math@1.0.0::is_positive`, Number to Bool |
+| 23 | ⊗ | `packageAlias::operation` | **Demo package** | `demo.math@1.0.0::factorial`, Number to Number |
 
-Note: The symbols in rows 19–22 have **no language-global meaning**. These bindings are examples provided by a specifically imported, versioned demonstration library. Any permitted nonreserved symbol can represent a different operation in a different package. Two packages exporting the same glyph require explicit qualified access.
+Note: The symbols in rows 20–23 have **no language-global meaning**. These bindings are examples provided by a specifically imported, versioned demonstration library. Any permitted nonreserved symbol can represent a different operation in a different package. Two packages exporting the same glyph require explicit qualified access.
 
 ## M1 behavior
 
@@ -39,8 +40,20 @@ Note: The symbols in rows 19–22 have **no language-global meaning**. These bin
 - Core/reserved symbols cannot be redefined by packages.
 - Source normalization is NFC; user glyphs additionally require NFKC stability, and invisible directional controls are prohibited.
 
-The H-Code Studio palette inserts literal Unicode characters in `.hc` source and displays the textual alias of all 15 implemented core glyphs. Reserved symbols `∅`, `∀`, and `∈` are **not yet executable features**. Version-locked user signs such as `⊕`, `▦`, `⊙`, and `⊗` are only available after an explicit package import, not as global builtin operations.
+The H-Code Studio palette inserts literal Unicode characters in `.hc` source and displays the textual alias of all 15 phase-1 glyphs, plus the experimental CSE-1 pipeline glyph. Reserved symbols `∅`, `∀`, and `∈` are **not yet executable features**. Version-locked user signs such as `⊕`, `▦`, `⊙`, and `⊗` are only available after an explicit package import, not as global builtin operations.
 
 For real cross-compiler tests, see `phase1/fixtures/` and `prototype/test/phase1-parity.test.mjs` / `compiler/tests/phase1_parity.rs`. For source-size data, see `phase1/results/source-metrics.json`. `≡` is one Unicode code point but **three bytes** in UTF-8, more than the two bytes of `==`; never mistake fewer visible characters for guaranteed binary size or runtime speed.
 
 See [`LIBRARIES.md`](./LIBRARIES.md) for runnable examples and a full authoring guide.
+
+## CSE-1 feature branch — pending CI verification
+
+The new compiler-level sign `▷` (U+25B7, stable under NFC/NFKC) has ASCII equivalent `|>`. This is a **proposed feature on a development branch**, not a stable-language feature or a released runtime guarantee.
+
+- `x ▷ f` means `f(x)`; `x ▷ f(a,b)` means `f(x,a,b)`, with `x` evaluated exactly once.
+- `x ▷ f ▷ g` means `g(f(x))`; pipelines bind more weakly than arithmetic and Boolean operators.
+- A function may use `ƒ square(x) ↩ x*x;` with a required semicolon. Braced forms remain valid.
+- For `(x ▷ f) + 1`, parentheses are required. Ambiguous `x ▷ f + 1` is rejected.
+- The pipeline is a core token. Version-locked libraries may not reuse `▷`. User-defined `∑`, `⌕`, `⇢` remain future package-scoped operations, not core keywords.
+
+See `docs/CSE1_STATUS.md` for current implementation and validation gates.

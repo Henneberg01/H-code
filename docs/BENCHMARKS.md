@@ -60,3 +60,7 @@ Command: `npm run phase1:test`; `npm run phase1:measure -- --output phase1/resul
 **AI tokens**: not measured (no specified/pinned tokenizer). **Developer speed**: not measured. **Generated JS byte size** and **execution runtime comparison**: not measured. Do not conflate them with source compression.
 
 Independent existing CLI startup/parse+typecheck benchmark: `npm run bench` (run five samples per case) reported the following **median process wall-times**, with Windows x64 and Node v24.17.0: Fibonacci 9.49 ms, invoice 9.88 ms, inventory 10.32 ms, savings 9.78 ms. These numbers have **no comparative baseline** and cannot demonstrate H-Code executes faster than Rust, JavaScript or other languages. Reproduce with `cargo build --manifest-path compiler/Cargo.toml` then `npm run bench`.
+
+## CSE-1 source metrics (feature branch, pending execution)
+
+Run `npm run compact:measure` for seven Unicode/ASCII **H-Code-only** fixture pairs and `npm run compact:test` for the measurement code. This reports separate code-point and UTF-8 byte reductions. It does **not** compare against TypeScript or establish the project's 70% goal. See `docs/CSE1_STATUS.md` for conformance and review gates.

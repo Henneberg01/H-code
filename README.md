@@ -67,3 +67,16 @@ Source in this repository is licensed under **Apache License 2.0** (see LICENSE/
 ## Release and contributing
 
 Read docs/RELEASING.md and CONTRIBUTING.md. Run `npm run release:check` when preparing a candidate. The GitHub Actions workflow is manual-only to prevent unplanned Actions credit usage.
+
+## Experimental Compact Syntax Engine (development branch only)
+
+M10 / CSE-1 adds a compact expression-return form and typed pipelines in the Rust and JavaScript frontends (subject to CI and review):
+
+```hcode
+ƒ double(x) ↩ x*2;
+print(21 ▷ double);
+```
+
+Expected output: `42`. ASCII equivalent: `fn double(x) return x*2; print(21 |> double);`.
+
+See `docs/CSE1_STATUS.md`, `docs/SYMBOLS.md`, and the 60-milestone masterplan. This is **not merged into main**, has **no confirmed test pass** yet, and is not a sandbox or evidence of 70% shorter code.
