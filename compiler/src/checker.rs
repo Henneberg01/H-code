@@ -8,11 +8,17 @@ use crate::{Diagnostic,ast::{Program,Stmt,StmtKind,Expr,ExprKind,UnaryOp,BinaryO
 pub enum Type {
     Number, String, Bool, Unit,
     Function(Vec<Type>,Box<Type>),
+    Sequence(Box<Type>),
     Variable(u32),
     BuiltinPrint,
 }
 impl Type {
     pub(crate) fn from_name(name:&str,span:Span)->Result<Type,Diagnostic>{
+        if let Some(rest)=name.strip_prefix("⟦"){
+            if let Some(inner)=rest.strip_suffix("⟧"){
+                return Ok(Type::Sequence(Box::new(Self::from_name(inner,span)?)));
+            }
+        }
         match name {
             "Number"=>Ok(Self::Number),"String"=>Ok(Self::String),"Bool"=>Ok(Self::Bool),"Unit"=>Ok(Self::Unit),
             _=>Err(Diagnostic::new("TYPE",format!("Unknown type {name}"),span))
@@ -47,6 +53,9 @@ pub enum TypedExprKind {
     Binary { op:BinaryOp,left:Box<TypedExpr>,right:Box<TypedExpr> },
     Choice { condition:Box<TypedExpr>,when_true:Box<TypedExpr>,when_false:Box<TypedExpr> },
     Call { callee:Box<TypedExpr>,arguments:Vec<TypedExpr> },
+    Sequence(Vec<TypedExpr>),
+    Index { sequence:Box<TypedExpr>,index:Box<TypedExpr> },
+    Length(Box<TypedExpr>),
 }
 
 #[derive(Clone)]
@@ -88,12 +97,14 @@ impl Checker {
         match ty {
             Type::Variable(id)=>match self.substitutions.get(id){Some(x)=>self.resolved(x),None=>ty.clone()},
             Type::Function(params,ret)=>Type::Function(params.iter().map(|x|self.resolved(x)).collect(),Box::new(self.resolved(ret))),
+            Type::Sequence(item)=>Type::Sequence(Box::new(self.resolved(item))),
             _=>ty.clone()
         }
     }
     fn occurs(&self,id:u32,ty:&Type)->bool {
         match self.resolved(ty){Type::Variable(n)=>id==n,
-            Type::Function(a,r)=>a.iter().any(|t|self.occurs(id,t))||self.occurs(id,&r),_=>false}
+            Type::Function(a,r)=>a.iter().any(|t|self.occurs(id,t))||self.occurs(id,&r),
+            Type::Sequence(item)=>self.occurs(id,&item),_=>false}
     }
     fn unify(&mut self,left:&Type,right:&Type,span:Span,reason:&str)->Result<Type,Diagnostic>{
         let a=self.resolved(left);let b=self.resolved(right);
@@ -102,6 +113,9 @@ impl Checker {
             (Type::Variable(id),other)|(other,Type::Variable(id))=>{
                 if self.occurs(*id,other){return Err(Diagnostic::new("TYPE",format!("{reason}: recursive type"),span));}
                 self.substitutions.insert(*id,other.clone()); Ok(other.clone())
+            }
+            (Type::Sequence(ea),Type::Sequence(eb))=>{
+                Ok(Type::Sequence(Box::new(self.unify(ea,eb,span,reason)?)))
             }
             (Type::Function(pa,ra),Type::Function(pb,rb)) if pa.len()==pb.len()=>{
                 let mut params=Vec::new();
@@ -168,12 +182,17 @@ impl Checker {
                 let typed=self.statement(declaration)?;
                 TypedStmtKind::Export{declaration:Box::new(typed)}
             },
-            StmtKind::Let{name,value}=>{
+            StmtKind::Let{name,annotation,value}=>{
                 if self.scopes.len()==1 && self.imported.contains_key(name) {
                     return Err(Diagnostic::new("TYPE",format!("Declaration {name} conflicts with package alias"),node.span));
                 }
                 let expr=self.expression(value)?;
-                self.declare(name,expr.ty.clone(),true,node.span)?;
+                let binding_ty=if let Some(ty)=annotation {
+                    let expected=Type::from_name(ty,node.span)?;
+                    self.unify(&expected,&expr.ty,node.span,"Declaration type mismatch")?;
+                    expected
+                } else {expr.ty.clone()};
+                self.declare(name,binding_ty,true,node.span)?;
                 TypedStmtKind::Let{name:name.clone(),value:expr}
             }
             StmtKind::Assign{name,value}=>{
@@ -266,6 +285,35 @@ impl Checker {
     }
     fn expression(&mut self,expr:&Expr)->Result<TypedExpr,Diagnostic>{
         let (kind,ty)=match &expr.kind {
+            ExprKind::Sequence(items)=>{
+                let element=self.fresh();
+                let mut checked=Vec::with_capacity(items.len());
+                for item in items {
+                    let typed=self.expression(item)?;
+                    self.unify(&element,&typed.ty,item.span,"Sequence elements must have matching types")?;
+                    checked.push(typed);
+                }
+                (TypedExprKind::Sequence(checked),Type::Sequence(Box::new(element)))
+            }
+            ExprKind::Index{sequence,index}=>{
+                let seq=self.expression(sequence)?;
+                let offset=self.expression(index)?;
+                self.unify(&Type::Number,&offset.ty,index.span,"Sequence index must be Number")?;
+                if let ExprKind::Number(raw)=&index.kind {
+                    if raw.parse::<f64>().map(|n|!n.is_finite()||n.fract()!=0.0).unwrap_or(true){
+                        return Err(Diagnostic::new("TYPE","Sequence index must be an integer".into(),index.span));
+                    }
+                }
+                let elem=self.fresh();
+                self.unify(&seq.ty,&Type::Sequence(Box::new(elem.clone())),sequence.span,"Sequence index requires sequence")?;
+                (TypedExprKind::Index{sequence:Box::new(seq),index:Box::new(offset)},elem)
+            }
+            ExprKind::Length(value)=>{
+                let seq=self.expression(value)?;
+                let elem=self.fresh();
+                self.unify(&seq.ty,&Type::Sequence(Box::new(elem)),value.span,"⌗ requires sequence")?;
+                (TypedExprKind::Length(Box::new(seq)),Type::Number)
+            }
             ExprKind::Number(raw)=>(TypedExprKind::Number(raw.clone()),Type::Number),
             ExprKind::String(raw)=>(TypedExprKind::String(raw.clone()),Type::String),
             ExprKind::Bool(value)=>(TypedExprKind::Bool(*value),Type::Bool),
@@ -294,6 +342,13 @@ impl Checker {
             ExprKind::Binary{op,left,right}=>{
                 let l=self.expression(left)?;let r=self.expression(right)?;
                 let ty=match op {
+                    BinaryOp::Concat=>{
+                        let elem=self.fresh();
+                        let list=Type::Sequence(Box::new(elem.clone()));
+                        self.unify(&l.ty,&list,left.span,"⧺ left operand must be sequence")?;
+                        self.unify(&r.ty,&list,right.span,"⧺ operands must share element type")?;
+                        Type::Sequence(Box::new(elem))
+                    }
                     BinaryOp::Compose=>{
                         // Composition: (B->C) and (A->B) produce (A->C).
                         let input=self.fresh();
@@ -394,6 +449,9 @@ impl Checker {
     fn finalize_expr(&self,e:&mut TypedExpr)->Result<(),Diagnostic>{
         e.ty=self.require_known(&e.ty,e.span)?;
         match &mut e.kind {
+            TypedExprKind::Sequence(items)=>{for item in items {self.finalize_expr(item)?;}},
+            TypedExprKind::Index{sequence,index}=>{self.finalize_expr(sequence)?;self.finalize_expr(index)?;},
+            TypedExprKind::Length(value)=>self.finalize_expr(value)?,
             TypedExprKind::Unary{operand,..}=>self.finalize_expr(operand)?,
             TypedExprKind::Binary{left,right,..}=>{self.finalize_expr(left)?;self.finalize_expr(right)?;},
             TypedExprKind::Choice{condition,when_true,when_false}=>{
@@ -411,7 +469,7 @@ impl Checker {
     }
 }
 fn contains_variable(t:&Type)->bool {
-    match t{Type::Variable(_)=>true,Type::Function(ps,r)=>ps.iter().any(contains_variable)||contains_variable(r),_=>false}
+    match t{Type::Variable(_)=>true,Type::Function(ps,r)=>ps.iter().any(contains_variable)||contains_variable(r),Type::Sequence(t)=>contains_variable(t),_=>false}
 }
 fn statement_returns(s:&Stmt)->bool {
     match &s.kind{

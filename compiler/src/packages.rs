@@ -75,10 +75,13 @@ fn version(v:&str)->bool {
     xs.len()==3 && xs.iter().all(|x|!x.is_empty()&& x.bytes().all(|n|n.is_ascii_digit())&&(x.len()==1||!x.starts_with('0')))
 }
 fn parse_type(ty:&str)->Result<Type,Diagnostic>{
+    if ty.contains('⟦') || ty.contains('⟧'){
+        return Err(failure("Sequence types require package manifest v2; v1 scalar contracts only"));
+    }
     Type::from_name(ty,Span::new(1,1)).map_err(|_|failure(format!("Unsupported package contract type {ty}")))
 }
 fn reserved_glyph(c:char)->bool {
-    matches!(c,'ƒ'|'≔'|'↩'|'→'|'←'|'⊤'|'⊥'|'∧'|'∨'|'¬'|'≡'|'≠'|'≤'|'≥'|'∷'|'▷'|'∘'|'◇'|'∅'|'∀'|'∈')
+    matches!(c,'ƒ'|'≔'|'↩'|'→'|'←'|'⊤'|'⊥'|'∧'|'∨'|'¬'|'≡'|'≠'|'≤'|'≥'|'∷'|'▷'|'∘'|'◇'|'⌗'|'⧺'|'⟦'|'⟧'|'∅'|'∀'|'∈')
 }
 
 pub fn load_lockfile(path:&Path)->Result<PackageRegistry,Diagnostic>{
