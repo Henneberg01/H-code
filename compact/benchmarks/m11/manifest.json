@@ -1,0 +1,32 @@
+{
+  "format": 1,
+  "corpusId": "M11-SEQ-SUM-MAP-FILTER-2026-10-18-v1",
+  "intent": "Independent 3-task Unicode-sign H-Code vs idiomatic TypeScript corpus; not a before/after comparison with M10",
+  "rustCompiledParityVerified": false,
+  "pairs": [
+    {
+      "id": "sum-typed-sequence",
+      "expected": "10\n",
+      "hcodePath": "compact/benchmarks/m11/sum-typed-sequence.hc",
+      "hcodeBlobSha": "23824383ce47a287e1ff83fb21a6ec05e4749e4c",
+      "typescriptPath": "compact/benchmarks/m11/sum-typed-sequence.ts",
+      "typescriptBlobSha": "b0c5696caf64ed15211ef380026129f7ac3bd51b"
+    },
+    {
+      "id": "map-typed-sequence",
+      "expected": "20\n22\n",
+      "hcodePath": "compact/benchmarks/m11/map-typed-sequence.hc",
+      "hcodeBlobSha": "467a0b18544b1721683d68421cf870d03a5451dc",
+      "typescriptPath": "compact/benchmarks/m11/map-typed-sequence.ts",
+      "typescriptBlobSha": "aa2382e406b8e96ae5a80d2b500bb33aa09c0e6d"
+    },
+    {
+      "id": "filter-typed-sequence",
+      "expected": "2\n2\n3\n",
+      "hcodePath": "compact/benchmarks/m11/filter-typed-sequence.hc",
+      "hcodeBlobSha": "e26c0d6a6e2bdda05091113040168e3f98947b11",
+      "typescriptPath": "compact/benchmarks/m11/filter-typed-sequence.ts",
+      "typescriptBlobSha": "45b9ad1726aeb3eda2f65046233c5b65813b6a89"
+    }
+  ]
+}
