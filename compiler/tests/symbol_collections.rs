@@ -90,3 +90,17 @@ fn filters_are_stable_and_callbacks_execute_once_per_value(){
 fn rejects_invisible_unicode_in_new_sign_expressions(){
     assert!(lex("print(∑⟦1,\u{200b}2⟧);").is_err());
 }
+
+#[test]
+fn all_three_exact_sha_locked_m13_hcode_sources_compile_and_execute(){
+    let root=std::path::Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
+    for (id,expected) in [
+        ("sum-typed-sequence","10\n"),
+        ("map-typed-sequence","20\n22\n"),
+        ("filter-typed-sequence","2\n2\n3\n")
+    ]{
+        let file=root.join(format!("compact/benchmarks/m13/{id}.hc"));
+        let source=std::fs::read_to_string(&file).unwrap();
+        assert_eq!(run(&source).unwrap(),expected,"M13 corpus {id}");
+    }
+}
