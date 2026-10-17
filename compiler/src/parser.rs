@@ -130,7 +130,7 @@ impl Parser {
             TokenKind::LessEqual=>BinaryOp::LessEqual,TokenKind::GreaterEqual=>BinaryOp::GreaterEqual,
             TokenKind::Plus=>BinaryOp::Add,TokenKind::Minus=>BinaryOp::Subtract,
             TokenKind::Star=>BinaryOp::Multiply,TokenKind::Slash=>BinaryOp::Divide,
-            TokenKind::Percent=>BinaryOp::Modulo,_=>return None
+            TokenKind::Percent=>BinaryOp::Modulo,TokenKind::Compose=>BinaryOp::Compose,_=>return None
         })
     }
     fn expression(&mut self,min_power:u8)->Result<Expr,Diagnostic>{
@@ -187,7 +187,13 @@ impl Parser {
                 self.index+=1;
                 ExprKind::Operation{alias:None,name_or_glyph:g.to_string(),is_glyph:true}
             }
-            _=>return Err(Diagnostic::new("PARSE","Pipeline target must be a callable name or package operation".into(),token.span))
+            TokenKind::LeftParen=>{
+                self.index+=1;
+                let expression=self.expression(0)?;
+                self.expect(&TokenKind::RightParen)?;
+                return Ok((expression,Vec::new()));
+            }
+            _=>return Err(Diagnostic::new("PARSE","Pipeline target must be a callable name, package operation or parenthesized callable".into(),token.span))
         };
         let callee=Expr{kind,span:token.span};
         let mut args=Vec::new();

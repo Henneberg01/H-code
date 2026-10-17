@@ -18,6 +18,7 @@ impl Emitter {
    TypedExprKind::Binary{op,left,right}=>{
     let a=self.expr(left);let b=self.expr(right);
     match op {
+     BinaryOp::Compose=>format!("__hc_compose({a},{b})"),
      BinaryOp::Divide=>format!("__hc_div({a},{b})"),
      BinaryOp::Modulo=>format!("__hc_mod({a},{b})"),
      _=>{
@@ -72,6 +73,7 @@ pub fn emit(program:&TypedProgram,registry:&PackageRegistry)->Result<String,Stri
  output.push_str("const __hc_print = (...xs) => { console.log(xs.map(x => x === null ? 'none' : String(x)).join(' ')); return null; };\n");
  output.push_str("const __hc_div = (a,b) => { if (b === 0) throw Error('Division by zero'); return a/b; };\n");
  output.push_str("const __hc_mod = (a,b) => { if (b === 0) throw Error('Division by zero'); return a%b; };\n");
+ output.push_str("const __hc_compose = (outer,inner) => { if (typeof outer !== 'function' || typeof inner !== 'function') throw Error('Composition expects unary functions'); return (x) => { __hc_tick(); return outer(inner(x)); }; };\n");
  output.push_str("const __hc_operations = Object.create(null);\n");
  let mut imported=BTreeMap::<String,()>::new();
  for stmt in &program.statements { if let TypedStmtKind::Use{package,..}=&stmt.kind {imported.insert(package.clone(),());}}

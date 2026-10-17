@@ -56,7 +56,7 @@ pub enum UnaryOp { Negate, Not }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum BinaryOp {
-    Add, Subtract, Multiply, Divide, Modulo, Equal, NotEqual,
+    Add, Subtract, Multiply, Divide, Modulo, Compose, Equal, NotEqual,
     Less, Greater, LessEqual, GreaterEqual, And, Or,
 }
 
@@ -69,6 +69,7 @@ impl BinaryOp {
             Self::Less | Self::Greater | Self::LessEqual | Self::GreaterEqual => 4,
             Self::Add | Self::Subtract => 5,
             Self::Multiply | Self::Divide | Self::Modulo => 6,
+            Self::Compose => 7,
         }
     }
 }

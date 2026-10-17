@@ -4,11 +4,11 @@ export const CORE_GLYPHS = Object.freeze({
   '\u2190': '=', '\u22a4': 'true', '\u22a5': 'false',
   '\u2227': 'and', '\u2228': 'or', '\u00ac': 'not',
   '\u2261': '==', '\u2260': '!=', '\u2264': '<=', '\u2265': '>=',
-  '\u2237': '::', '\u25b7': '|>'
+  '\u2237': '::', '\u25b7': '|>', '\u2218': '<<'
 });
 export const RESERVED_USER_GLYPHS = new Set(['\u2205', '\u2200', '\u2208', ...Object.keys(CORE_GLYPHS)]);
 const RESERVED = new Set(['fn','let','return','true','false','if','else','while','and','or','not','use','as']);
-const TWO = new Set(['==','!=','<=','>=','->','::','|>']);
+const TWO = new Set(['==','!=','<=','>=','->','::','|>','<<']);
 const ONE = new Set(['+','-','*','/','%','<','>','=','(',')','{','}',',',';',':']);
 const ILLEGAL = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]|\p{Default_Ignorable_Code_Point}/u;
 const SYMBOL_CHARACTER = /^\p{S}$/u;
@@ -148,8 +148,12 @@ class Parser {
     } else if(this.at('glyph')){
       const glyph=this.expect('glyph');
       callee={kind:'GlyphOperation',glyph:glyph.value,line:glyph.line,column:glyph.column};
+    } else if(this.accept('(')){
+      callee=this.expr();
+      this.expect(')');
+      return {callee,args:[]};
     } else {
-      throw new HCodeError('Pipeline target must be a callable name or package operation',token.line,token.column);
+      throw new HCodeError('Pipeline target must be a callable name, package operation or parenthesized callable',token.line,token.column);
     }
     const args=[];
     if(this.accept('(')){
@@ -194,7 +198,7 @@ class Parser {
         continue;
       }
       const op=this.peek().type;
-      const power={or:1,and:2,'==':3,'!=':3,'<':4,'>':4,'<=':4,'>=':4,'+':5,'-':5,'*':6,'/':6,'%':6}[op];
+      const power={or:1,and:2,'==':3,'!=':3,'<':4,'>':4,'<=':4,'>=':4,'+':5,'-':5,'*':6,'/':6,'%':6,'<<':7}[op];
       if(power===undefined||power<min)break;
       this.i++;const right=this.expr(power+1);left={kind:'Binary',operator:op,left,right};
     }
@@ -309,6 +313,11 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,registry=new Map()}=
       }
       case 'Binary':{
         const a=expr(node.left,scope),op=node.operator;
+        if(op==='<<'){
+          const b=expr(node.right,scope);
+          if(typeof a!=='function'||typeof b!=='function')throw Error('Composition expects unary functions');
+          return x=>{step();return a(b(x));};
+        }
         if(op==='and')return truth(a)?truth(expr(node.right,scope)):false;
         if(op==='or')return truth(a)?true:truth(expr(node.right,scope));
         const b=expr(node.right,scope);

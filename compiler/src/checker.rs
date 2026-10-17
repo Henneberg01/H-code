@@ -285,6 +285,17 @@ impl Checker {
             ExprKind::Binary{op,left,right}=>{
                 let l=self.expression(left)?;let r=self.expression(right)?;
                 let ty=match op {
+                    BinaryOp::Compose=>{
+                        // Composition: (B->C) and (A->B) produce (A->C).
+                        let input=self.fresh();
+                        let mid=self.fresh();
+                        let output=self.fresh();
+                        let outer=Type::Function(vec![mid.clone()],Box::new(output.clone()));
+                        let inner=Type::Function(vec![input.clone()],Box::new(mid));
+                        self.unify(&l.ty,&outer,expr.span,"Composition left operand must be unary callable")?;
+                        self.unify(&r.ty,&inner,expr.span,"Composition right operand must be unary callable")?;
+                        Type::Function(vec![input],Box::new(output))
+                    }
                     BinaryOp::Add=>{
                         let merged=self.unify(&l.ty,&r.ty,expr.span,"+ operands must have matching types")?;
                         self.pending_add.push((merged.clone(),expr.span));merged
