@@ -4,11 +4,11 @@ export const CORE_GLYPHS = Object.freeze({
   '\u2190': '=', '\u22a4': 'true', '\u22a5': 'false',
   '\u2227': 'and', '\u2228': 'or', '\u00ac': 'not',
   '\u2261': '==', '\u2260': '!=', '\u2264': '<=', '\u2265': '>=',
-  '\u2237': '::', '\u25b7': '|>', '\u2218': '<<', '\u25c7': '?', '\u27e6': '[[', '\u27e7': ']]', '\u2317': '#', '\u29fa': '++'
+  '\u2237': '::', '\u25b7': '|>', '\u2218': '<<', '\u25c7': '?', '\u27e6': '[[', '\u27e7': ']]', '\u2317': '#', '\u29fa': '++', '\u2211': '@+', '\u2315': '@?', '\u21e2': '@>'
 });
 export const RESERVED_USER_GLYPHS = new Set(['\u2205', '\u2200', '\u2208', ...Object.keys(CORE_GLYPHS)]);
 const RESERVED = new Set(['fn','let','return','true','false','if','else','while','and','or','not','use','as']);
-const TWO = new Set(['==','!=','<=','>=','->','::','|>','<<','[[',']]','++']);
+const TWO = new Set(['==','!=','<=','>=','->','::','|>','<<','[[',']]','++','@+','@?','@>']);
 const ONE = new Set(['+','-','*','/','%','<','>','=','(',')','{','}',',',';',':','?','#']);
 const ILLEGAL = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]|\p{Default_Ignorable_Code_Point}/u;
 const SYMBOL_CHARACTER = /^\p{S}$/u;
@@ -180,6 +180,7 @@ class Parser {
     if(this.accept('not'))left={kind:'Unary',operator:'not',value:this.expr(8)};
     else if(this.accept('-'))left={kind:'Unary',operator:'-',value:this.expr(8)};
     else if(this.accept('#'))left={kind:'Length',value:this.expr(8)};
+    else if(this.accept('@+'))left={kind:'Sum',value:this.expr(8)};
     else if(this.at('number'))left={kind:'Literal',value:this.expect('number').value};
     else if(this.at('string'))left={kind:'Literal',value:this.expect('string').value};
     else if(this.accept('true'))left={kind:'Literal',value:true};
@@ -229,7 +230,7 @@ class Parser {
         continue;
       }
       const op=this.peek().type;
-      const power={or:1,and:2,'==':3,'!=':3,'<':4,'>':4,'<=':4,'>=':4,'+':5,'-':5,'*':6,'/':6,'%':6,'<<':7,'++':5}[op];
+      const power={or:1,and:2,'==':3,'!=':3,'<':4,'>':4,'<=':4,'>=':4,'+':5,'-':5,'*':6,'/':6,'%':6,'<<':7,'++':5,'@?':5,'@>':5}[op];
       if(power===undefined||power<min)break;
       this.i++;const right=this.expr(power+1);left={kind:'Binary',operator:op,left,right};
     }
@@ -286,6 +287,7 @@ export function linkProgram(ast, registry=new Map()) {
     if(node.kind==='Sequence')return {...node,items:node.items.map(expression)};
     if(node.kind==='Index')return {...node,sequence:expression(node.sequence),index:expression(node.index)};
     if(node.kind==='Length')return {...node,value:expression(node.value)};
+    if(node.kind==='Sum')return {...node,value:expression(node.value)};
     if(node.kind==='Binary')return {...node,left:expression(node.left),right:expression(node.right)};
     if(node.kind==='Choice')return {...node,condition:expression(node.condition),whenTrue:expression(node.whenTrue),whenFalse:expression(node.whenFalse)};
     if(node.kind==='Call'){
@@ -388,6 +390,16 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
         return seq[i];
       }
       case 'Length':return validateSequence(expr(node.value,scope)).length;
+      case 'Sum':{
+        const xs=validateSequence(expr(node.value,scope));
+        let total=0;
+        for(const v of xs){
+          step();
+          if(typeof v!=='number')throw Error('∑ requires a numeric sequence');
+          total+=v;
+        }
+        return total;
+      }
       case 'Identifier':return scope.get(node.name);
       case 'OperationRef':{
         const fn=operations.get(node.id);
@@ -405,6 +417,22 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
       }
       case 'Binary':{
         const a=expr(node.left,scope),op=node.operator;
+        if(op==='@?'||op==='@>'){
+          const source=validateSequence(a);
+          const fn=expr(node.right,scope);
+          if(typeof fn!=='function')throw Error(op==='@?'?'⌕ requires a unary predicate':'⇢ requires a unary transform');
+          const out=[];
+          for(const item of source){
+            step();
+            const value=fn(item);
+            if(op==='@?'){
+              if(typeof value!=='boolean')throw Error('⌕ predicate must return Bool');
+              if(value)out.push(item);
+            }else out.push(value);
+            if(out.length>maxSequenceItems)throw Error('Sequence allocation limit exceeded');
+          }
+          return validateSequence(out);
+        }
         if(op==='++'){
           const b=expr(node.right,scope);
           const x=validateSequence(a),y=validateSequence(b);
