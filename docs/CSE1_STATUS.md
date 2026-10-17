@@ -54,3 +54,8 @@ The preliminary `compact/benchmarks/paired` set now covers a typed function, com
 The repository's paired source programs currently have a **median 2.27% shorter H-Code Unicode code-point count** and a **median 5.85% larger H-Code UTF-8 byte count**. Four of eight cases are LONGER in H-Code: `recursive-fibonacci`, `counter-loop`, `recursive-factorial` and `conditional-branch`. These are intentionally not hidden.
 
 All eight H-Code examples ran in the JavaScript reference interpreter and equivalent TypeScript programs produced matching output in isolated evaluations. **Rust compiler and full GitHub CI parity remain unverified**. Source-count details, caveats and base SHA are in `compact/results/m10-interim-reference.json`. The 70% research target is NOT achieved; M11 onward should prioritize general-purpose typed collection operations and compact control flow, not task-specific macro tricks.
+
+
+## Correction: different benchmark corpora are NOT a before/after regression
+
+The formerly reported **26.73%/30.71%** reference-program reductions, initial M10 two-case **31.25%/47.86%**, and expanded M10 eight-case median **2.27%** came from **different program selections, baselines or execution levels**. They must not be described as repeated measurements of identical tests. Source pairs were not frozen for the two oldest results and cannot be reconciled as an exact before/after measurement. **Both original M10 task results are preserved unchanged** in the eight-case corpus. See `docs/BENCHMARK-PROVENANCE.md` for frozen Git blob SHAs and the test `scripts/test/compact-frozen-benchmark.test.mjs`. The universal 20-case, Rust-verified result is still pending.

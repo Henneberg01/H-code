@@ -70,3 +70,8 @@ Run `npm run compact:measure` for seven Unicode/ASCII **H-Code-only** fixture pa
 `compact/benchmarks/paired` contains eight varied idiomatic TypeScript implementations and equivalent H-Code sources. Run `npm run compact:ts-parity` with Node 22+ and cargo; the script checks exact stdout parity and fails rather than counting incompatible implementations. **No verified result is asserted yet**, and none of these cases constitutes the completed 20-task study.
 
 **Anti-cherry-picking rule:** Preserve tasks where H-Code expands source size. Treat a negative reduction as a regression, not an outlier to hide. Calculate median reductions on **all** eight predeclared pairs, report bytes separately, and prioritize general-purpose syntax improvements based on the failures.
+
+
+## Correction: different benchmark corpora are NOT a before/after regression
+
+The formerly reported **26.73%/30.71%** reference-program reductions, initial M10 two-case **31.25%/47.86%**, and expanded M10 eight-case median **2.27%** came from **different program selections, baselines or execution levels**. They must not be described as repeated measurements of identical tests. Source pairs were not frozen for the two oldest results and cannot be reconciled as an exact before/after measurement. **Both original M10 task results are preserved unchanged** in the eight-case corpus. See `docs/BENCHMARK-PROVENANCE.md` for frozen Git blob SHAs and the test `scripts/test/compact-frozen-benchmark.test.mjs`. The universal 20-case, Rust-verified result is still pending.
