@@ -2,7 +2,7 @@
 // The fixed 20-task registry and task06 fixture SHA are never altered.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync,mkdtempSync,rmSync} from 'node:fs';
+import {readFileSync,writeFileSync,mkdtempSync,rmSync} from 'node:fs';
 import {join,resolve} from 'node:path';
 import {tmpdir} from 'node:os';
 import {fileURLToPath} from 'node:url';
@@ -167,6 +167,8 @@ test('canonical06 fixed and independent generated sequences run as real H-Code a
  try{
    const generated=join(tmp,'out.mjs'),emitted=build(join(root,data.hc.path),generated);
    assert.ok(emitted.bytes>0);
+   console.log('CANONICAL06_GENERATED_JS_BYTES='+emitted.bytes);
+   console.log('CANONICAL06_GENERATED_JS_SHA256='+emitted.sha256);
    assert.equal(data.ts.codepoints,3112,'oracle source baseline must remain unchanged');
    for(const c of fixture.cases)await compareEngines(c,data.hc.source,generated,c.expected);
    for(const c of variations)await compareEngines(c,data.hc.source,generated);
@@ -191,4 +193,37 @@ test('ambient HTTP is denied even for otherwise well-typed H-Code',async()=>{
      assert.equal(server.hitsFor('deny'),0,'denied network still reached server');
    }finally{await server.close();}
  }finally{rmSync(tmp,{recursive:true,force:true});}
+});
+
+test('Rust checker independently rejects malformed HTTP/delay types and effects',()=>{
+ const cases=[
+   ['bad-http-argument','print((⤋12)·status);','String URL'],
+   ['bad-delay-argument','⌛"100";','Number milliseconds'],
+   ['http-in-sync-function','ƒ f(u:String)→String ↩ (⤋u)·body;print(f("https://example.invalid"));','only available in effectful top-level'],
+   ['sleep-in-sync-function','ƒ f()→Unit{⌛0;}f();','only available in effectful top-level']
+ ];
+ const tmp=mkdtempSync(join(tmpdir(),'hcode-http06-errors-'));
+ try{
+  for(const [id,source,needle] of cases){
+   const path=join(tmp,id+'.hc');
+   writeFileSync(path,source);
+   const p=spawnSync('cargo',['run','--quiet','--manifest-path','compiler/Cargo.toml',
+    '--','check',path],{cwd:root,encoding:'utf8',windowsHide:true,timeout:180000});
+   assert.ifError(p.error);
+   assert.notEqual(p.status,0,id+' unexpectedly accepted by Rust compiler');
+   assert.ok(p.stderr.includes(needle),id+' expected '+needle+' got '+p.stderr.slice(0,800));
+  }
+ }finally{rmSync(tmp,{recursive:true,force:true});}
+});
+
+test('independent interpreter rejects wrong types and unapproved effects',async()=>{
+ const requests=()=>{throw Error('No I/O should occur')};
+ for(const [source,needle] of [
+  ['print((⤋12)·status);',/String URL/],
+  ['⌛"100";',/bounded nonnegative integer/],
+  ['ƒ f(u:String)→String ↩ (⤋u)·body;print(f("https:\/\/example.invalid"));',/HTTP effect denied/],
+  ['ƒ f()→Unit{⌛0;}f();',/delay effect denied/]
+ ]){
+  await assert.rejects(executeAsync(source,{httpGet:requests,sleepMs:async()=>{throw Error('Unexpected wait')}}),needle);
+ }
 });

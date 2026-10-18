@@ -16,9 +16,9 @@ test('all 20 canonical tasks remain registered in source order, including unsupp
 test('source-locked reference-only examples cannot be misrepresented as global 70% proof',{skip:!canRunTs},()=>{
   const r=readiness();
   assert.equal(r.preregisteredTasks,20);
-  assert.equal(r.verifiedFullWorkloads,6);
+  assert.equal(r.verifiedFullWorkloads,7);
   assert.equal(r.partialReferenceEvidence,0);
-  assert.equal(r.unsupported,14);
+  assert.equal(r.unsupported,13);
   assert.equal(r.complete,false);
   assert.equal(r.globalMedianCodepointReduction,null);
   assert.equal(r.objectiveAchieved,false);
@@ -43,7 +43,7 @@ test('source-locked reference-only examples cannot be misrepresented as global 7
   assert.equal(r.immutableRegistryGitBlobSha,PREREGISTERED_GIT_BLOB_SHA);
   assert.equal(r.capabilityDemandIsNotCompilerCoverage,true);
   assert.deepEqual(r.requestedByUnverifiedTasks.slice(0,3).map(x=>[x.capability,x.workloads]),
-    [['async',3],['multi-file-project',3],['records',3]]);
+    [['multi-file-project',3],['records',3],['async',2]]);
   assert.equal(r.evidenceByFullTask['04-csv-validation'].kind,'full-compiler-evidence');
   assert.equal(r.evidenceByFullTask['04-csv-validation'].fixedFilesVerified,4);
   assert.equal(r.evidenceByFullTask['04-csv-validation'].generatedCSVFilesAndExpectedOutputsVerified,40);
@@ -59,6 +59,14 @@ test('source-locked reference-only examples cannot be misrepresented as global 7
   assert.equal(r.evidenceByFullTask['05-json-transformation'].positiveFixturesVerified,3);
   assert.equal(r.evidenceByFullTask['05-json-transformation'].generatedVariantsVerified,12);
   assert.equal(r.evidenceByFullTask['05-json-transformation'].invalidFixturesRejectedByAll,11);
+  assert.equal(r.evidenceByFullTask['06-http-retries'].kind,'full-compiler-evidence');
+  assert.equal(r.evidenceByFullTask['06-http-retries'].frozenHTTPFixturesVerified,6);
+  assert.equal(r.evidenceByFullTask['06-http-retries'].generatedHTTPVariantsVerified,10);
+  assert.equal(r.evidenceByFullTask['06-http-retries'].compilerStaticInvalidProgramsRejected,4);
+  assert.equal(r.evidenceByFullTask['06-http-retries'].interpreterInvalidProgramsRejected,4);
+  assert.equal(r.evidenceByFullTask['06-http-retries'].realRetryLogicIsHCodeSource,true);
+  assert.equal(r.evidenceByFullTask['06-http-retries'].comparisonIsCorrectnessOracleNotCompetitiveBaseline,true);
+  assert.ok(r.evidenceByFullTask['06-http-retries'].compiledJavascriptUtf8Bytes>0);
 });
 
 test('registry cannot claim an unsupported case is fully verified without compiler proof',()=>{
@@ -70,21 +78,21 @@ test('registry cannot claim an unsupported case is fully verified without compil
   } finally { target.status=previous; }
 });
 
-// This starts the real six-task cross-runtime Rust/JS/TS proof again in a new process.
+// This starts all seven verified cross-runtime Rust/JS/TS proofs again in a new process.
 // On Windows, independent child runtimes exceed 30s; extending the timeout does
 // not skip a single test or loosen the original 20-task strict rejection.
 test('the strict twenty-workload CI gate intentionally fails until all 20 pass',{skip:!canRunTs},()=>{
   const root=fileURLToPath(new URL('../../',import.meta.url));
   const child=spawnSync(process.execPath,['scripts/canonical20-coverage.mjs','--require-complete'],{
-    cwd:root,encoding:'utf8',timeout:180_000,windowsHide:true
+    cwd:root,encoding:'utf8',timeout:300_000,windowsHide:true
   });
   assert.ifError(child.error);
   assert.equal(child.status,2);
   assert.match(child.stderr,/all 20 must be compiler-verified/);
   const report=JSON.parse(child.stdout);
   assert.equal(report.preregisteredTasks,20);
-  assert.equal(report.verifiedFullWorkloads,6);
-  assert.equal(report.unsupported,14);
+  assert.equal(report.verifiedFullWorkloads,7);
+  assert.equal(report.unsupported,13);
   assert.equal(report.globalMedianCodepointReduction,null);
   assert.equal(report.objectiveAchieved,false);
 });

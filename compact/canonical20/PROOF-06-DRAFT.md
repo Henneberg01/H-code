@@ -1,4 +1,9 @@
-# M19.06-B0 — HTTP retry task contract, NOT a compiler proof
+# M19.06-B0 — historical HTTP retry fixture contract (NOT a compiler proof)
+
+**Historical snapshot:** this describes the original B0-only stage. Subsequent
+M19.06-B1/B2/B3 work implemented ⤋ GET, ⌛ delay, a real H-Code retry program and
+an evidence-backed readiness checker. See [PROOF-06.md](PROOF-06.md) for current
+results; the original wording below is kept for provenance.
 
 The original canonical workload 06 is **unchanged**: `fake 500/429/200 responses, bounded retries and deterministic trace`. Registry Git blob SHA `46653ef90ffb3e420fba4ddfbfac3c4cfd57f3b3` remains the source of truth. Workload 06 is still **unsupported** and **not** in the 6/20 fully verified results.
 
