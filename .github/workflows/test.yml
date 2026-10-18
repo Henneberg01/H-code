@@ -1,6 +1,9 @@
-name: H-Code conformance (manual CI only)
+name: H-Code conformance (M14 verification)
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - feat/m14-typed-lambda-glyph
 permissions:
   contents: read
 jobs:
