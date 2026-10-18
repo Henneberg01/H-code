@@ -387,6 +387,26 @@ impl Checker {
             _=>false
         }
     }
+    // Contextual inference: when a sequence drives ⌕ or ⇢, infer its
+    // element type BEFORE checking λ's body. Without this, λe:e·field
+    // cannot access known record fields because e is still a type variable.
+    // This is general bidirectional typing, not a cache-specific shortcut.
+    fn sequence_lambda(&mut self, source:&Expr, element:Type)->Result<TypedExpr,Diagnostic>{
+        let ExprKind::Lambda{parameter,body}=&source.kind else {
+            unreachable!("sequence_lambda requires an inline lambda");
+        };
+        self.push();
+        self.declare(parameter,element.clone(),false,source.span)?;
+        self.lambda_depth+=1;
+        let inferred=self.expression(body);
+        self.lambda_depth-=1;
+        self.pop();
+        let checked=inferred?;
+        let return_type=checked.ty.clone();
+        Ok(TypedExpr{kind:TypedExprKind::Lambda{
+            parameter:parameter.clone(),body:Box::new(checked)
+        },ty:Type::Function(vec![element],Box::new(return_type)),span:source.span})
+    }
     fn expression(&mut self,expr:&Expr)->Result<TypedExpr,Diagnostic>{
         let (kind,ty)=match &expr.kind {
             ExprKind::JsonRead{schema,value}=>{
@@ -650,7 +670,15 @@ impl Checker {
                 (TypedExprKind::Choice{condition:Box::new(test),when_true:Box::new(positive),when_false:Box::new(negative)},ty)
             }
             ExprKind::Binary{op,left,right}=>{
-                let l=self.expression(left)?;let r=self.expression(right)?;
+                let l=self.expression(left)?;
+                let r=if matches!(op,BinaryOp::Filter|BinaryOp::Map) &&
+                          matches!(&right.kind,ExprKind::Lambda{..}){
+                    let element=self.fresh();
+                    self.unify(&l.ty,&Type::Sequence(Box::new(element.clone())),left.span,
+                        "⌕/⇢ requires a typed input sequence")?;
+                    let context=self.resolved(&element);
+                    self.sequence_lambda(right,context)?
+                }else{self.expression(right)?};
                 let ty=match op {
                     BinaryOp::Filter=>{
                         let element=self.fresh();

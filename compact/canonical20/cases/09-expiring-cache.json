@@ -1,0 +1,729 @@
+{
+  "id": "09-expiring-cache",
+  "acceptance": "fake clock, set/get/expire, prevent stale reads and bounded memory",
+  "originalRegistryGitBlobSha": "46653ef90ffb3e420fba4ddfbfac3c4cfd57f3b3",
+  "fakeClock": "explicit monotonic at milliseconds from test event stream",
+  "maxEntries": 8,
+  "expiryBoundary": "valid exactly while at < setAt + ttl",
+  "eviction": "FIFO, replacements move to end",
+  "cases": [
+    {
+      "id": "hit-expire-boundary",
+      "events": [
+        {
+          "at": 0,
+          "key": "a",
+          "op": "set",
+          "ttl": 10,
+          "value": "A"
+        },
+        {
+          "at": 0,
+          "key": "a",
+          "op": "get",
+          "ttl": 0,
+          "value": ""
+        },
+        {
+          "at": 9,
+          "key": "a",
+          "op": "get",
+          "ttl": 0,
+          "value": ""
+        },
+        {
+          "at": 10,
+          "key": "a",
+          "op": "get",
+          "ttl": 0,
+          "value": ""
+        },
+        {
+          "at": 10,
+          "key": "a",
+          "op": "expire",
+          "ttl": 0,
+          "value": ""
+        }
+      ],
+      "expected": [
+        {
+          "hit": false,
+          "key": "a",
+          "size": 1,
+          "value": ""
+        },
+        {
+          "hit": true,
+          "key": "a",
+          "size": 1,
+          "value": "A"
+        },
+        {
+          "hit": true,
+          "key": "a",
+          "size": 1,
+          "value": "A"
+        },
+        {
+          "hit": false,
+          "key": "a",
+          "size": 0,
+          "value": ""
+        },
+        {
+          "hit": false,
+          "key": "a",
+          "size": 0,
+          "value": ""
+        }
+      ]
+    },
+    {
+      "id": "overwrite-renews-fifo",
+      "events": [
+        {
+          "at": 0,
+          "key": "a",
+          "op": "set",
+          "ttl": 5,
+          "value": "old"
+        },
+        {
+          "at": 2,
+          "key": "a",
+          "op": "set",
+          "ttl": 15,
+          "value": "new"
+        },
+        {
+          "at": 5,
+          "key": "a",
+          "op": "get",
+          "ttl": 0,
+          "value": ""
+        },
+        {
+          "at": 16,
+          "key": "a",
+          "op": "get",
+          "ttl": 0,
+          "value": ""
+        },
+        {
+          "at": 17,
+          "key": "a",
+          "op": "get",
+          "ttl": 0,
+          "value": ""
+        }
+      ],
+      "expected": [
+        {
+          "hit": false,
+          "key": "a",
+          "size": 1,
+          "value": ""
+        },
+        {
+          "hit": false,
+          "key": "a",
+          "size": 1,
+          "value": ""
+        },
+        {
+          "hit": true,
+          "key": "a",
+          "size": 1,
+          "value": "new"
+        },
+        {
+          "hit": true,
+          "key": "a",
+          "size": 1,
+          "value": "new"
+        },
+        {
+          "hit": false,
+          "key": "a",
+          "size": 0,
+          "value": ""
+        }
+      ]
+    },
+    {
+      "id": "eviction-bounded",
+      "events": [
+        {
+          "at": 0,
+          "key": "k0",
+          "op": "set",
+          "ttl": 1000,
+          "value": "v0"
+        },
+        {
+          "at": 1,
+          "key": "k1",
+          "op": "set",
+          "ttl": 1000,
+          "value": "v1"
+        },
+        {
+          "at": 2,
+          "key": "k2",
+          "op": "set",
+          "ttl": 1000,
+          "value": "v2"
+        },
+        {
+          "at": 3,
+          "key": "k3",
+          "op": "set",
+          "ttl": 1000,
+          "value": "v3"
+        },
+        {
+          "at": 4,
+          "key": "k4",
+          "op": "set",
+          "ttl": 1000,
+          "value": "v4"
+        },
+        {
+          "at": 5,
+          "key": "k5",
+          "op": "set",
+          "ttl": 1000,
+          "value": "v5"
+        },
+        {
+          "at": 6,
+          "key": "k6",
+          "op": "set",
+          "ttl": 1000,
+          "value": "v6"
+        },
+        {
+          "at": 7,
+          "key": "k7",
+          "op": "set",
+          "ttl": 1000,
+          "value": "v7"
+        },
+        {
+          "at": 8,
+          "key": "k8",
+          "op": "set",
+          "ttl": 1000,
+          "value": "v8"
+        },
+        {
+          "at": 9,
+          "key": "k9",
+          "op": "set",
+          "ttl": 1000,
+          "value": "v9"
+        },
+        {
+          "at": 10,
+          "key": "k0",
+          "op": "get",
+          "ttl": 0,
+          "value": ""
+        },
+        {
+          "at": 10,
+          "key": "k1",
+          "op": "get",
+          "ttl": 0,
+          "value": ""
+        },
+        {
+          "at": 10,
+          "key": "k2",
+          "op": "get",
+          "ttl": 0,
+          "value": ""
+        },
+        {
+          "at": 10,
+          "key": "k9",
+          "op": "get",
+          "ttl": 0,
+          "value": ""
+        }
+      ],
+      "expected": [
+        {
+          "hit": false,
+          "key": "k0",
+          "size": 1,
+          "value": ""
+        },
+        {
+          "hit": false,
+          "key": "k1",
+          "size": 2,
+          "value": ""
+        },
+        {
+          "hit": false,
+          "key": "k2",
+          "size": 3,
+          "value": ""
+        },
+        {
+          "hit": false,
+          "key": "k3",
+          "size": 4,
+          "value": ""
+        },
+        {
+          "hit": false,
+          "key": "k4",
+          "size": 5,
+          "value": ""
+        },
+        {
+          "hit": false,
+          "key": "k5",
+          "size": 6,
+          "value": ""
+        },
+        {
+          "hit": false,
+          "key": "k6",
+          "size": 7,
+          "value": ""
+        },
+        {
+          "hit": false,
+          "key": "k7",
+          "size": 8,
+          "value": ""
+        },
+        {
+          "hit": false,
+          "key": "k8",
+          "size": 8,
+          "value": ""
+        },
+        {
+          "hit": false,
+          "key": "k9",
+          "size": 8,
+          "value": ""
+        },
+        {
+          "hit": false,
+          "key": "k0",
+          "size": 8,
+          "value": ""
+        },
+        {
+          "hit": false,
+          "key": "k1",
+          "size": 8,
+          "value": ""
+        },
+        {
+          "hit": true,
+          "key": "k2",
+          "size": 8,
+          "value": "v2"
+        },
+        {
+          "hit": true,
+          "key": "k9",
+          "size": 8,
+          "value": "v9"
+        }
+      ]
+    },
+    {
+      "id": "expire-and-reuse-capacity",
+      "events": [
+        {
+          "at": 0,
+          "key": "zero",
+          "op": "set",
+          "ttl": 0,
+          "value": "hidden"
+        },
+        {
+          "at": 0,
+          "key": "zero",
+          "op": "get",
+          "ttl": 0,
+          "value": ""
+        },
+        {
+          "at": 0,
+          "key": "s0",
+          "op": "set",
+          "ttl": 2,
+          "value": "v0"
+        },
+        {
+          "at": 0,
+          "key": "s1",
+          "op": "set",
+          "ttl": 99,
+          "value": "v1"
+        },
+        {
+          "at": 0,
+          "key": "s2",
+          "op": "set",
+          "ttl": 99,
+          "value": "v2"
+        },
+        {
+          "at": 0,
+          "key": "s3",
+          "op": "set",
+          "ttl": 99,
+          "value": "v3"
+        },
+        {
+          "at": 0,
+          "key": "s4",
+          "op": "set",
+          "ttl": 99,
+          "value": "v4"
+        },
+        {
+          "at": 0,
+          "key": "s5",
+          "op": "set",
+          "ttl": 99,
+          "value": "v5"
+        },
+        {
+          "at": 0,
+          "key": "s6",
+          "op": "set",
+          "ttl": 99,
+          "value": "v6"
+        },
+        {
+          "at": 0,
+          "key": "s7",
+          "op": "set",
+          "ttl": 99,
+          "value": "v7"
+        },
+        {
+          "at": 2,
+          "key": "new",
+          "op": "set",
+          "ttl": 80,
+          "value": "newvalue"
+        },
+        {
+          "at": 2,
+          "key": "s0",
+          "op": "get",
+          "ttl": 0,
+          "value": ""
+        },
+        {
+          "at": 2,
+          "key": "s1",
+          "op": "get",
+          "ttl": 0,
+          "value": ""
+        },
+        {
+          "at": 81,
+          "key": "new",
+          "op": "get",
+          "ttl": 0,
+          "value": ""
+        }
+      ],
+      "expected": [
+        {
+          "hit": false,
+          "key": "zero",
+          "size": 0,
+          "value": ""
+        },
+        {
+          "hit": false,
+          "key": "zero",
+          "size": 0,
+          "value": ""
+        },
+        {
+          "hit": false,
+          "key": "s0",
+          "size": 1,
+          "value": ""
+        },
+        {
+          "hit": false,
+          "key": "s1",
+          "size": 2,
+          "value": ""
+        },
+        {
+          "hit": false,
+          "key": "s2",
+          "size": 3,
+          "value": ""
+        },
+        {
+          "hit": false,
+          "key": "s3",
+          "size": 4,
+          "value": ""
+        },
+        {
+          "hit": false,
+          "key": "s4",
+          "size": 5,
+          "value": ""
+        },
+        {
+          "hit": false,
+          "key": "s5",
+          "size": 6,
+          "value": ""
+        },
+        {
+          "hit": false,
+          "key": "s6",
+          "size": 7,
+          "value": ""
+        },
+        {
+          "hit": false,
+          "key": "s7",
+          "size": 8,
+          "value": ""
+        },
+        {
+          "hit": false,
+          "key": "new",
+          "size": 8,
+          "value": ""
+        },
+        {
+          "hit": false,
+          "key": "s0",
+          "size": 8,
+          "value": ""
+        },
+        {
+          "hit": true,
+          "key": "s1",
+          "size": 8,
+          "value": "v1"
+        },
+        {
+          "hit": true,
+          "key": "new",
+          "size": 8,
+          "value": "newvalue"
+        }
+      ]
+    },
+    {
+      "id": "unicode-map-keys",
+      "events": [
+        {
+          "at": 0,
+          "key": "🇩🇰",
+          "op": "set",
+          "ttl": 30,
+          "value": "Møbel 🧩"
+        },
+        {
+          "at": 0,
+          "key": "東京",
+          "op": "set",
+          "ttl": 10,
+          "value": "こんにちは"
+        },
+        {
+          "at": 1,
+          "key": "🇩🇰",
+          "op": "get",
+          "ttl": 0,
+          "value": ""
+        },
+        {
+          "at": 10,
+          "key": "東京",
+          "op": "get",
+          "ttl": 0,
+          "value": ""
+        },
+        {
+          "at": 20,
+          "key": "🇩🇰",
+          "op": "get",
+          "ttl": 0,
+          "value": ""
+        },
+        {
+          "at": 30,
+          "key": "",
+          "op": "expire",
+          "ttl": 0,
+          "value": ""
+        }
+      ],
+      "expected": [
+        {
+          "hit": false,
+          "key": "🇩🇰",
+          "size": 1,
+          "value": ""
+        },
+        {
+          "hit": false,
+          "key": "東京",
+          "size": 2,
+          "value": ""
+        },
+        {
+          "hit": true,
+          "key": "🇩🇰",
+          "size": 2,
+          "value": "Møbel 🧩"
+        },
+        {
+          "hit": false,
+          "key": "東京",
+          "size": 1,
+          "value": ""
+        },
+        {
+          "hit": true,
+          "key": "🇩🇰",
+          "size": 1,
+          "value": "Møbel 🧩"
+        },
+        {
+          "hit": false,
+          "key": "",
+          "size": 0,
+          "value": ""
+        }
+      ]
+    },
+    {
+      "id": "empty-and-zero-value",
+      "events": [
+        {
+          "at": 0,
+          "key": "",
+          "op": "expire",
+          "ttl": 0,
+          "value": ""
+        },
+        {
+          "at": 0,
+          "key": "absent",
+          "op": "get",
+          "ttl": 0,
+          "value": ""
+        },
+        {
+          "at": 1,
+          "key": "empty",
+          "op": "set",
+          "ttl": 4,
+          "value": ""
+        },
+        {
+          "at": 1,
+          "key": "empty",
+          "op": "get",
+          "ttl": 0,
+          "value": ""
+        },
+        {
+          "at": 2,
+          "key": "empty",
+          "op": "set",
+          "ttl": 0,
+          "value": ""
+        },
+        {
+          "at": 2,
+          "key": "empty",
+          "op": "get",
+          "ttl": 0,
+          "value": ""
+        },
+        {
+          "at": 3,
+          "key": "negative",
+          "op": "set",
+          "ttl": -1,
+          "value": "skip"
+        },
+        {
+          "at": 3,
+          "key": "negative",
+          "op": "get",
+          "ttl": 0,
+          "value": ""
+        }
+      ],
+      "expected": [
+        {
+          "hit": false,
+          "key": "",
+          "size": 0,
+          "value": ""
+        },
+        {
+          "hit": false,
+          "key": "absent",
+          "size": 0,
+          "value": ""
+        },
+        {
+          "hit": false,
+          "key": "empty",
+          "size": 1,
+          "value": ""
+        },
+        {
+          "hit": true,
+          "key": "empty",
+          "size": 1,
+          "value": ""
+        },
+        {
+          "hit": false,
+          "key": "empty",
+          "size": 0,
+          "value": ""
+        },
+        {
+          "hit": false,
+          "key": "empty",
+          "size": 0,
+          "value": ""
+        },
+        {
+          "hit": false,
+          "key": "negative",
+          "size": 0,
+          "value": ""
+        },
+        {
+          "hit": false,
+          "key": "negative",
+          "size": 0,
+          "value": ""
+        }
+      ]
+    }
+  ]
+}
