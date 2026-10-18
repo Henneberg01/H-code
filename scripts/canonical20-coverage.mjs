@@ -13,6 +13,7 @@ import {verifyCanonical03} from './canonical20-verify-03.mjs';
 import {verifyCanonical04} from './canonical20-verify-04.mjs';
 import {verifyCanonical01} from './canonical20-verify-01.mjs';
 import {verifyCanonical06} from './canonical20-verify-06.mjs';
+import {verifyCanonical07} from './canonical20-verify-07.mjs';
 import {verifyCanonical08} from './canonical20-verify-08.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
@@ -108,6 +109,11 @@ export function readiness(){
         // compiler effects/types, and independent JS/TypeScript parity.
         // Do NOT trust the frozen JSON registry's original unsupported label.
         fullEvidence[w.id]=verifyCanonical06();
+        verified++;
+      }else if(w.id==='07-file-conversion'){
+        // Derived only from exact-SHA frozen source, real filesystem IO,
+        // byte-exact Rust/JS/TS parity, security and invalid inputs.
+        fullEvidence[w.id]=verifyCanonical07();
         verified++;
       }else if(w.id==='08-concurrent-requests'){
         // Exactly the original concurrent HTTP acceptance: barrier server
