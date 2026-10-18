@@ -72,3 +72,18 @@ fn source_and_generated_output_reject_symlinks(){
   assert!(!w.run(&[]).status.success());
  }
 }
+
+#[test]
+fn invalid_update_does_not_damage_previously_valid_lock(){
+ let w=Workspace::new();
+ let good=w.run(&[]);assert!(good.status.success(),"{}",output(&good));
+ let paths=[w.0.join("packages/poly.auto/lib.hc"),
+     w.0.join("packages/poly.auto/manifest.json"),w.lock()];
+ let old=paths.map(|p|fs::read(p).unwrap());
+ fs::write(w.source(),"∀T ⥇ ƒ unused(xs:⟦Number⟧)→Number ↩ xs⟦0⟧;\\n").unwrap();
+ let bad=w.run(&[]);
+ assert!(!bad.status.success(),"invalid package should not regenerate files");
+ let unchanged=paths.map(|p|fs::read(p).unwrap());
+ assert_eq!(old,unchanged);
+ assert!(load_lockfile(&w.lock()).is_ok());
+}
