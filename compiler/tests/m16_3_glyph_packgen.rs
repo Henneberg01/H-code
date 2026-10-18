@@ -9,6 +9,7 @@ impl Workspace{
   let root=std::env::temp_dir().join(format!("hcode-m163-{}-{n}",std::process::id()));
   fs::create_dir_all(root.join("packages/poly.auto")).unwrap();
   fs::copy(root_source(),root.join("packages/poly.auto/signs.hcs")).unwrap();
+  fs::copy(root().join("packages/poly.auto/demo.hc"),root.join("packages/poly.auto/demo.hc")).unwrap();
   Self(root)
  }
  fn run(&self,extra:&[&str])->std::process::Output{
@@ -40,6 +41,17 @@ fn build_is_deterministic_sha_locked_and_idempotent(){
  assert_eq!(parsed["operations"][0]["glyph"],"⥇");
  assert_eq!(parsed["operations"][1]["glyph"],"⥈");
  assert!(load_lockfile(&w.lock()).is_ok());
+ let generated=Command::new(env!("CARGO_BIN_EXE_hcodec"))
+   .current_dir(&w.0).args(["run","packages/poly.auto/demo.hc","--lock","hcode.m16.3.lock.json"]).output().unwrap();
+ assert!(generated.status.success(),"Compiled Rust backend: {}",output(&generated));
+ let reference=Command::new("node").current_dir(&w.0)
+   .arg(root().join("prototype/bin/hcode.mjs"))
+   .args(["run","packages/poly.auto/demo.hc","--lock","hcode.m16.3.lock.json"])
+   .output().unwrap();
+ assert!(reference.status.success(),"JS reference: {}",output(&reference));
+ let text=|b:&[u8]|String::from_utf8_lossy(b).replace("\r\n","\n");
+ assert_eq!(text(&generated.stdout),"2\na\ntrue\n4\n");
+ assert_eq!(text(&reference.stdout),text(&generated.stdout));
  fs::write(&lib,"TAMPER").unwrap();
  assert!(!w.run(&["--check"]).status.success());
  assert!(load_lockfile(&w.lock()).is_err());
