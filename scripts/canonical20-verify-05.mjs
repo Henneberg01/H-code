@@ -14,7 +14,7 @@ export const SOURCES=Object.freeze({
   registry:'46653ef90ffb3e420fba4ddfbfac3c4cfd57f3b3',
   cases:'6e151dd70cbb16b160349688be8f86aad06c54ee',
   hc:'9e98f97129e6c40c41ba4635f63fe9af26275f19',
-  ts:'3b94d1bb863d59924aa769ca7e48ceb7562f1a04'
+  ts:'f01524c5559aa4606348ef166a4ff7ad5b5ed46b'
 });
 const paths=Object.freeze({
   registry:'compact/canonical20/workloads.json',
