@@ -15,7 +15,7 @@ const root=fileURLToPath(new URL('../',import.meta.url));
 const fixed={
   registry:['compact/canonical20/workloads.json','46653ef90ffb3e420fba4ddfbfac3c4cfd57f3b3'],
   hc:['compact/canonical20/programs/07-file-conversion.hc','b93015a0dab3cd5b616026a16348de97162b5bac'],
-  ts:['compact/canonical20/programs/07-file-conversion.ts','7c685dc1fd2d6ff52ea26d4a5e2dea8438d6d51c'],
+  ts:['compact/canonical20/programs/07-file-conversion.ts','8d81d7b3c8150201728d9451dfbd3d07e1359d69'],
   products:['compact/canonical20/cases/07-products.csv','46e536392d088824e261e44a1baf5aa441bcdf3d'],
   unicode:['compact/canonical20/cases/07-unicode.csv','508b88528f82cec4b393768f355f87d5aacaa12a'],
   empty:['compact/canonical20/cases/07-header-only.csv','f692fb78f747d391f69361885b81ac16c0089bc6'],
