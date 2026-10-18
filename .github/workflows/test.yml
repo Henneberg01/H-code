@@ -106,6 +106,9 @@ jobs:
       - name: Verify task06 frozen loopback HTTP fixtures and independent TypeScript baseline
         run: npm run benchmark20:http-contract
         if: ${{ success() || failure() }}
+      - name: Verify canonical06 H-Code compiler and independent JS / TypeScript HTTP retry parity
+        run: npm run benchmark20:verify06
+        if: ${{ success() || failure() }}
       - name: Canonical twenty source-locked readiness check
         run: npm run benchmark20:status
         if: ${{ success() || failure() }}

@@ -1,0 +1,184 @@
+#!/usr/bin/env node
+// M19.06 canonical06 full sign language vs frozen TS oracle over real loopback.
+import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
+import {readFileSync,mkdtempSync,rmSync,statSync} from 'node:fs';
+import {join} from 'node:path';
+import {tmpdir} from 'node:os';
+import {spawn,spawnSync} from 'node:child_process';
+import {executeAsync} from '../prototype/src/hcode.mjs';
+import {startHttpFixture} from './canonical20-http-fixture.mjs';
+import {fetchWithRetries} from './canonical20-http-oracle.ts';
+
+const ROOT=new URL('../',import.meta.url);
+const read=path=>readFileSync(new URL(path,ROOT));
+const gitBlob=b=>createHash('sha1').update('blob '+b.length+'\0').update(b).digest('hex');
+const sha256=b=>createHash('sha256').update(b).digest('hex');
+const FIXTURE_SHA='4f12a085d9730ac637444a06fff6f75481985efb';
+const REGISTRY_SHA='46653ef90ffb3e420fba4ddfbfac3c4cfd57f3b3';
+const HCODE_SHA='__PIN_HC_BLOB__';
+const TYPESCRIPT_SHA='__PIN_TS_BLOB__';
+const hcPath='compact/canonical20/programs/06-http-retries.hc';
+const tsPath='scripts/canonical20-http-oracle.ts';
+const fixture=JSON.parse(read('compact/canonical20/cases/06-http-retries.json'));
+const program=read(hcPath).toString('utf8');
+
+function verifyFrozen(){
+  assert.equal(gitBlob(read('compact/canonical20/workloads.json')),REGISTRY_SHA,'registry drift');
+  assert.equal(gitBlob(read('compact/canonical20/cases/06-http-retries.json')),FIXTURE_SHA,'cases drift');
+  assert.equal(gitBlob(read(hcPath)),HCODE_SHA,'H-Code source drift');
+  assert.equal(gitBlob(read(tsPath)),TYPESCRIPT_SHA,'idiomatic TypeScript baseline drift');
+  assert.equal(fixture.cases.length,6);
+  assert.equal(fixture.id,'06-http-retries');
+  assert.deepEqual(fixture.retryableStatuses,[429,500,502,503,504]);
+  assert.equal(fixture.maxAttempts,4);
+  assert.equal(fixture.timeoutMs,2000);
+  assert.equal(fixture.baseDelayMs,100);
+  assert.equal(fixture.maxBackoffMs,1000);
+  const registry=JSON.parse(read('compact/canonical20/workloads.json'));
+  assert.equal(registry.workloads.length,20);
+  assert.equal(registry.workloads[5].id,'06-http-retries');
+  assert.equal(registry.workloads[5].acceptance,fixture.acceptance);
+  assert.deepEqual(registry.workloads[5].requiredCapabilities,['http-client','async','effect-control']);
+  assert.equal(registry.workloads[5].status,'unsupported','original preregistration must not be edited');
+  assert.equal(fixture.stage,'fixture-contract-only-not-compiler-verified');
+}
+function points(src){return [...src].length;}
+function reduction(smaller,larger){return Number((100*(1-smaller/larger)).toFixed(2));}
+function canonicalize(output){
+  const p=typeof output==='string'?JSON.parse(output.trim()):output;
+  assert.deepEqual(Object.keys(p).sort(),['body','ok','reason','status','trace']);
+  assert.ok(Array.isArray(p.trace)&&p.trace.length<=fixture.maxAttempts);
+  const trace=p.trace.map(entry=>{
+    assert.deepEqual(Object.keys(entry).sort(),['attempt','decision','status','waitMs']);
+    return {...entry,status:entry.status===0?null:entry.status};
+  });
+  return {...p,status:p.status===0?null:p.status,reason:p.reason===''?null:p.reason,trace};
+}
+function typedResponse(r,body){
+  const raw=r.headers.get('retry-after');
+  const seconds=raw!==null&&/^\d+$/.test(raw)?Number(raw):0;
+  return {status:r.status,ok:r.ok,body,retryAfter:Number.isSafeInteger(seconds)&&seconds<=120?seconds*1000:0};
+}
+async function request(url){
+  const response=await fetch(url,{method:'GET',redirect:'error',signal:AbortSignal.timeout(2000)});
+  return typedResponse(response,await response.text());
+}
+function compile(out){
+  const command=spawnSync('cargo',['run','--quiet','--manifest-path','compiler/Cargo.toml',
+    '--','build',hcPath,'--out',out],{
+     cwd:new URL('.',ROOT),encoding:'utf8',windowsHide:true,timeout:180000
+    });
+  if(command.error||command.status!==0)throw Error('H-Code Rust compiler failed: '+
+    (command.error?.message||command.stderr?.slice(0,2400)));
+}
+async function runCompiled(file,url){
+  const origin=new URL(url).origin;
+  return await new Promise((resolve,reject)=>{
+    const child=spawn(process.execPath,[file],{
+      cwd:new URL('.',ROOT),windowsHide:true,
+      env:{...process.env,HCODE_HTTP_ALLOWED_ORIGINS:origin,HCODE_TEST_VIRTUAL_SLEEP:'1'},
+      stdio:['pipe','pipe','pipe']
+    });
+    let stdout='',stderr='',settled=false;
+    const fail=err=>{if(settled)return;settled=true;clearTimeout(timer);child.kill();reject(err);};
+    const timer=setTimeout(()=>fail(Error('Compiled H-Code runtime timed out')),15000);
+    child.stdout.setEncoding('utf8');
+    child.stderr.setEncoding('utf8');
+    child.stdout.on('data',value=>{stdout+=value;if(stdout.length>65536)fail(Error('Excessive stdout'));});
+    child.stderr.on('data',value=>{stderr+=value;if(stderr.length>65536)fail(Error('Excessive stderr'));});
+    child.on('error',fail);
+    child.on('close',code=>{
+      if(settled)return;
+      settled=true;clearTimeout(timer);
+      if(code!==0)reject(Error('Compiled H-Code exited '+code+': '+stderr.slice(0,2000)));
+      else resolve(stdout.replace(/\r\n/g,'\n'));
+    });
+    child.stdin.on('error',()=>{});
+    child.stdin.end(url);
+  });
+}
+async function runReference(url,sleeps){
+  const out=[];
+  const r=await executeAsync(program,{
+    readStdin:()=>url,httpGet:request,maxHttpRequests:4,maxSleepCalls:4,
+    sleep:async ms=>{sleeps.push(ms);},stdout:line=>out.push(line)
+  });
+  assert.ok(r.httpRequests<=4);
+  assert.equal(r.sleepCalls,sleeps.length);
+  assert.equal(out.length,1,'H-Code program must emit only the final result');
+  return out[0];
+}
+async function verifyEngine(engine,jsPath){
+  const server=await startHttpFixture(fixture.cases);
+  try{
+    for(const c of fixture.cases){
+      const url=server.urlFor(c.id);
+      let actual,slept=[];
+      if(engine==='rust-compiled'){
+        actual=canonicalize(await runCompiled(jsPath,url));
+      }else if(engine==='js-independent'){
+        actual=canonicalize(await runReference(url,slept));
+      }else{
+        actual=await fetchWithRetries(url,{maxAttempts:fixture.maxAttempts,
+          baseDelayMs:fixture.baseDelayMs,maxBackoffMs:fixture.maxBackoffMs,
+          timeoutMs:fixture.timeoutMs,sleep:async ms=>{slept.push(ms);}
+        });
+      }
+      assert.deepEqual(actual,c.expected,engine+' '+c.id);
+      assert.equal(server.hitsFor(c.id),c.expected.trace.length,engine+' '+c.id+' HTTP request count');
+      assert.ok(server.hitsFor(c.id)<=fixture.maxAttempts);
+      if(engine!=='rust-compiled')assert.deepEqual(slept,
+        c.expected.trace.filter(x=>x.waitMs>0).map(x=>x.waitMs),engine+' '+c.id+' scheduler');
+    }
+    assert.equal(server.received.length,fixture.cases.reduce((n,x)=>n+x.expected.trace.length,0));
+  }finally{await server.close();}
+}
+async function verifyNetworkError(){
+  const url='http://127.0.0.1:1/unreachable';
+  const sleeps=[],lines=[];
+  const stats=await executeAsync(program,{
+    readStdin:()=>url,maxHttpRequests:4,maxSleepCalls:4,
+    httpGet:async()=>{throw Error('secret should not leak');},
+    sleep:async ms=>{sleeps.push(ms);},stdout:line=>lines.push(line)
+  });
+  assert.equal(stats.httpRequests,4);
+  assert.equal(stats.sleepCalls,3);
+  assert.deepEqual(sleeps,[100,200,400]);
+  assert.deepEqual(canonicalize(lines[0]),{
+    ok:false,status:null,body:'',reason:'network',trace:[
+      {attempt:1,status:null,decision:'network-retry',waitMs:100},
+      {attempt:2,status:null,decision:'network-retry',waitMs:200},
+      {attempt:3,status:null,decision:'network-retry',waitMs:400},
+      {attempt:4,status:null,decision:'network-exhausted',waitMs:0}
+    ]
+  });
+}
+export async function verifyCanonical06(){
+  verifyFrozen();
+  const tmp=mkdtempSync(join(tmpdir(),'hcode-canonical06-'));
+  const out=join(tmp,'workload06.mjs');
+  try{
+    compile(out);
+    for(const engine of ['rust-compiled','js-independent','ts-independent'])
+      await verifyEngine(engine,out);
+    await verifyNetworkError();
+    const h=read(hcPath),ts=read(tsPath),output=readFileSync(out);
+    return {
+      id:'06-http-retries',verified:true,positiveCases:fixture.cases.length,
+      negativeCases:1,
+      hcodeCodePoints:points(program),typescriptCodePoints:points(ts.toString('utf8')),
+      hcodeUtf8Bytes:h.length,typescriptUtf8Bytes:ts.length,
+      codepointReductionPct:reduction(points(program),points(ts.toString('utf8'))),
+      utf8ReductionPct:reduction(h.length,ts.length),
+      compilerJsBytes:statSync(out).size,compilerJsSha256:sha256(output),
+      externalRuntimeDependencies:0,timeoutMs:fixture.timeoutMs
+    };
+  }finally{rmSync(tmp,{recursive:true,force:true});}
+}
+if(import.meta.url===new URL(process.argv[1], 'file://' + process.cwd() + '/').href){
+  verifyCanonical06().then(v=>console.log(JSON.stringify(v,null,2))).catch(e=>{
+    console.error('Canonical06 full parity FAILED:',e.stack||e);
+    process.exitCode=1;
+  });
+}
