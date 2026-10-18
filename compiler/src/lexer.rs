@@ -15,7 +15,7 @@ pub struct Token { pub kind: TokenKind, pub span: Span }
 pub enum TokenKind {
     Fn, Let, Return, If, Else, While, Then, Forall, Use, Import, Export, As, True, False, And, Or, Not,
     Identifier(String), Number(String), String(String), Glyph(char),
-    LeftParen, RightParen, LeftBrace, RightBrace, RecOpen, RecClose, Field, RecordUpdate, JsonRead, JsonWrite, Comma, Semicolon, Colon, DoubleColon, Pipe, Compose, Choice, Lambda, SeqOpen, SeqClose, SeqLength, SeqConcat, Sum, Filter, Map,
+    LeftParen, RightParen, LeftBrace, RightBrace, RecOpen, RecClose, Field, RecordUpdate, JsonRead, JsonWrite, TextScalars, TextWords, Histogram, Comma, Semicolon, Colon, DoubleColon, Pipe, Compose, Choice, Lambda, SeqOpen, SeqClose, SeqLength, SeqConcat, Sum, Filter, Map,
     Assign, Arrow, Plus, Minus, Star, Slash, Percent,
     Equal, NotEqual, Less, Greater, LessEqual, GreaterEqual, Eof,
 }
@@ -124,6 +124,8 @@ pub fn lex(source: &str) -> Result<Vec<Token>, Diagnostic> {
                 "true"=>TokenKind::True,"false"=>TokenKind::False,"and"=>TokenKind::And,
                 "or"=>TokenKind::Or,"not"=>TokenKind::Not,"lambda"=>TokenKind::Lambda,"forall"=>TokenKind::Forall,
                 "json_in"=>TokenKind::JsonRead,"json_out"=>TokenKind::JsonWrite,
+                "text_scalars"=>TokenKind::TextScalars,"text_words"=>TokenKind::TextWords,
+                "text_hist"=>TokenKind::Histogram,
                 _=>TokenKind::Identifier(word)
             };
             result.push(Token{kind,span});continue;
@@ -140,6 +142,7 @@ pub fn lex(source: &str) -> Result<Vec<Token>, Diagnostic> {
             '⟦'=>Some(TokenKind::SeqOpen),'⟧'=>Some(TokenKind::SeqClose),
             '⦃'=>Some(TokenKind::RecOpen),'⦄'=>Some(TokenKind::RecClose),'·'=>Some(TokenKind::Field),'⊞'=>Some(TokenKind::RecordUpdate),
             '⤓'=>Some(TokenKind::JsonRead),'⤒'=>Some(TokenKind::JsonWrite),
+            '⫶'=>Some(TokenKind::TextScalars),'⟟'=>Some(TokenKind::TextWords),'⧉'=>Some(TokenKind::Histogram),
             '⌗'=>Some(TokenKind::SeqLength),'⧺'=>Some(TokenKind::SeqConcat),
             '∑'=>Some(TokenKind::Sum),'⌕'=>Some(TokenKind::Filter),'⇢'=>Some(TokenKind::Map),'λ'=>Some(TokenKind::Lambda),'∀'=>Some(TokenKind::Forall),
             _=>None,

@@ -94,6 +94,9 @@ pub enum TypedExprKind {
     RecordUpdate { record:Box<TypedExpr>,name:String,value:Box<TypedExpr> },
     JsonRead { schema:Type,value:Box<TypedExpr> },
     JsonWrite { value:Box<TypedExpr>,schema:Type },
+    TextScalars(Box<TypedExpr>),
+    TextWords(Box<TypedExpr>),
+    Histogram(Box<TypedExpr>),
     Index { sequence:Box<TypedExpr>,index:Box<TypedExpr> },
     Length(Box<TypedExpr>),
     Sum(Box<TypedExpr>),
@@ -395,6 +398,30 @@ impl Checker {
                 }
                 (TypedExprKind::JsonWrite{value:Box::new(checked),schema:resolved},Type::String)
             }
+            ExprKind::TextScalars(value)|ExprKind::TextWords(value)=>{
+                let checked=self.expression(value)?;
+                self.unify(&Type::String,&checked.ty,value.span,"Unicode text operation requires String")?;
+                let typed=if matches!(&expr.kind,ExprKind::TextScalars(_)){
+                    TypedExprKind::TextScalars(Box::new(checked))
+                }else{
+                    TypedExprKind::TextWords(Box::new(checked))
+                };
+                (typed,Type::Sequence(Box::new(Type::String)))
+            }
+            ExprKind::Histogram(value)=>{
+                let checked=self.expression(value)?;
+                let element=self.fresh();
+                self.unify(&checked.ty,&Type::Sequence(Box::new(element.clone())),value.span,"⧉ requires a typed sequence")?;
+                let concrete=self.resolved(&element);
+                if !matches!(concrete,Type::String|Type::Number|Type::Bool){
+                    return Err(Diagnostic::new("TYPE",
+                        "⧉ requires a concrete Sequence<String|Number|Bool>; annotate an empty sequence".into(),expr.span));
+                }
+                let row=Type::Record(vec![
+                    ("count".into(),Type::Number),("value".into(),concrete)
+                ]);
+                (TypedExprKind::Histogram(Box::new(checked)),Type::Sequence(Box::new(row)))
+            }
             ExprKind::Record(fields)=>{
                 let mut typed=Vec::with_capacity(fields.len());
                 let mut structure=Vec::with_capacity(fields.len());
@@ -668,6 +695,7 @@ impl Checker {
             TypedExprKind::Record(fields)=>{for (_,value) in fields{self.finalize_expr(value)?;}},
             TypedExprKind::Field{record,..}=>self.finalize_expr(record)?,
             TypedExprKind::JsonRead{value,..}|TypedExprKind::JsonWrite{value,..}=>self.finalize_expr(value)?,
+            TypedExprKind::TextScalars(value)|TypedExprKind::TextWords(value)|TypedExprKind::Histogram(value)=>self.finalize_expr(value)?,
             TypedExprKind::RecordUpdate{record,value,..}=>{self.finalize_expr(record)?;self.finalize_expr(value)?;},
             TypedExprKind::Index{sequence,index}=>{self.finalize_expr(sequence)?;self.finalize_expr(index)?;},
             TypedExprKind::Length(value)=>self.finalize_expr(value)?,

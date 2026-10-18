@@ -237,6 +237,9 @@ impl Parser {
                 self.index+=1;
                 ExprKind::JsonWrite(Box::new(self.expression(8)?))
             }
+            TokenKind::TextScalars=>{self.index+=1;ExprKind::TextScalars(Box::new(self.expression(8)?))}
+            TokenKind::TextWords=>{self.index+=1;ExprKind::TextWords(Box::new(self.expression(8)?))}
+            TokenKind::Histogram=>{self.index+=1;ExprKind::Histogram(Box::new(self.expression(8)?))}
             TokenKind::SeqLength=>{self.index+=1;ExprKind::Length(Box::new(self.expression(8)?))}
             TokenKind::Sum=>{self.index+=1;ExprKind::Sum(Box::new(self.expression(8)?))}
             TokenKind::Lambda=>{
