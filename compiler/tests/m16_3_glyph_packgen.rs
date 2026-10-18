@@ -51,6 +51,7 @@ fn invalid_glyph_or_type_does_not_write_outputs(){
    "∀T ⥇ ƒ head(xs:⟦T⟧)→T ↩ 42;\n",
    "∀T ⥇ ƒ head(xs:⟦T⟧)→T ↩ xs⟦0⟧;\n∀T ⥇ ƒ other(xs:⟦T⟧)→T ↩ xs⟦0⟧;\n",
    "∀T ⥇ ƒ head(xs:⟦U⟧)→U ↩ xs⟦0⟧;\n",
+   "∀T ⥇ ƒ unused(xs:⟦Number⟧)→Number ↩ xs⟦0⟧;\n",
    "∀T ⥇ ƒ head(xs:⟦T⟧)→T ↩ print(xs⟦0⟧);\n"
  ];
  for code in bad{
@@ -80,7 +81,7 @@ fn invalid_update_does_not_damage_previously_valid_lock(){
  let paths=[w.0.join("packages/poly.auto/lib.hc"),
      w.0.join("packages/poly.auto/manifest.json"),w.lock()];
  let old=paths.map(|p|fs::read(p).unwrap());
- fs::write(w.source(),"∀T ⥇ ƒ unused(xs:⟦Number⟧)→Number ↩ xs⟦0⟧;\\n").unwrap();
+ fs::write(w.source(),"∀T ⥇ ƒ unused(xs:⟦Number⟧)→Number ↩ xs⟦0⟧;\n").unwrap();
  let bad=w.run(&[]);
  assert!(!bad.status.success(),"invalid package should not regenerate files");
  let unchanged=paths.map(|p|fs::read(p).unwrap());
