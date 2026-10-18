@@ -148,3 +148,14 @@ Ikke-reserverede Unicode-symboler som `⊚` (typet sum) og `⊛` (typet transfor
 ## M16.2 — `∀` er nu en rigtig typedeklaration
 
 `∀T ƒ head(xs:⟦T⟧)→T ↩ xs⟦0⟧` deklarerer et **rigidly quantified** `T`, ikke fremtidig iteration. ASCII-tilgængelighed: `forall`. Format-3-biblioteker kan låse brugerens egne glyphs `⥇` / `⥈` til genbrugelig H-Code-kilde. Tegnene får frisk typeløsning ved **hvert kald**; der bruges ikke `Any` eller skjult JS/AI. Se `docs/M16-2-UNIVERSAL-SIGNS.md`. Kernen er endnu kun på draft-branch.
+
+## M12/CSE-3a — ⦃records⦄, ·felter og ⊞ immutable opdatering (draft)
+
+- `⦃a:1,b:"text"⦄` konstruerer en almindelig, eksplicit typet record; ASCII-alias `{a:1,b:"text"}`.
+- `record·a` læser et kendt felt. ASCII-alias `record.a`. Ukendte felter og forkert type er **statiske Rust-fejl**.
+- `record⊞a:value` opretter en uforanderlig kopi, hvor et eksisterende felt ændres. Det **erstatter** den længere, reelle JS/TS-konstruktion `{...record,a:value}`. ASCII-alias `record<+a:value`.
+- Typeannoteringer `⦃a:Number,b:⦃name:String⦄⦄` er præcise strukturelle typer; nesting, typed sequence and function calls understøttes.
+- Et record lagres som et frosset null-prototype-objekt i både referenceruntime og Rust-emitteret JS. Ingen implicit `constructor`/`__proto__`-adgang.
+- Denne milestone giver ikke i sig selv JSON, DB, HTTP eller et komplet CRUD API. 20-programmers benchmark forbliver separat og ufuldstændigt.
+
+Se `docs/M12-SYMBOLIC-RECORDS.md` for kildefaste Rust/JS/TS-paritetstests, typeregel, negative tests og ærlige tegn/byte-målinger. PR er stacked på M19 og **ikke merged til main**.
