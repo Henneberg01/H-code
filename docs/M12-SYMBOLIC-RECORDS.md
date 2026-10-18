@@ -43,7 +43,7 @@ En TypeScript-konstruktion med tilsvarende kopi og feltudskiftning er eksempelvi
 
 Begge opgaver sammenlignes med præcis samme observerbare output og kildeindhold låst til Git-blob-SHA. `npm run m12:measure` udfører H-Code- og TS-kilderne og måler Unicode-kodepunkter og UTF-8-bytes hver for sig. De **28,95 % er alene denne ene opgave**, ikke en ny samlet H-Code-score. Målingen indeholder hele den udviklerskrevne kilde for opgaven; her bruges intet importeret bibliotek. Afhængighedsstørrelse og genereret runtime-kode er endnu ikke opgjort.
 
-De oprindelige tre M14-eksempler måler fortsat **68,46 % færre Unicode-kodepunkter i median**. M19 PR #25 har nu separat **1 fuldt compiler-verificeret, 2 delvist belagte og 17 uverificerede** af de uændrede 20 workloads. M12's mikrocases tælles ikke som ekstra opgaver. Vi opfinder ikke en global 70 %-score fra mikrocases.
+De oprindelige tre M14-eksempler måler fortsat **68,46 % færre Unicode-kodepunkter i median**. M19 PR-kæden til #27 har nu **3 fuldt compiler-verificerede, 0 delvist belagte og 17 uverificerede** af de uændrede 20 workloads på udviklingsgrenen. M12's mikrocases tælles ikke som ekstra opgaver. Vi opfinder ikke en global 70 %-score fra mikrocases.
 
 Kør: `cargo test --manifest-path compiler/Cargo.toml --test m12_symbolic_records`, `npm test`, `npm run m12:measure`, `npm run benchmark20:status`.
 

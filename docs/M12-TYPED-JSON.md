@@ -44,7 +44,7 @@ Det **samme konkrete JSON-roundtrip** måles med `compact/benchmarks/m12/json-ty
 
 `npm run m12:json-measure` måler kodepunkter og UTF-8 bytes **separat**, SHA-kontrollerer begge fixture-kilder, eksekverer begge og sammenligner eksakt stdout. **Genereret JS-runtime-størrelse måles nu særskilt i bytes og med SHA-256, og det kompilerede output eksekveres også**. Compiler tid, eksekveringshastighed og dependency-size er endnu ikke reproducerbare benchmarks, og må ikke fejlagtigt tælle som forfattet kilde.
 
-**Historisk benchmark:** M14's originale tre sum/map/filter-eksempler er fortsat **68,46 % median færre Unicode-kodepunkter**, og M19's efterfølgende PR #25 har **1/20 fuldt compiler-verificeret** (den oprindelige JSON-transformation, ikke denne mikrotest), 2 delvise og 17 uden fuld verifikation. Den samlede median er fortsat ukendt. M12 JSON-casen må ikke lægges ind som en ny “let” 21. opgave, erstatte en af de 20 eller tælles som en global 70%-måling.
+**Historisk benchmark:** M14's originale tre sum/map/filter-eksempler er fortsat **68,46 % median færre Unicode-kodepunkter**, og M19's efterfølgende PR-kæde frem til #27 har **3/20 fuldt compiler-verificeret** (02 Fibonacci, 05 JSON, 10 generiske samlinger), 0 delvise og 17 endnu uden fuld verifikation. Dette er udelukkende på den stacked branch, ikke main. Den samlede median er fortsat ukendt. M12 JSON-casen må ikke lægges ind som en ny “let” 21. opgave, erstatte en af de 20 eller tælles som en global 70%-måling.
 
 ## Verifikation
 
