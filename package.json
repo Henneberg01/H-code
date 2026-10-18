@@ -19,7 +19,10 @@
     "compact:ts-parity": "node scripts/compact-ts-parity.mjs",
     "m13:measure": "node scripts/m13-compare.mjs",
     "m14:measure": "node scripts/m14-compare.mjs",
-    "m15:measure": "node scripts/m15-compare.mjs"
+    "m15:measure": "node scripts/m15-compare.mjs",
+    "benchmark20:status": "node scripts/canonical20-coverage.mjs",
+    "benchmark20:test": "node --test scripts/test/canonical20-coverage.test.mjs",
+    "benchmark20:strict": "node scripts/canonical20-coverage.mjs --require-complete"
   },
   "engines": {
     "node": ">=20"
