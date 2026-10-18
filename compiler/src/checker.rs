@@ -118,7 +118,119 @@ pub enum TypedExprKind {
 struct Binding { ty:Type,assignable:bool }
 struct ActiveFunction { expected:Type,saw_return:bool,generics:Vec<String> }
 
+
+/* B2c-3: a CAS conflict may retry the H-Code reducer. Reject effects
+   transitively through named H-Code functions before emitting JS. Unknown
+   indirect calls fail closed; verified package operations remain pure. */
+fn cas_pure_expression<'a>(
+    expr:&Expr,functions:&HashMap<String,&'a Stmt>,visiting:&mut Vec<String>
+)->Result<(),Diagnostic>{
+    let denied=||Diagnostic::new("EFFECT","CAS HTTP state reducer must be replay-safe and effect-free".into(),expr.span);
+    match &expr.kind {
+        ExprKind::FileRead(_)|ExprKind::FileWrite{..}|ExprKind::HttpGet(_)|
+        ExprKind::HttpServe(_)|ExprKind::HttpServeState{..}|ExprKind::Sleep(_)|
+        ExprKind::StdinText=>return Err(denied()),
+        ExprKind::Call{callee,arguments}=>{
+            match &callee.kind {
+                ExprKind::Identifier(name)=>{
+                    if name=="print"{return Err(denied());}
+                    let function=functions.get(name).ok_or_else(denied)?;
+                    if !visiting.contains(name) {
+                        visiting.push(name.clone());
+                        if let StmtKind::Function{body,..}=&function.kind {
+                            for stmt in body {cas_pure_statement(stmt,functions,visiting)?;}
+                        }else{return Err(denied());}
+                        visiting.pop();
+                    }
+                },
+                ExprKind::Operation{..}=>{},
+                _=>return Err(denied())
+            }
+            for arg in arguments {cas_pure_expression(arg,functions,visiting)?;}
+        },
+        ExprKind::JsonRead{value,..}|ExprKind::JsonWrite(value)|
+        ExprKind::TextScalars(value)|ExprKind::TextWords(value)|
+        ExprKind::Histogram(value)|ExprKind::Markdown(value)|
+        ExprKind::Length(value)|ExprKind::Sum(value)|
+        ExprKind::ArithEval(value)|ExprKind::CsvTyped{value,..}|
+        ExprKind::Unary{operand:value,..}|ExprKind::Lambda{body:value,..}|
+        ExprKind::Section{right:value,..}=>cas_pure_expression(value,functions,visiting)?,
+        ExprKind::Record(fields)=>for (_,value) in fields{cas_pure_expression(value,functions,visiting)?;},
+        ExprKind::Sequence(items)=>for value in items{cas_pure_expression(value,functions,visiting)?;},
+        ExprKind::Field{record,..}=>cas_pure_expression(record,functions,visiting)?,
+        ExprKind::RecordUpdate{record,value,..}=>{
+            cas_pure_expression(record,functions,visiting)?;
+            cas_pure_expression(value,functions,visiting)?;
+        },
+        ExprKind::Index{sequence,index}=>{
+            cas_pure_expression(sequence,functions,visiting)?;
+            cas_pure_expression(index,functions,visiting)?;
+        },
+        ExprKind::Binary{left,right,..}=>{
+            cas_pure_expression(left,functions,visiting)?;
+            cas_pure_expression(right,functions,visiting)?;
+        },
+        ExprKind::Choice{condition,when_true,when_false}=>{
+            cas_pure_expression(condition,functions,visiting)?;
+            cas_pure_expression(when_true,functions,visiting)?;
+            cas_pure_expression(when_false,functions,visiting)?;
+        },
+        ExprKind::Number(_)|ExprKind::String(_)|ExprKind::Bool(_)|
+        ExprKind::Identifier(_)|ExprKind::Operation{..}=>{}
+    }
+    Ok(())
+}
+fn cas_pure_statement<'a>(
+    statement:&Stmt,functions:&HashMap<String,&'a Stmt>,visiting:&mut Vec<String>
+)->Result<(),Diagnostic>{
+    match &statement.kind{
+        StmtKind::Assign{..}|StmtKind::Function{..}|StmtKind::Use{..}|
+        StmtKind::Import{..}=>Err(Diagnostic::new("EFFECT","CAS reducer cannot mutate captures, declare nested functions or import effects".into(),statement.span)),
+        StmtKind::Let{value,..}|StmtKind::Return(value)|StmtKind::Expression(value)=>
+            cas_pure_expression(value,functions,visiting),
+        StmtKind::If{condition,then_body,else_body}=>{
+            cas_pure_expression(condition,functions,visiting)?;
+            for s in then_body{cas_pure_statement(s,functions,visiting)?;}
+            if let Some(other)=else_body{for s in other{cas_pure_statement(s,functions,visiting)?;}}
+            Ok(())
+        },
+        StmtKind::While{condition,body}=>{
+            cas_pure_expression(condition,functions,visiting)?;
+            for s in body{cas_pure_statement(s,functions,visiting)?;}
+            Ok(())
+        },
+        StmtKind::Export{declaration}=>cas_pure_statement(declaration,functions,visiting)
+    }
+}
+fn check_cas_pure_reducers(program:&Program)->Result<(),Diagnostic>{
+    let mut functions=HashMap::new();
+    for stmt in &program.statements {
+        let s=if let StmtKind::Export{declaration}=&stmt.kind{declaration.as_ref()}else{stmt};
+        if let StmtKind::Function{name,..}=&s.kind {functions.insert(name.clone(),s);}
+    }
+    for stmt in &program.statements {
+        let expr=match &stmt.kind {
+            StmtKind::Expression(e)|StmtKind::Let{value:e,..}|StmtKind::Assign{value:e,..}=>Some(e),
+            _=>None
+        };
+        if let Some(Expr{kind:ExprKind::HttpServeState{handler,..},..})=expr {
+            match &handler.kind {
+                ExprKind::Identifier(name)=>{
+                    let function=functions.get(name).ok_or_else(||Diagnostic::new("EFFECT","CAS reducer must be a statically known H-Code function".into(),handler.span))?;
+                    let mut visiting=vec![name.clone()];
+                    if let StmtKind::Function{body,..}=&function.kind {
+                        for child in body {cas_pure_statement(child,&functions,&mut visiting)?;}
+                    }
+                },
+                _=>return Err(Diagnostic::new("EFFECT","CAS reducer requires a statically known H-Code function".into(),handler.span))
+            }
+        }
+    }
+    Ok(())
+}
+
 pub fn check(program:&Program, registry:&PackageRegistry, allow_print:bool)->Result<TypedProgram,Diagnostic>{
+    check_cas_pure_reducers(program)?;
     let mut checker=Checker{
         scopes:vec![HashMap::new()],substitutions:HashMap::new(),fresh:0,
         imported:HashMap::new(),glyphs:HashMap::new(),active_function:None,
