@@ -1,5 +1,4 @@
 use hcode_compiler::{
- ast::ExprKind,
  checker::{check,Type,TypedStmtKind},
  codegen::emit,
  lexer::{lex,TokenKind},
@@ -14,10 +13,17 @@ fn compile(source:&str)->Result<String,String>{
  let typed=check(&tree,&registry,true).map_err(|e|e.to_string())?;
  emit(&typed,&registry)
 }
+// Avoid Windows CreateProcess argument limit: a valid 16,385-token test
+// generates more than 32 KiB of compiled JS, so --eval is not portable.
+static FILE_ID:std::sync::atomic::AtomicU64=std::sync::atomic::AtomicU64::new(0);
 fn run(source:&str)->Result<String,String>{
  let js=compile(source)?;
- let child=Command::new("node").args(["--input-type=module","--eval",&js])
-     .output().map_err(|e|e.to_string())?;
+ let count=FILE_ID.fetch_add(1,std::sync::atomic::Ordering::Relaxed);
+ let tmp=std::env::temp_dir().join(format!("hcode_unicode_{}_{}.mjs",std::process::id(),count));
+ std::fs::write(&tmp,js).map_err(|e|e.to_string())?;
+ let result=Command::new("node").arg(&tmp).output();
+ let _=std::fs::remove_file(&tmp);
+ let child=result.map_err(|e|e.to_string())?;
  if !child.status.success(){return Err(String::from_utf8_lossy(&child.stderr).into());}
  Ok(String::from_utf8_lossy(&child.stdout).replace("\r\n","\n"))
 }
