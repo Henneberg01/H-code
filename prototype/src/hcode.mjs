@@ -8,10 +8,11 @@ export const CORE_GLYPHS = Object.freeze({
   '\u22a2': 'if', '\u22a3': 'else', '\u27f3': 'while', '\u21d2': '=>',
   '\u2237': '::', '\u25b7': '|>', '\u2218': '<<', '\u25c7': '?', '\u27e6': '[[', '\u27e7': ']]',
   '\u2983':'record-open', '\u2984':'record-close', '\u00b7':'field', '\u229e':'record-update',
-  '\u2913':'json-read', '\u2912':'json-write', '\u2317': '#', '\u29fa': '++', '\u2211': '@+', '\u2315': '@?', '\u21e2': '@>', '\u03bb': 'lambda', '\u2200': 'forall'
+  '\u2913':'json-read', '\u2912':'json-write',
+  '\u2af6':'text-scalars', '\u27df':'text-words', '\u29c9':'histogram', '\u2317': '#', '\u29fa': '++', '\u2211': '@+', '\u2315': '@?', '\u21e2': '@>', '\u03bb': 'lambda', '\u2200': 'forall'
 });
 export const RESERVED_USER_GLYPHS = new Set(['\u2205', '\u2200', '\u2208', ...Object.keys(CORE_GLYPHS)]);
-const RESERVED = new Set(['fn','let','return','true','false','if','else','while','and','or','not','use','as','lambda','forall','json_in','json_out']);
+const RESERVED = new Set(['fn','let','return','true','false','if','else','while','and','or','not','use','as','lambda','forall','json_in','json_out','text_scalars','text_words','text_hist']);
 const TWO = new Set(['==','!=','<=','>=','->','::','|>','<<','[[',']]','++','@+','@?','@>','=>','<+']);
 const ONE = new Set(['+','-','*','/','%','<','>','=','(',')','{','}',',',';',':','?','#','.']);
 const ILLEGAL = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]|\p{Default_Ignorable_Code_Point}/u;
@@ -81,7 +82,7 @@ export function tokenize(source) {
     }
     if(letter(c)){
       let word='';while(alnum(peek()))word+=advance();
-      emit(word==='json_in'?'json-read':word==='json_out'?'json-write':(RESERVED.has(word)?word:'ident'),word,ln,col);continue;
+      emit(word==='json_in'?'json-read':word==='json_out'?'json-write':word==='text_scalars'?'text-scalars':word==='text_words'?'text-words':word==='text_hist'?'histogram':(RESERVED.has(word)?word:'ident'),word,ln,col);continue;
     }
     if(Object.hasOwn(CORE_GLYPHS,c)){
       advance();const alias=CORE_GLYPHS[c];emit(alias,alias,ln,col);continue;
@@ -239,6 +240,9 @@ class Parser {
     let left;
     if(this.accept('not'))left={kind:'Unary',operator:'not',value:this.expr(8)};
     else if(this.accept('-'))left={kind:'Unary',operator:'-',value:this.expr(8)};
+    else if(this.accept('text-scalars'))left={kind:'TextScalars',value:this.expr(8)};
+    else if(this.accept('text-words'))left={kind:'TextWords',value:this.expr(8)};
+    else if(this.accept('histogram'))left={kind:'Histogram',value:this.expr(8)};
     else if(this.accept('#'))left={kind:'Length',value:this.expr(8)};
     else if(this.accept('@+'))left={kind:'Sum',value:this.expr(8)};
     else if(this.accept('lambda')){
@@ -407,7 +411,7 @@ export function linkProgram(ast, registry=new Map()) {
     if(node.kind==='Sequence')return {...node,items:node.items.map(expression)};
     if(node.kind==='Record')return {...node,fields:node.fields.map(f=>({name:f.name,value:expression(f.value)}))};
     if(node.kind==='Field')return {...node,record:expression(node.record)};
-    if(node.kind==='JsonRead'||node.kind==='JsonWrite')return {...node,value:expression(node.value)};
+    if(node.kind==='JsonRead'||node.kind==='JsonWrite'||node.kind==='TextScalars'||node.kind==='TextWords'||node.kind==='Histogram')return {...node,value:expression(node.value)};
     if(node.kind==='RecordUpdate')return {...node,record:expression(node.record),value:expression(node.value)};
     if(node.kind==='Index')return {...node,sequence:expression(node.sequence),index:expression(node.index)};
     if(node.kind==='Length')return {...node,value:expression(node.value)};
@@ -588,9 +592,81 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
     }
     throw Error('⤒ requires typed JSON-compatible data');
   };
+  // H-Code's Unicode operations are reusable typed data primitives,
+  // not per-benchmark output templates. Scalar ordering is codepoint order
+  // (not locale-dependent); tokenization is explicit NFC+lowercase+Unicode.
+  const TEXT_MAX_BYTES=1048576;
+  const textCheck=value=>{
+    step();
+    if(typeof value!=='string')throw Error('Unicode text operation requires String');
+    let n=0;
+    for(const ch of value){
+      if((++n & 255)===0)step();
+      const cp=ch.codePointAt(0);
+      if(cp>=0xD800&&cp<=0xDFFF)throw Error('Unpaired UTF-16 surrogate');
+    }
+    if(jsonBytes(value)>TEXT_MAX_BYTES)throw Error('Unicode text exceeds 1 MiB UTF-8');
+    return value;
+  };
+  const unicodeCompare=(a,b)=>{
+    const x=[...a],y=[...b];
+    for(let i=0;i<Math.min(x.length,y.length);i++){
+      const diff=x[i].codePointAt(0)-y[i].codePointAt(0);
+      if(diff)return diff;
+    }
+    return x.length-y.length;
+  };
+  const textScalars=value=>{
+    const out=[];
+    for(const ch of textCheck(value)){
+      step();out.push(ch);
+      if(out.length>maxSequenceItems)throw Error('Sequence allocation limit exceeded');
+    }
+    return validateSequence(out);
+  };
+  const textWords=value=>{
+    const text=textCheck(value).normalize('NFC').toLowerCase().normalize('NFC');
+    if(jsonBytes(text)>TEXT_MAX_BYTES)throw Error('Normalized text exceeds 1 MiB UTF-8');
+    const out=[];
+    for(const match of text.matchAll(/[\p{L}\p{N}][\p{L}\p{M}\p{N}\p{Pc}]*/gu)){
+      step();out.push(match[0]);
+      if(out.length>maxSequenceItems)throw Error('Sequence allocation limit exceeded');
+    }
+    return validateSequence(out);
+  };
+  const histogram=input=>{
+    const xs=validateSequence(input),counts=new Map();
+    let kind=null,bytes=0;
+    for(const value of xs){
+      step();
+      const actual=typeof value;
+      if(actual!=='string'&&actual!=='number'&&actual!=='boolean')
+        throw Error('⧉ requires String, Number, or Bool values');
+      if(kind!==null&&actual!==kind)throw Error('⧉ requires homogeneous sequence');
+      kind=actual;
+      if(actual==='number'&&!Number.isFinite(value))throw Error('⧉ requires finite Number keys');
+      if(actual==='string'){
+        textCheck(value);
+        bytes+=jsonBytes(value);
+        if(bytes>TEXT_MAX_BYTES)throw Error('Histogram text exceeds 1 MiB UTF-8');
+      }
+      const key=value===0?0:value;
+      counts.set(key,(counts.get(key)||0)+1);
+    }
+    const comparator=kind==='string'?
+      (a,b)=>unicodeCompare(a[0],b[0]):(a,b)=>a[0]<b[0]?-1:a[0]>b[0]?1:0;
+    const result=[...counts.entries()].sort(comparator).map(([value,count])=>{
+      step();const row=Object.create(null);row.count=count;row.value=value;
+      return Object.freeze(row);
+    });
+    return validateSequence(result);
+  };
   function expr(node,scope,expectedType=null,deferredEmpty=false){
     step();
     switch(node.kind){
+      case 'TextScalars':return textScalars(expr(node.value,scope));
+      case 'TextWords':return textWords(expr(node.value,scope));
+      case 'Histogram':return histogram(expr(node.value,scope));
       case 'JsonRead':{
         verifyJsonSchema(node.schema);
         const text=expr(node.value,scope);
