@@ -103,5 +103,7 @@ test('reference examples produce their specified outputs',()=>{
 
 test('explicitly missing M1 features never silently appear supported',()=>{
  assert.throws(()=>parse('let xs = [1,2,3];'),/Unexpected character/);
- assert.throws(()=>parse('symbol \u2295 as lists.add;'),/Unexpected character/);
+ // The ASCII dot now tokenizes as safe typed field access (M12), but an
+ // unsupported free-form 'symbol ... as ...' declaration must still fail.
+ assert.throws(()=>parse('symbol \u2295 as lists.add;'),/Unexpected character|Expected ; or an unambiguous statement boundary/);
 });
