@@ -56,3 +56,24 @@ test('record annotations are checked on assignment and on returned nested values
   assert.throws(()=>run('≔x:⦃n:Number⦄←⦃n:3⦄;x←⦃n:"bad"⦄;'),/Annotated type mismatch/);
   assert.throws(()=>run('ƒ f()→⦃n:Number⦄ ↩ ⦃n:"bad"⦄;print(f()·n);'),/return expects/);
 });
+
+test('⊞ replaces object spread without changing original record',()=>{
+  assert.equal(tokenize('⊞')[0].type,'record-update');
+  assert.equal(tokenize('<+')[0].type,'record-update');
+  assert.equal(RESERVED_USER_GLYPHS.has('⊞'),true);
+  const glyph='≔p←⦃age:42,name:"Ada"⦄;≔q←p⊞age:p·age+1;print(p·age);print(q·age);print(q·name);';
+  const ascii='let p={age:42,name:"Ada"};let q=p<+age:p.age+1;print(p.age);print(q.age);print(q.name);';
+  assert.deepEqual(parse(glyph),parse(ascii));
+  assert.equal(run(glyph),'42\\n43\\nAda\\n'.replaceAll('\\n','\n'));
+  assert.equal(run(ascii),'42\\n43\\nAda\\n'.replaceAll('\\n','\n'));
+  const proto='≔p←⦃__proto__:1,constructor:2⦄;≔q←p⊞__proto__:3;print(p·__proto__);print(q·__proto__);';
+  assert.equal(run(proto),'1\\n3\\n'.replaceAll('\\n','\n'));
+});
+test('⊞ rejects invalid target, missing fields and incompatible values',()=>{
+  for(const source of [
+    '≔p←⦃age:42⦄;≔q←p⊞missing:2;',
+    '≔p←⦃age:42⦄;≔q←p⊞age:"wrong";',
+    '≔q←42⊞age:10;',
+    '≔p←⦃age:⟦1,2⟧⦄;≔q←p⊞age:⟦"a"⟧;'
+  ])assert.throws(()=>run(source),undefined,source);
+});

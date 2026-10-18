@@ -7,11 +7,11 @@ export const CORE_GLYPHS = Object.freeze({
   '\u2261': '==', '\u2260': '!=', '\u2264': '<=', '\u2265': '>=',
   '\u22a2': 'if', '\u22a3': 'else', '\u27f3': 'while', '\u21d2': '=>',
   '\u2237': '::', '\u25b7': '|>', '\u2218': '<<', '\u25c7': '?', '\u27e6': '[[', '\u27e7': ']]',
-  '\u2983':'record-open', '\u2984':'record-close', '\u00b7':'field', '\u2317': '#', '\u29fa': '++', '\u2211': '@+', '\u2315': '@?', '\u21e2': '@>', '\u03bb': 'lambda', '\u2200': 'forall'
+  '\u2983':'record-open', '\u2984':'record-close', '\u00b7':'field', '\u229e':'record-update', '\u2317': '#', '\u29fa': '++', '\u2211': '@+', '\u2315': '@?', '\u21e2': '@>', '\u03bb': 'lambda', '\u2200': 'forall'
 });
 export const RESERVED_USER_GLYPHS = new Set(['\u2205', '\u2200', '\u2208', ...Object.keys(CORE_GLYPHS)]);
 const RESERVED = new Set(['fn','let','return','true','false','if','else','while','and','or','not','use','as','lambda','forall']);
-const TWO = new Set(['==','!=','<=','>=','->','::','|>','<<','[[',']]','++','@+','@?','@>','=>']);
+const TWO = new Set(['==','!=','<=','>=','->','::','|>','<<','[[',']]','++','@+','@?','@>','=>','<+']);
 const ONE = new Set(['+','-','*','/','%','<','>','=','(',')','{','}',',',';',':','?','#','.']);
 const ILLEGAL = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]|\p{Default_Ignorable_Code_Point}/u;
 const SYMBOL_CHARACTER = /^\p{S}$/u;
@@ -86,7 +86,7 @@ export function tokenize(source) {
       advance();const alias=CORE_GLYPHS[c];emit(alias,alias,ln,col);continue;
     }
     const two=c+(peek(1)??'');
-    if(TWO.has(two)){advance();advance();emit(two,two,ln,col);continue;}
+    if(TWO.has(two)){advance();advance();emit(two==='<+'?'record-update':two,two,ln,col);continue;}
     if(ONE.has(c)){advance();emit(c==='.'?'field':c,c,ln,col);continue;}
     // Reject a split ASCII pipe instead of interpreting it as a package glyph.
     if(c==='|')throw new HCodeError('Unexpected character "|"; use ▷ or |>',ln,col);
@@ -313,6 +313,12 @@ class Parser {
           throw new HCodeError('Parenthesize pipeline before another operator',t.line,t.column);
         continue;
       }
+      if(this.at('record-update')&&min===0){
+        this.expect('record-update');
+        const key=this.expect('ident').value;
+        this.expect(':');const value=this.expr(0);
+        left={kind:'RecordUpdate',record:left,name:key,value};continue;
+      }
       if(this.at('?')&&min===0){
         this.expect('?');
         const whenTrue=this.expr();
@@ -395,6 +401,7 @@ export function linkProgram(ast, registry=new Map()) {
     if(node.kind==='Sequence')return {...node,items:node.items.map(expression)};
     if(node.kind==='Record')return {...node,fields:node.fields.map(f=>({name:f.name,value:expression(f.value)}))};
     if(node.kind==='Field')return {...node,record:expression(node.record)};
+    if(node.kind==='RecordUpdate')return {...node,record:expression(node.record),value:expression(node.value)};
     if(node.kind==='Index')return {...node,sequence:expression(node.sequence),index:expression(node.index)};
     if(node.kind==='Length')return {...node,value:expression(node.value)};
     if(node.kind==='Sum')return {...node,value:expression(node.value)};
@@ -531,6 +538,18 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
           value[field.name]=expr(field.value,scope);
         }
         return Object.freeze(value);
+      }
+      case 'RecordUpdate':{
+        const original=expr(node.record,scope);
+        if(original===null||typeof original!=='object'||Array.isArray(original)||
+           Object.getPrototypeOf(original)!==null||!Object.hasOwn(original,node.name))
+          throw Error('Unknown record field '+node.name);
+        const updated=expr(node.value,scope);
+        if(seqElementType(original[node.name])!==seqElementType(updated))
+          throw Error('Record update field type mismatch');
+        const copy=Object.assign(Object.create(null),original);
+        copy[node.name]=updated;
+        return Object.freeze(copy);
       }
       case 'Field':{
         const value=expr(node.record,scope);
