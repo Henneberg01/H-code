@@ -207,3 +207,27 @@ test('real compiler rejects 64KiB output overflow and symlink target without clo
   assert.equal(readdirSync(d.out).length,1);
  }finally{built.close();d.clean();}
 });
+
+
+test('four malformed typed/effectful write programs are rejected by Rust and JS with no host I/O',async()=>{
+ const programs=[
+   ['bad-name-type','⧅(4,"bytes");','⧅ filename must be String',/filename must be String/],
+   ['bad-content-type','⧅("ok.txt",3);','⧅ content must be String',/content must be String/],
+   ['pure-function','ƒ forbidden()→Number ↩ ⧅("ok.txt","payload");print(forbidden());','only available in effectful top-level',/file write effect denied/],
+   ['sync-closure','≔f←λv:⧅("ok.txt",v);print(f("payload"));','only available in effectful top-level',/file write effect denied/]
+ ];
+ const temp=mkdtempSync(join(tmpdir(),'hcode07-reject-'));
+ try{
+  for(const [name,program,diagnostic,reference] of programs){
+   const path=join(temp,name+'.hc');writeFileSync(path,program);
+   const result=spawnSync('cargo',['run','--quiet','--manifest-path','compiler/Cargo.toml',
+    '--','check',path],{cwd:root,encoding:'utf8',timeout:180000,windowsHide:true});
+   assert.ifError(result.error);
+   assert.notEqual(result.status,0,name+' accepted by Rust');
+   assert.ok(result.stderr.includes(diagnostic),name+': '+result.stderr);
+   let files=0;
+   await assert.rejects(executeAsync(program,{fileWrite:async()=>{files++;return 1;}}),reference);
+   assert.equal(files,0,name+' performed forbidden host I/O');
+  }
+ }finally{rmSync(temp,{recursive:true,force:true});}
+});
