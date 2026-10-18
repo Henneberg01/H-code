@@ -64,3 +64,44 @@ test('failed atomic host write causes no replay or silent overwrite',async()=>{
   assert.equal(existsSync(join(dir,'.hcode-tmp')),false);
  }finally{rmSync(dir,{recursive:true,force:true});}
 });
+
+
+test('two separate Node processes race for one output inode: exactly one atomic success',async()=>{
+ const {spawn} = await import('node:child_process');
+ const {pathToFileURL} = await import('node:url');
+ const dir=mkdtempSync(join(tmpdir(),'hcode-m19-write-race-'));
+ const url=pathToFileURL(new URL('../../runtime/file-write.mjs',import.meta.url).pathname).href;
+ const script='import {createFileWriteCapability} from '+JSON.stringify(url)+';'+
+   'const w=createFileWriteCapability({root:process.env.HCODE_FILE_WRITE_ROOT});'+
+   'try{w.write("raced.txt",process.env.HCODE_RACE_CONTENT);process.stdout.write("OK");}'+
+   'catch(e){process.stderr.write(String(e.code||e.message));process.exitCode=4;}';
+ const race=content=>new Promise((resolve,reject)=>{
+   const p=spawn(process.execPath,['--input-type=module','--eval',script],{
+     env:{...process.env,HCODE_FILE_WRITE_ROOT:dir,HCODE_RACE_CONTENT:content},
+     stdio:['ignore','pipe','pipe'],windowsHide:true
+   });
+   let stdout='',stderr='';p.stdout.on('data',x=>stdout+=x);p.stderr.on('data',x=>stderr+=x);
+   p.once('error',reject);p.once('close',code=>resolve({code,stdout,stderr}));
+ });
+ try{
+  const results=await Promise.all([race('A'.repeat(4096)),race('B'.repeat(4096))]);
+  assert.equal(results.filter(x=>x.code===0).length,1);
+  assert.equal(results.filter(x=>x.code===4&&x.stderr.includes('EEXIST')).length,1);
+  const bytes=readFileSync(join(dir,'raced.txt'),'utf8');
+  assert.ok(bytes==='A'.repeat(4096)||bytes==='B'.repeat(4096));
+  assert.deepEqual(readdirSync(dir),['raced.txt']);
+ }finally{rmSync(dir,{recursive:true,force:true});}
+});
+
+test('direct capability enforces output UTF-8 byte budget, unsafe names, and no overwrite',()=>{
+ const dir=mkdtempSync(join(tmpdir(),'hcode-m19-write-budget-'));
+ try{
+  const cap=createFileWriteCapability({root:dir,maxWrites:2,maxTotalBytes:65536});
+  assert.throws(()=>cap.write('../outside','hello'),/portable single-component filename/);
+  assert.throws(()=>cap.write('too-big.txt','🧩'.repeat(16385)),/64 KiB UTF-8/);
+  assert.equal(cap.write('empty.txt',''),0);
+  assert.equal(cap.write('ok.txt','Møbel'),Buffer.byteLength('Møbel'));
+  assert.throws(()=>cap.write('third.txt','x'),/effect budget exceeded/);
+  assert.deepEqual(readdirSync(dir).sort(),['empty.txt','ok.txt']);
+ }finally{rmSync(dir,{recursive:true,force:true});}
+});
