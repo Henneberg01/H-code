@@ -34,7 +34,8 @@
     "benchmark20:verify01": "node scripts/canonical20-verify-01.mjs",
     "benchmark20:calc-idiomatic": "node scripts/canonical20-arith-idiomatic.mjs",
     "benchmark20:http-contract": "node --experimental-strip-types --test scripts/canonical20-http-contract.test.mjs",
-    "benchmark20:verify06": "node --experimental-strip-types --test scripts/canonical20-verify-06.test.mjs"
+    "benchmark20:verify06": "node --experimental-strip-types --test scripts/canonical20-verify-06.test.mjs",
+    "benchmark20:batch08": "node --test scripts/canonical20-http-batch-compiler.test.mjs"
   },
   "engines": {
     "node": ">=20"
