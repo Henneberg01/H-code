@@ -3,13 +3,14 @@ import {readFileSync,realpathSync,statSync} from 'node:fs';
 import {dirname,relative,resolve,isAbsolute} from 'node:path';
 import {createHash} from 'node:crypto';
 import {parse,RESERVED_USER_GLYPHS,CORE_GLYPHS} from './hcode.mjs';
+import {contractType,validatePurePackageV2} from './package-v2-types.mjs';
 
 const IDENT=/^[A-Za-z_][A-Za-z0-9_]*$/;
 const PACKAGE=/^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$/;
 const VERSION=/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
 const HEX=/^[a-f0-9]{64}$/;
 const TYPES=new Set(['Number','String','Bool','Unit']);
-const KEYWORDS=new Set(['fn','let','return','true','false','if','else','while','and','or','not','use','as']);
+const KEYWORDS=new Set(['fn','let','return','true','false','if','else','while','and','or','not','use','as','import','export','lambda']);
 const MAX_BYTES=1024*1024;
 const sha=buffer=>createHash('sha256').update(buffer).digest('hex');
 const must=(condition,message)=>{if(!condition)throw Error(`Invalid H-Code package: ${message}`);};
@@ -36,7 +37,7 @@ function signature(fn,op,key){
   must(fn.returnType===op.returns,`${key}: return type mismatch`);
 }
 function validateManifest(manifest,ast){
-  must(isRecord(manifest)&&manifest.format===1,'manifest format must be 1');
+  must(isRecord(manifest)&&[1,2].includes(manifest.format),'manifest format must be 1 or 2');
   must(PACKAGE.test(manifest.name??''),'invalid package name');
   must(VERSION.test(manifest.version??''),'invalid semantic version');
   must(typeof manifest.source==='string'&&/^[a-zA-Z0-9_-]+\.hc$/.test(manifest.source),'source must be a local .hc filename');
@@ -59,16 +60,20 @@ function validateManifest(manifest,ast){
     must(Array.isArray(op.parameters)&&op.parameters.length<=32,'parameters must be an array (max 32)');
     const params=new Set();
     for(const p of op.parameters){
-      must(isRecord(p)&&IDENT.test(p.name??'')&&!KEYWORDS.has(p.name)&&TYPES.has(p.type),`${op.name}: invalid typed parameter`);
+      must(isRecord(p)&&IDENT.test(p.name??'')&&!KEYWORDS.has(p.name),`${op.name}: invalid typed parameter`);
+      if(manifest.format===1)must(TYPES.has(p.type),`${op.name}: invalid typed parameter`);
+      else contractType(p.type,2);
       must(!params.has(p.name),`${op.name}: duplicate parameter ${p.name}`);params.add(p.name);
     }
-    must(TYPES.has(op.returns),`${op.name}: unsupported return type`);
+    if(manifest.format===1)must(TYPES.has(op.returns),`${op.name}: unsupported return type`);
+    else contractType(op.returns,2);
     must(Array.isArray(op.effects)&&op.effects.length===0,`${op.name}: M1 supports only pure operations (effects: [])`);
     must(typeof op.implementation==='string'&&IDENT.test(op.implementation)&&!KEYWORDS.has(op.implementation),`${op.name}: invalid implementation name`);
     const fn=functions.get(op.implementation);
     must(fn,`${op.name}: implementation ${op.implementation} was not found`);
     signature(fn,op,`${manifest.name}::${op.name}`);
   }
+  if(manifest.format===2)validatePurePackageV2(ast,manifest);
   return manifest;
 }
 
