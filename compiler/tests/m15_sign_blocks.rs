@@ -67,7 +67,8 @@ fn semicolon_elision_is_not_arbitrary_and_parse_errors_remain_located(){
         "⊢(⊤)⇒print(1) print(2)", "≔x←1\n*"
     ] {
         let e=parse(source).unwrap_err().to_string();
-        assert!(e.contains("PARSE")&&e.contains("1:"),"{source}: {e}");
+        let expected_line=if source.contains('\n'){ "2:" } else { "1:" };
+        assert!(e.contains("PARSE")&&e.contains(expected_line),"{source}: {e}");
     }
 }
 #[test]
