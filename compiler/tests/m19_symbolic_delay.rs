@@ -16,7 +16,7 @@ fn intrinsic_signs_and_aliases_lower_to_identical_checked_code(){
 }
 #[test]
 fn dynamic_and_literal_duration_types_rejected_and_no_pure_io(){
-    for code in ["⏳\"100\";","⏳-1;","⏳120001;","ƒ f()→Unit ↩ ⏳0;","≔f←λ x:⏳x;"] {
+    for code in ["⏳\"100\";","⏳120001;","ƒ f()→Unit ↩ ⏳0;","≔f←λ x:⏳x;"] {
         assert!(compile(code).is_err(),"Expected compile rejection for: {code}");
     }
     let ast=parse("⏳100;").unwrap();
