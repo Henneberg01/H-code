@@ -6,12 +6,13 @@ export const CORE_GLYPHS = Object.freeze({
   '\u2227': 'and', '\u2228': 'or', '\u00ac': 'not',
   '\u2261': '==', '\u2260': '!=', '\u2264': '<=', '\u2265': '>=',
   '\u22a2': 'if', '\u22a3': 'else', '\u27f3': 'while', '\u21d2': '=>',
-  '\u2237': '::', '\u25b7': '|>', '\u2218': '<<', '\u25c7': '?', '\u27e6': '[[', '\u27e7': ']]', '\u2317': '#', '\u29fa': '++', '\u2211': '@+', '\u2315': '@?', '\u21e2': '@>', '\u03bb': 'lambda', '\u2200': 'forall'
+  '\u2237': '::', '\u25b7': '|>', '\u2218': '<<', '\u25c7': '?', '\u27e6': '[[', '\u27e7': ']]',
+  '\u2983':'record-open', '\u2984':'record-close', '\u00b7':'field', '\u2317': '#', '\u29fa': '++', '\u2211': '@+', '\u2315': '@?', '\u21e2': '@>', '\u03bb': 'lambda', '\u2200': 'forall'
 });
 export const RESERVED_USER_GLYPHS = new Set(['\u2205', '\u2200', '\u2208', ...Object.keys(CORE_GLYPHS)]);
 const RESERVED = new Set(['fn','let','return','true','false','if','else','while','and','or','not','use','as','lambda','forall']);
 const TWO = new Set(['==','!=','<=','>=','->','::','|>','<<','[[',']]','++','@+','@?','@>','=>']);
-const ONE = new Set(['+','-','*','/','%','<','>','=','(',')','{','}',',',';',':','?','#']);
+const ONE = new Set(['+','-','*','/','%','<','>','=','(',')','{','}',',',';',':','?','#','.']);
 const ILLEGAL = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]|\p{Default_Ignorable_Code_Point}/u;
 const SYMBOL_CHARACTER = /^\p{S}$/u;
 
@@ -86,7 +87,7 @@ export function tokenize(source) {
     }
     const two=c+(peek(1)??'');
     if(TWO.has(two)){advance();advance();emit(two,two,ln,col);continue;}
-    if(ONE.has(c)){advance();emit(c,c,ln,col);continue;}
+    if(ONE.has(c)){advance();emit(c==='.'?'field':c,c,ln,col);continue;}
     // Reject a split ASCII pipe instead of interpreting it as a package glyph.
     if(c==='|')throw new HCodeError('Unexpected character "|"; use ▷ or |>',ln,col);
     if(SYMBOL_CHARACTER.test(c)){
@@ -126,6 +127,20 @@ class Parser {
       const element=this.typeName();
       this.expect(']]');
       return '⟦'+element+'⟧';
+    }
+    if(this.at('record-open')||this.at('{')){
+      const closing=this.accept('record-open')?'record-close':(this.expect('{'),'}');
+      const fields=[],keys=new Set();
+      while(!this.at(closing)){
+        if(fields.length>=64)throw new HCodeError('Record type exceeds 64 fields',this.peek().line,this.peek().column);
+        const key=this.expect('ident');
+        if(keys.has(key.value))throw new HCodeError('Duplicate record field '+key.value,key.line,key.column);
+        keys.add(key.value);this.expect(':');
+        fields.push(key.value+':'+this.typeName());
+        if(!this.accept(','))break;
+      }
+      this.expect(closing);
+      return '⦃'+fields.join(',')+'⦄';
     }
     return this.expect('ident').value;
   }
@@ -240,6 +255,19 @@ class Parser {
       if(!this.at(']]')){do{items.push(this.expr());}while(this.accept(','));}
       this.expect(']]');left={kind:'Sequence',items};
     }
+    else if(this.at('record-open')||this.at('{')){
+      const closing=this.accept('record-open')?'record-close':(this.expect('{'),'}');
+      const fields=[],keys=new Set();
+      while(!this.at(closing)){
+        if(fields.length>=64)throw new HCodeError('Record exceeds 64 fields',this.peek().line,this.peek().column);
+        const key=this.expect('ident');
+        if(keys.has(key.value))throw new HCodeError('Duplicate record field '+key.value,key.line,key.column);
+        keys.add(key.value);this.expect(':');
+        fields.push({name:key.value,value:this.expr()});
+        if(!this.accept(','))break;
+      }
+      this.expect(closing);left={kind:'Record',fields};
+    }
     else if(this.at('ident')){
       const t=this.expect('ident');
       if(this.accept('::')){
@@ -262,6 +290,11 @@ class Parser {
     }
     else {const t=this.peek();throw new HCodeError(`Expected expression, got ${t.type}`,t.line,t.column);}
     while(true){
+      if(this.at('field')&&9>=min){
+        this.expect('field');
+        const t=this.expect('ident');
+        left={kind:'Field',record:left,name:t.value};continue;
+      }
       if(this.at('[[')&&9>=min){
         this.expect('[[');const index=this.expr();this.expect(']]');
         left={kind:'Index',sequence:left,index};continue;
@@ -337,6 +370,12 @@ export function linkProgram(ast, registry=new Map()) {
     if(n.kind==='Literal')return typeof n.value==='number'?'Number':typeof n.value==='string'?'String':'Bool';
     if(n.kind==='Unary' && n.operator==='-' && literalType(n.value)==='Number')return 'Number';
     if(n.kind==='OperationRef')return null;
+    if(n.kind==='Record'){
+      const fields=n.fields.map(f=>[f.name,literalType(f.value)]);
+      if(fields.some(([,ty])=>ty===null))return null;
+      fields.sort((a,b)=>a[0].localeCompare(b[0],'en'));
+      return '⦃'+fields.map(([k,ty])=>k+':'+ty).join(',')+'⦄';
+    }
     if(n.kind==='Sequence'){
       if(!n.items.length)return null; // empty sequence type is inferred from the call
       const types=n.items.map(literalType);
@@ -354,6 +393,8 @@ export function linkProgram(ast, registry=new Map()) {
     if(node.kind==='GlyphOperation'||node.kind==='QualifiedOperation')return resolveRef(node);
     if(node.kind==='Unary')return {...node,value:expression(node.value)};
     if(node.kind==='Sequence')return {...node,items:node.items.map(expression)};
+    if(node.kind==='Record')return {...node,fields:node.fields.map(f=>({name:f.name,value:expression(f.value)}))};
+    if(node.kind==='Field')return {...node,record:expression(node.record)};
     if(node.kind==='Index')return {...node,sequence:expression(node.sequence),index:expression(node.index)};
     if(node.kind==='Length')return {...node,value:expression(node.value)};
     if(node.kind==='Sum')return {...node,value:expression(node.value)};
@@ -404,12 +445,46 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
   const step=()=>{if(++steps>maxSteps)throw Error('Execution step limit exceeded');};
   root.define('print',(...args)=>{stdout(args.map(x=>x===null?'none':String(x)).join(' '));return null;});
   const truth=v=>{if(typeof v!=='boolean')throw Error('Condition must be Boolean');return v;};
+  // The parser emits ⦃name:Type,...⦄. Split top-level commas without
+  // losing recursively nested sequence/record types.
+  const recordAnnotationFields=type=>{
+    if(!(type.startsWith('⦃')&&type.endsWith('⦄')))throw Error('Invalid record type');
+    const body=type.slice(1,-1),parts=[];
+    let open=[],begin=0;
+    for(const [i,c] of [...body].entries()){
+      if(c==='⦃'||c==='⟦')open.push(c);
+      else if(c==='⦄'||c==='⟧'){
+        if(open.pop()!==(c==='⦄'?'⦃':'⟦'))throw Error('Invalid nested record annotation');
+      } else if(c===','&&!open.length){
+        parts.push(body.slice(begin,i));begin=i+1;
+      }
+    }
+    if(open.length)throw Error('Unclosed record annotation');
+    if(body)parts.push(body.slice(begin));
+    if(parts.length>64)throw Error('Record field limit exceeded');
+    const seen=new Set();
+    return parts.map(part=>{
+      const index=part.indexOf(':');
+      if(index<=0)throw Error('Invalid record annotation');
+      const key=part.slice(0,index),value=part.slice(index+1);
+      if(!/^[A-Za-z_][A-Za-z0-9_]*$/.test(key)||seen.has(key)||!value)throw Error('Invalid or duplicate record field');
+      seen.add(key);return [key,value];
+    });
+  };
   const requireType=(value,type,context='annotation')=>{
     if(!type)return;
     if(type.startsWith('⟦')&&type.endsWith('⟧')){
       if(!Array.isArray(value))throw Error(context==='return'?'return expects '+type+', got '+runtimeType(value):'Annotated type mismatch: expected '+type);
       if(value.length>maxSequenceItems)throw Error('Sequence allocation limit exceeded');
       for(const element of value)requireType(element,type.slice(1,-1),context);
+      return;
+    }
+    if(type.startsWith('⦃')&&type.endsWith('⦄')){
+      const fields=recordAnnotationFields(type);
+      const valid=value!==null&&typeof value==='object'&&!Array.isArray(value)&&Object.getPrototypeOf(value)===null;
+      if(!valid||Object.keys(value).length!==fields.length||fields.some(([key])=>!Object.hasOwn(value,key)))
+        throw Error(context==='return'?'return expects '+type+', got record mismatch':'Annotated type mismatch: expected '+type);
+      for(const [key,fieldType] of fields)requireType(value[key],fieldType,context);
       return;
     }
     const actual=value===null?'Unit':typeof value==='number'?'Number':typeof value==='string'?'String':typeof value==='boolean'?'Bool':'Unknown';
@@ -425,6 +500,10 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
     return left;
   };
   const seqElementType=v=>{
+    if(v!==null&&typeof v==='object'&&!Array.isArray(v)&&Object.getPrototypeOf(v)===null){
+      const keys=Object.keys(v).sort();
+      return 'Record<'+keys.map(key=>key+':'+seqElementType(v[key])).join(',')+'>';
+    }
     if(Array.isArray(v)){
       let element='?';
       for(const item of v)element=unifySequenceTypes(element,seqElementType(item));
@@ -443,6 +522,22 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
     step();
     switch(node.kind){
       case 'Literal':return node.value;
+      case 'Record':{
+        if(node.fields.length>64)throw Error('Record field limit exceeded');
+        const value=Object.create(null);
+        for(const field of node.fields){
+          step();
+          if(Object.hasOwn(value,field.name))throw Error('Duplicate record field '+field.name);
+          value[field.name]=expr(field.value,scope);
+        }
+        return Object.freeze(value);
+      }
+      case 'Field':{
+        const value=expr(node.record,scope);
+        if(value===null||typeof value!=='object'||Array.isArray(value)||Object.getPrototypeOf(value)!==null||
+            !Object.hasOwn(value,node.name))throw Error('Unknown record field '+node.name);
+        return value[node.name];
+      }
       case 'Sequence':{
         const typed=typeof expectedType==='string' && expectedType.startsWith('⟦') && expectedType.endsWith('⟧');
         if(node.items.length===0){
@@ -580,6 +675,8 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
   const concretize=(type,bindings)=>{
     if(!type)return type;
     if(type.startsWith('⟦')&&type.endsWith('⟧'))return '⟦'+concretize(type.slice(1,-1),bindings)+'⟧';
+    if(type.startsWith('⦃')&&type.endsWith('⦄'))
+      return '⦃'+recordAnnotationFields(type).map(([k,ty])=>k+':'+concretize(ty,bindings)).join(',')+'⦄';
     const resolved=bindings?.get(type);
     return resolved?typeToString(resolved):type;
   };
