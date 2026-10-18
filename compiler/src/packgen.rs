@@ -11,7 +11,7 @@ fn fail(s:impl Into<String>)->String{format!("M16.3: {}",s.into())}
 fn legal_name(s:&str)->bool{
     !s.is_empty() && s.as_bytes()[0].is_ascii_lowercase()
         && s.bytes().all(|c|c.is_ascii_lowercase()||c.is_ascii_digit()||c==b'.'||c==b'-')
-        && !s.contains("..") && !s.ends_with(['.','-'])
+        && !s.contains("..") && !s.ends_with('.') && !s.ends_with('-')
 }
 fn legal_version(s:&str)->bool{
     let p:Vec<_>=s.split('.').collect();
@@ -59,7 +59,7 @@ pub fn generate(name:&str,version:&str,source:&Path,lock:&Path,check_only:bool)-
     let authored=source_text(&input)?;
     let tokens=lex(&authored).map_err(|e|fail(e.to_string()))?;
     let mut positions=Vec::new();
-    let mut glyphs=Vec::new();
+    let mut glyphs=HashSet::new();
     for i in 0..tokens.len().saturating_sub(1){
         if let (TokenKind::Glyph(c),TokenKind::Fn)=(&tokens[i].kind,&tokens[i+1].kind){
             // The signature marker is directly before ƒ. Parsing the stripped
