@@ -152,3 +152,16 @@ test('B2b independent JS H-Code interpreter reducer output still agrees with com
     assert.equal(disk(store).state,first.state);
   }finally{await stop(app);rmSync(b.folder,{recursive:true,force:true});rmSync(store,{recursive:true,force:true});}
 });
+
+test('B2b prevents unsafe GET handlers from committing state changes',async()=>{
+  const bad=source.replace('r.method≡"POST"','r.method≡"GET"');
+  assert.notEqual(bad,source);
+  const b=compile(bad),store=temp();let app;
+  try{
+    app=await start(b.output,store);
+    assert.deepEqual(await request(app,{method:'GET',path:'/inc'}),
+      {status:405,body:'unsafe_state_transition'});
+    assert.deepEqual(await request(app,{method:'GET',path:'/read'}),
+      {status:200,body:'0'});
+  }finally{await stop(app);rmSync(b.folder,{recursive:true,force:true});rmSync(store,{recursive:true,force:true});}
+});
