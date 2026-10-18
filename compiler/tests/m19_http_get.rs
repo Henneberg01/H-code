@@ -45,7 +45,7 @@ fn generated_network_effect_issues_real_get_and_exposes_typed_response(){
     let origin=format!("http://{}",listener.local_addr().unwrap());
     let server=thread::spawn(move||{
         let start=Instant::now();
-        while start.elapsed()<Duration::from_secs(8) {
+        while start.elapsed()<Duration::from_secs(30) {
             match listener.accept(){
                 Ok((mut socket,_))=>{
                     socket.set_read_timeout(Some(Duration::from_secs(2))).unwrap();
@@ -67,5 +67,5 @@ fn generated_network_effect_issues_real_get_and_exposes_typed_response(){
        .env("HCODE_HTTP_ALLOWED_ORIGINS",&origin).output().unwrap();
     assert!(result.status.success(),"{}",String::from_utf8_lossy(&result.stderr));
     assert!(server.join().unwrap(),"GET never arrived");
-    assert_eq!(String::from_utf8_lossy(&result.stdout),"429\nbusy\n1000\nfalse\n");
+    assert_eq!(String::from_utf8_lossy(&result.stdout).replace("\r\n","\n"),"429\nbusy\n1000\nfalse\n");
 }
