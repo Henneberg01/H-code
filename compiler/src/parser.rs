@@ -59,6 +59,24 @@ impl Parser {
             let inner=self.type_name()?;
             self.expect(&TokenKind::SeqClose)?;
             Ok(format!("⟦{inner}⟧"))
+        } else if self.at(&TokenKind::RecOpen) || self.at(&TokenKind::LeftBrace) {
+            // ASCII braces and symbol braces normalize to the same canonical type.
+            let closing=if self.accept(&TokenKind::RecOpen).is_some(){TokenKind::RecClose}
+                else{self.expect(&TokenKind::LeftBrace)?;TokenKind::RightBrace};
+            let mut fields:Vec<(String,String)>=Vec::new();
+            while !self.at(&closing){
+                if fields.len()>=64{return Err(Diagnostic::new("PARSE","Record type has over 64 fields".into(),self.peek().span));}
+                let (name,at)=self.ident()?;
+                if fields.iter().any(|(key,_)|key==&name){
+                    return Err(Diagnostic::new("PARSE",format!("Duplicate record field {name}"),at));
+                }
+                self.expect(&TokenKind::Colon)?;
+                let ty=self.type_name()?;
+                fields.push((name,ty));
+                if self.accept(&TokenKind::Comma).is_none(){break;}
+            }
+            self.expect(&closing)?;
+            Ok(format!("⦃{}⦄",fields.into_iter().map(|(key,ty)|format!("{key}:{ty}")).collect::<Vec<_>>().join(",")))
         } else {Ok(self.ident()?.0)}
     }
     fn statement(&mut self,top_level:bool)->Result<Stmt,Diagnostic>{
@@ -228,6 +246,24 @@ impl Parser {
                 self.expect(&TokenKind::SeqClose)?;
                 ExprKind::Sequence(items)
             }
+            TokenKind::RecOpen|TokenKind::LeftBrace=>{
+                let closing=if self.accept(&TokenKind::RecOpen).is_some(){TokenKind::RecClose}
+                    else{self.expect(&TokenKind::LeftBrace)?;TokenKind::RightBrace};
+                let mut fields:Vec<(String,Expr)>=Vec::new();
+                while !self.at(&closing){
+                    if fields.len()>=64{return Err(Diagnostic::new("PARSE","Record has over 64 fields".into(),self.peek().span));}
+                    let (name,at)=self.ident()?;
+                    if fields.iter().any(|(key,_)|key==&name){
+                        return Err(Diagnostic::new("PARSE",format!("Duplicate record field {name}"),at));
+                    }
+                    self.expect(&TokenKind::Colon)?;
+                    let value=self.expression(0)?;
+                    fields.push((name,value));
+                    if self.accept(&TokenKind::Comma).is_none(){break;}
+                }
+                self.expect(&closing)?;
+                ExprKind::Record(fields)
+            }
             TokenKind::Number(value)=>{self.index+=1;ExprKind::Number(value)}
             TokenKind::String(value)=>{self.index+=1;ExprKind::String(value)}
             TokenKind::True=>{self.index+=1;ExprKind::Bool(true)}
@@ -321,6 +357,13 @@ impl Parser {
     }
     fn suffixes(&mut self,mut left:Expr,min_power:u8)->Result<Expr,Diagnostic>{
         loop {
+            if self.at(&TokenKind::Field) && 9>=min_power {
+                self.index+=1;
+                let (name,_)=self.ident()?;
+                let span=left.span;
+                left=Expr{kind:ExprKind::Field{record:Box::new(left),name},span};
+                continue;
+            }
             if self.at(&TokenKind::SeqOpen) && 9>=min_power {
                 self.index+=1;
                 let index=self.expression(0)?;
