@@ -12,11 +12,11 @@ export const CORE_GLYPHS = Object.freeze({
   '\u2983':'record-open', '\u2984':'record-close', '\u00b7':'field', '\u229e':'record-update',
   '\u2913':'json-read', '\u2912':'json-write',
   '\u2af6':'text-scalars', '\u27df':'text-words', '\u29c9':'histogram',
-  '\u29c4':'file-read', '\u29c7':'csv-typed',
+  '\u29c4':'file-read', '\u290b':'http-get', '\u29c7':'csv-typed',
   '\u2328':'stdin-text', '\u2a5a':'arith-eval', '\u2317': '#', '\u29fa': '++', '\u2211': '@+', '\u2315': '@?', '\u21e2': '@>', '\u03bb': 'lambda', '\u2200': 'forall'
 });
 export const RESERVED_USER_GLYPHS = new Set(['\u2205', '\u2200', '\u2208', ...Object.keys(CORE_GLYPHS)]);
-const RESERVED = new Set(['fn','let','return','true','false','if','else','while','and','or','not','use','as','lambda','forall','json_in','json_out','text_scalars','text_words','text_hist','file_read','csv_typed','stdin_text','arith_eval']);
+const RESERVED = new Set(['fn','let','return','true','false','if','else','while','and','or','not','use','as','lambda','forall','json_in','json_out','text_scalars','text_words','text_hist','file_read','http_get','csv_typed','stdin_text','arith_eval']);
 const TWO = new Set(['==','!=','<=','>=','->','::','|>','<<','[[',']]','++','@+','@?','@>','=>','<+']);
 const ONE = new Set(['+','-','*','/','%','<','>','=','(',')','{','}',',',';',':','?','#','.']);
 const ILLEGAL = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]|\p{Default_Ignorable_Code_Point}/u;
@@ -86,7 +86,7 @@ export function tokenize(source) {
     }
     if(letter(c)){
       let word='';while(alnum(peek()))word+=advance();
-      emit(word==='json_in'?'json-read':word==='json_out'?'json-write':word==='text_scalars'?'text-scalars':word==='text_words'?'text-words':word==='text_hist'?'histogram':word==='file_read'?'file-read':word==='csv_typed'?'csv-typed':word==='stdin_text'?'stdin-text':word==='arith_eval'?'arith-eval':(RESERVED.has(word)?word:'ident'),word,ln,col);continue;
+      emit(word==='json_in'?'json-read':word==='json_out'?'json-write':word==='text_scalars'?'text-scalars':word==='text_words'?'text-words':word==='text_hist'?'histogram':word==='file_read'?'file-read':word==='http_get'?'http-get':word==='csv_typed'?'csv-typed':word==='stdin_text'?'stdin-text':word==='arith_eval'?'arith-eval':(RESERVED.has(word)?word:'ident'),word,ln,col);continue;
     }
     if(Object.hasOwn(CORE_GLYPHS,c)){
       advance();const alias=CORE_GLYPHS[c];emit(alias,alias,ln,col);continue;
@@ -247,6 +247,7 @@ class Parser {
     else if(this.accept('stdin-text'))left={kind:'StdinText'};
     else if(this.accept('arith-eval'))left={kind:'ArithEval',value:this.expr(8)};
     else if(this.accept('file-read'))left={kind:'FileRead',value:this.expr(8)};
+    else if(this.accept('http-get'))left={kind:'HttpGet',value:this.expr(8)};
     else if(this.accept('csv-typed')){
       const schema=this.typeName();
       left={kind:'CsvTyped',schema,value:this.expr(8)};
@@ -422,7 +423,7 @@ export function linkProgram(ast, registry=new Map()) {
     if(node.kind==='Sequence')return {...node,items:node.items.map(expression)};
     if(node.kind==='Record')return {...node,fields:node.fields.map(f=>({name:f.name,value:expression(f.value)}))};
     if(node.kind==='Field')return {...node,record:expression(node.record)};
-    if(node.kind==='JsonRead'||node.kind==='JsonWrite'||node.kind==='TextScalars'||node.kind==='TextWords'||node.kind==='Histogram'||node.kind==='FileRead'||node.kind==='CsvTyped'||node.kind==='ArithEval')return {...node,value:expression(node.value)};
+    if(node.kind==='JsonRead'||node.kind==='JsonWrite'||node.kind==='TextScalars'||node.kind==='TextWords'||node.kind==='Histogram'||node.kind==='FileRead'||node.kind==='HttpGet'||node.kind==='CsvTyped'||node.kind==='ArithEval')return {...node,value:expression(node.value)};
     if(node.kind==='RecordUpdate')return {...node,record:expression(node.record),value:expression(node.value)};
     if(node.kind==='Index')return {...node,sequence:expression(node.sequence),index:expression(node.index)};
     if(node.kind==='Length')return {...node,value:expression(node.value)};
@@ -686,6 +687,7 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
         return data;
       }
       case 'ArithEval':return safeArithmetic(expr(node.value,scope));
+      case 'HttpGet':throw Error('⤋ requires asynchronous H-Code interpreter; synchronous execution cannot perform HTTP');
       case 'FileRead':{
         const path=expr(node.value,scope);
         if(typeof path!=='string')throw Error('⧄ requires String file name');

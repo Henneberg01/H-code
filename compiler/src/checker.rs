@@ -98,6 +98,7 @@ pub enum TypedExprKind {
     TextWords(Box<TypedExpr>),
     Histogram(Box<TypedExpr>),
     FileRead(Box<TypedExpr>),
+    HttpGet(Box<TypedExpr>),
     StdinText,
     ArithEval(Box<TypedExpr>),
     CsvTyped {schema:Type,value:Box<TypedExpr>},
@@ -116,7 +117,7 @@ pub fn check(program:&Program, registry:&PackageRegistry, allow_print:bool)->Res
     let mut checker=Checker{
         scopes:vec![HashMap::new()],substitutions:HashMap::new(),fresh:0,
         imported:HashMap::new(),glyphs:HashMap::new(),active_function:None,
-        pending_add:Vec::new(),pending_equal:Vec::new(),allow_print
+        pending_add:Vec::new(),pending_equal:Vec::new(),lambda_depth:0,allow_print
     };
     if allow_print {
         checker.declare("print",Type::BuiltinPrint,false,Span::new(1,1))?;
@@ -140,6 +141,7 @@ struct Checker {
     pending_add:Vec<(Type,Span)>,
     pending_equal:Vec<(Type,Span)>,
     allow_print:bool,
+    lambda_depth:usize,
 }
 impl Checker {
     fn fresh(&mut self)->Type {let n=self.fresh;self.fresh+=1;Type::Variable(n)}
@@ -421,6 +423,20 @@ impl Checker {
                 self.unify(&Type::String,&input.ty,value.span,"⧄ requires String file name")?;
                 (TypedExprKind::FileRead(Box::new(input)),Type::String)
             }
+            ExprKind::HttpGet(value)=>{
+                // HTTP is an application effect: pure packages, functions, and
+                // non-async lambdas may not accidentally perform network I/O.
+                if !self.allow_print || self.active_function.is_some() || self.lambda_depth>0 {
+                    return Err(Diagnostic::new("EFFECT","⤋ HTTP GET is only available in effectful top-level program flow; pure packages and sync closures cannot use network I/O".into(),expr.span));
+                }
+                let input=self.expression(value)?;
+                self.unify(&Type::String,&input.ty,value.span,"⤋ expects a String URL")?;
+                let structure=Type::Record(vec![
+                    ("body".into(),Type::String),("ok".into(),Type::Bool),
+                    ("retryAfter".into(),Type::Number),("status".into(),Type::Number)
+                ]);
+                (TypedExprKind::HttpGet(Box::new(input)),structure)
+            }
             ExprKind::CsvTyped{schema,value}=>{
                 let ty=Type::from_name(schema,expr.span)?;
                 let Type::Record(ref fields)=ty else {
@@ -560,7 +576,9 @@ impl Checker {
                 let arg=self.fresh();
                 self.push();
                 self.declare(parameter,arg.clone(),false,expr.span)?;
+                self.lambda_depth+=1;
                 let inferred=self.expression(body);
+                self.lambda_depth-=1;
                 self.pop();
                 let checked=inferred?;
                 let ty=Type::Function(vec![arg],Box::new(checked.ty.clone()));
@@ -730,7 +748,7 @@ impl Checker {
             TypedExprKind::Record(fields)=>{for (_,value) in fields{self.finalize_expr(value)?;}},
             TypedExprKind::Field{record,..}=>self.finalize_expr(record)?,
             TypedExprKind::JsonRead{value,..}|TypedExprKind::JsonWrite{value,..}=>self.finalize_expr(value)?,
-            TypedExprKind::TextScalars(value)|TypedExprKind::TextWords(value)|TypedExprKind::Histogram(value)|TypedExprKind::FileRead(value)|TypedExprKind::ArithEval(value)=>self.finalize_expr(value)?,
+            TypedExprKind::TextScalars(value)|TypedExprKind::TextWords(value)|TypedExprKind::Histogram(value)|TypedExprKind::FileRead(value)|TypedExprKind::HttpGet(value)|TypedExprKind::ArithEval(value)=>self.finalize_expr(value)?,
             TypedExprKind::CsvTyped{value,..}=>self.finalize_expr(value)?,
             TypedExprKind::RecordUpdate{record,value,..}=>{self.finalize_expr(record)?;self.finalize_expr(value)?;},
             TypedExprKind::Index{sequence,index}=>{self.finalize_expr(sequence)?;self.finalize_expr(index)?;},
