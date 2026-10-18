@@ -4,18 +4,19 @@
 
 Source registry: `compact/canonical20/workloads.json`; coverage checker: `npm run benchmark20:status` on Node22+. The registered source is anchored to Git blob SHA `46653ef90ffb3e420fba4ddfbfac3c4cfd57f3b3` from the original M19 preregistration. Rewriting the scope requires an explicit new reviewed registry version, not silent benchmark edits. All twenty IDs, category requirements and acceptance criteria are recorded so that skipped work cannot disappear from the denominator.
 
-**Current state on this stacked draft branch (not yet merged to main): 1/20 full compiler-verified, 2/20 partial references, 17/20 unsupported.** The initial manifest JSON retains its original pre-implementation statuses and Git blob SHA; **a separate SHA-locked proof harness derives full verification for task 05**. Do not modify the twenty IDs or call a registry field a test.
+**Current state on this stacked draft branch after passing the new Fibonacci proof gate: 2/20 full compiler-verified, 1/20 partial reference, 17/20 unsupported.** The initial manifest JSON retains its original pre-implementation statuses and Git blob SHA; **a separate SHA-locked proof harness derives full verification for task 05**. Do not modify the twenty IDs or call a registry field a test.
 
 Task **05 — JSON transformation** now runs a complete, typed, nested JSON record transformation: true Rust H-Code compiler→JS, independent JavaScript H-Code interpreter and Node TypeScript runtime. The proof is **3 immutable positive fixtures + 12 generated positive variations + 11 invalid input cases**, with matching outputs and fail-closed malformed input rejection across all engines. `npm run benchmark20:verify05`; source and fixture Git blob SHAs are fixed. Its authored source is 594 H-Code vs 2,005 TS Unicode codepoints (70.37% fewer **on task 05 only**); 651 vs 2,007 UTF-8 bytes (67.56% fewer), generated JS 6,560 bytes tracked separately. See `compact/canonical20/PROOF-05.md`.
 
-Two workloads remain **partial reference evidence**:
+Task **02 — Fibonacci recursion** now uses exactly its original M10-pinned source (96 H-Code codepoints versus 94 TypeScript) for a complete independent Rust→JS, H-Code JS reference and Node TypeScript conformance proof. It includes n=7→13, 16 different n values, and 3 static type-error cases. The original H-Code is **2.13% longer** than TS; do not hide this regression. An additional **separate candidate** with compact built-in signs (`↩ ≤ ?`) is 64 codepoints (31.91% fewer than the same TS), and must pass the same 16-case Rust/JS parity. The original source remains byte-for-byte SHA-frozen; the optimized one is never silently substituted. See `compact/canonical20/PROOF-02.md`.
 
-- Workload **02**, Fibonacci: a pinned M10 recursion example plus its unchanged TypeScript counterpart. It does not yet constitute full production-language coverage.
+One workload remains **partial reference evidence**:
+
 - Workload **10**, generic collections: three pinned M14 sum/map/filter examples plus their unchanged idiomatic TypeScript counterparts. A full generics/library/productivity task needs wider tests.
 
-The other **17 tasks are explicitly unsupported/unverified** and remain counted. Thus **1/20 fully verified**, **2/20 partial references**, **17/20 unsupported** in the calculated evidence view. This is not evidence of reaching 70% across actual products or apps. Even though M14's Rust/Node CI is now green for the three narrow collections examples, those are not a substitute for a complete CRUD API, auth session system, file converter or browser app.
+The other **17 tasks are explicitly unsupported/unverified** and remain counted. Thus **2/20 fully verified**, **1/20 partial reference**, **17/20 unsupported** in the calculated evidence view. This is not evidence of reaching 70% across actual products or apps. Even though M14's Rust/Node CI is now green for the three narrow collections examples, those are not a substitute for a complete CRUD API, auth session system, file converter or browser app.
 
-The checker **still refuses arbitrary `status: verified` labels**. Workload 05 is counted as fully verified only by separately executing its source-SHA-locked, compiler-generated program and a TypeScript baseline with the full positive/negative fixture contract. A JSON label alone cannot manufacture a green benchmark.
+The checker **still refuses arbitrary `status: verified` labels**. Workloads 02 and 05 are counted as fully verified only by separately executing their source-SHA-locked, compiler-generated program and a TypeScript baseline with the full positive/negative fixture contract. A JSON label alone cannot manufacture a green benchmark.
 
 ### What we build next: evidence-driven language primitives
 
@@ -41,6 +42,7 @@ The next technical work should target reusable constructs, beginning with typed 
 ### Use
 
 ```sh
+npm run benchmark20:verify02
 npm run benchmark20:verify05
 npm run benchmark20:status
 npm run benchmark20:test
