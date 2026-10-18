@@ -44,7 +44,14 @@ const __hc_http_serve = (handler,onClose=null) => {
       const request=__hc_record([
         ['body',body],['method',req.method],['path',req.url]
       ]);
-      const result=handler(request);
+      const metadata={
+        requestId:String(req.headers['x-hcode-request-id']??''),
+        contentType:String(req.headers['content-type']??''),
+        isCancelled:()=>res.destroyed
+      };
+      // B1 handlers ignore the optional host metadata; B2 uses it to journal
+      // request-scoped idempotency without widening the H-Code Request shape.
+      const result=handler(request,metadata);
       // B1 intentionally restricts handlers to typed synchronous/pure functions;
       // async operations and durable state are separate B2/B3 capabilities.
       if(result && typeof result.then==='function')
@@ -78,9 +85,9 @@ const __hc_http_serve = (handler,onClose=null) => {
   });
   process.on('SIGTERM',()=>server.close());
   process.on('SIGINT',()=>server.close());
-  // Windows process.kill('SIGTERM') forcibly terminates the child before
-  // its JS SIGTERM handler runs. Trusted host IPC makes integration-test
-  // shutdown graceful on BOTH Windows and POSIX; not an HTTP endpoint.
+  // Windows forces unconditional termination on process.kill('SIGTERM').
+  // Explicit host-authorized IPC allows a clean close and releases the
+  // durable store lock consistently on Windows and POSIX.
   if(process.env.HCODE_HTTP_HOST_IPC==='1' && typeof process.send==='function'){
     process.on('message',message=>{
       if(message && message.hcodeHostCommand==='close'){

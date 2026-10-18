@@ -8,9 +8,15 @@ import {
   unlinkSync as __hc_state_unlink,writeFileSync as __hc_state_write
 } from 'node:fs';
 import {isAbsolute as __hc_state_absolute,join as __hc_state_join,resolve as __hc_state_resolve} from 'node:path';
-import {randomUUID as __hc_state_uuid} from 'node:crypto';
+import {randomUUID as __hc_state_uuid,createHash as __hc_state_hash} from 'node:crypto';
 
 const __hc_state_max=1024*1024;
+const __hc_state_receipt_max=128;
+const __hc_state_receipt_id=/^[A-Za-z0-9_-]{1,64}$/;
+const __hc_state_receipt_digest=/^[a-f0-9]{64}$/;
+// Digest all externally observed request input before state mutation.
+const __hc_state_request_digest=(method,path,body,contentType)=>
+  __hc_state_hash('sha256').update(JSON.stringify([method,path,body,contentType]),'utf8').digest('hex');
 const __hc_state_plain=value=>value!==null && typeof value==='object' &&
   !Array.isArray(value) && Object.getPrototypeOf(value)===Object.prototype;
 const __hc_state_text=value=>typeof value==='string' && value.isWellFormed() &&
@@ -32,7 +38,7 @@ export const createHttpStateStore = ({root,initial})=>{
   // Separate processes must never silently load independent copies of state.
   // A stale lock after an unclean crash requires explicit host intervention;
   // automatic stale lock recovery is intentionally NOT claimed by B2a.
-  let fd=__hc_state_open(lock,'wx',0o600),closed=false,sequence=0,state=initial;
+  let fd=__hc_state_open(lock,'wx',0o600),closed=false,sequence=0,state=initial,receipts=[];
   const release=()=>{
     if(closed)return;
     closed=true;
@@ -56,20 +62,58 @@ export const createHttpStateStore = ({root,initial})=>{
       let parsed;
       try{parsed=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes));}
       catch{throw Error('Corrupt H-Code persisted state');}
-      if(!__hc_state_plain(parsed) ||
-         Object.keys(parsed).sort().join(',')!=='seq,state,version' ||
-         parsed.version!==1 || !Number.isSafeInteger(parsed.seq) || parsed.seq<0 ||
+      const v1=__hc_state_plain(parsed)&&parsed.version===1&&
+        Object.keys(parsed).sort().join(',')==='seq,state,version';
+      const v2=__hc_state_plain(parsed)&&parsed.version===2&&
+        Object.keys(parsed).sort().join(',')==='receipts,seq,state,version';
+      if((!v1&&!v2)||!Number.isSafeInteger(parsed.seq)||parsed.seq<0||
          !__hc_state_text(parsed.state))
         throw Error('Invalid H-Code persisted state schema');
+      if(v2){
+        if(!Array.isArray(parsed.receipts)||parsed.receipts.length>__hc_state_receipt_max)
+          throw Error('Invalid H-Code durable receipt journal');
+        const ids=new Set();
+        for(const receipt of parsed.receipts){
+          if(!__hc_state_plain(receipt)||
+            Object.keys(receipt).sort().join(',')!=='body,digest,id,status'||
+            typeof receipt.id!=='string'||!__hc_state_receipt_id.test(receipt.id)||
+            typeof receipt.digest!=='string'||!__hc_state_receipt_digest.test(receipt.digest)||
+            !Number.isInteger(receipt.status)||receipt.status<200||receipt.status>599||
+            typeof receipt.body!=='string'||!receipt.body.isWellFormed()||
+            new TextEncoder().encode(receipt.body).byteLength>65536||
+            ids.has(receipt.id))
+            throw Error('Invalid H-Code durable receipt journal');
+          ids.add(receipt.id);
+        }
+        receipts=parsed.receipts;
+      }
       state=parsed.state;sequence=parsed.seq;
     }
   }catch(error){process.off('exit',release);release();throw error;}
-  const commit=next=>{
+  // Receipt and state are one atomic revision; no eviction of older IDs.
+  const receiptFor=id=>receipts.find(x=>x.id===id)??null;
+  const commit=(next,receipt=null)=>{
     if(closed)throw Error('H-Code state store is closed');
     if(!__hc_state_text(next))throw TypeError('H-Code state exceeds 1 MiB or is invalid Unicode');
-    if(next===state)return sequence;
+    if(receipt!==null){
+      if(!__hc_state_plain(receipt)||
+         Object.keys(receipt).sort().join(',')!=='body,digest,id,status'||
+         typeof receipt.id!=='string'||!__hc_state_receipt_id.test(receipt.id)||
+         typeof receipt.digest!=='string'||!__hc_state_receipt_digest.test(receipt.digest)||
+         !Number.isInteger(receipt.status)||receipt.status<200||receipt.status>599||
+         typeof receipt.body!=='string'||!receipt.body.isWellFormed()||
+         new TextEncoder().encode(receipt.body).byteLength>65536)
+        throw TypeError('Invalid H-Code idempotency receipt');
+      if(receipts.some(r=>r.id===receipt.id))throw Error('Duplicate H-Code idempotency receipt');
+      if(receipts.length>=__hc_state_receipt_max)throw Error('H-Code durable receipt journal full');
+    }
+    if(next===state&&receipt===null)return sequence;
     if(sequence>=Number.MAX_SAFE_INTEGER)throw RangeError('H-Code state sequence exhausted');
-    const encoded=Buffer.from(JSON.stringify({version:1,seq:sequence+1,state:next})+'\n','utf8');
+    const nextReceipts=receipt===null?receipts:[...receipts,receipt];
+    const envelope=nextReceipts.length?
+      {version:2,seq:sequence+1,state:next,receipts:nextReceipts}:
+      {version:1,seq:sequence+1,state:next};
+    const encoded=Buffer.from(JSON.stringify(envelope)+'\n','utf8');
     if(encoded.length>__hc_state_max*3)throw RangeError('H-Code state file exceeds budget');
     const temporary=__hc_state_join(dir,'.hcode-state-'+process.pid+'-'+__hc_state_uuid()+'.tmp');
     let temporaryFd;
@@ -80,7 +124,7 @@ export const createHttpStateStore = ({root,initial})=>{
       __hc_state_close_fd(temporaryFd);temporaryFd=undefined;
       verifyTarget();
       __hc_state_rename(temporary,path); // atomic publish within same directory
-      state=next;sequence++;
+      state=next;receipts=nextReceipts;sequence++;
       if(process.platform!=='win32'){
         const directoryFd=__hc_state_open(dir,'r');
         try{__hc_state_fsync(directoryFd);}finally{__hc_state_close_fd(directoryFd);}
@@ -93,7 +137,9 @@ export const createHttpStateStore = ({root,initial})=>{
       }
     }
   };
-  return Object.freeze({read:()=>state,commit,sequence:()=>sequence,close:()=>{
+  return Object.freeze({read:()=>state,commit,sequence:()=>sequence,
+    receiptFor,receiptSlots:()=>__hc_state_receipt_max-receipts.length,
+    close:()=>{
     process.off('exit',release);
     release();
   }});
