@@ -1,5 +1,5 @@
 // H-Code M1 reference interpreter and symbol linker. NOT a production compiler.
-import {specializeCall,checkSpecializedReturn} from './package-v3-signatures.mjs';
+import {specializeCall,checkSpecializedReturn,typeToString} from './package-v3-signatures.mjs';
 export const CORE_GLYPHS = Object.freeze({
   '\u0192': 'fn', '\u2254': 'let', '\u21a9': 'return', '\u2192': '->',
   '\u2190': '=', '\u22a4': 'true', '\u22a5': 'false',
@@ -390,7 +390,7 @@ export function linkProgram(ast, registry=new Map()) {
 }
 
 class Scope {
-  constructor(parent=null){this.parent=parent;this.values=new Map();this.annotations=new Map();this.returnType=parent?.returnType??null;}
+  constructor(parent=null){this.parent=parent;this.values=new Map();this.annotations=new Map();this.returnType=parent?.returnType??null;this.genericBindings=parent?.genericBindings??new Map();}
   define(name,value,type=null){if(this.values.has(name))throw Error(`Duplicate name ${name}`);this.values.set(name,value);this.annotations.set(name,type);}
   find(name){if(this.values.has(name))return this;if(this.parent)return this.parent.find(name);throw Error(`Unknown name ${name}`);}
   get(name){return this.find(name).values.get(name);}
@@ -577,19 +577,21 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
     }
   }
   function block(node,parent){const scope=new Scope(parent);for(const statement of node.body)stmt(statement,scope);}
-  const usesBoundType=(type,binders=[])=>{
-    if(!type)return false;
-    while(type.startsWith('⟦')&&type.endsWith('⟧'))type=type.slice(1,-1);
-    return binders.includes(type);
+  const concretize=(type,bindings)=>{
+    if(!type)return type;
+    if(type.startsWith('⟦')&&type.endsWith('⟧'))return '⟦'+concretize(type.slice(1,-1),bindings)+'⟧';
+    const resolved=bindings?.get(type);
+    return resolved?typeToString(resolved):type;
   };
   function stmt(node,scope){
     step();
     switch(node.kind){
       case 'Use':break;
       case 'Let':{
-        const val=expr(node.value,scope,node.annotation??null);
-        requireType(val,node.annotation??null);
-        scope.define(node.name,val,node.annotation??null);
+        const annotation=concretize(node.annotation??null,scope.genericBindings);
+        const val=expr(node.value,scope,annotation);
+        requireType(val,annotation);
+        scope.define(node.name,val,annotation);
         break;
       }
       case 'Assign':{
@@ -606,14 +608,20 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
         const fn=(...args)=>{
           step();
           if(args.length!==node.params.length)throw Error(`${node.name} expects ${node.params.length} arguments`);
-          const inner=new Scope(scope);inner.returnType=node.returnType;
+          // A polymorphic source function is never executed as unchecked Any.
+          // Instantiate its own declared ∀ signature with the actual inputs.
+          const polymorphic=node.typeParameters?.length>0;
+          const inferred=polymorphic?specializeCall({name:node.name,typeParameters:node.typeParameters,
+            parameters:node.params.map(p=>({name:p.name,type:p.type})),returns:node.returnType},args,maxSequenceItems):null;
+          const inner=new Scope(scope);
+          inner.genericBindings=inferred?.bindings??new Map();
+          inner.returnType=concretize(node.returnType,inner.genericBindings);
           for(let j=0;j<args.length;j++){
-            // Rigid ∀ is verified statically on the trusted SHA-locked source;
-            // the package boundary performs concrete per-call specialization.
-            if(!usesBoundType(node.params[j].type,node.typeParameters))requireType(args[j],node.params[j].type);
-            inner.define(node.params[j].name,args[j],node.params[j].type);
+            const annotation=concretize(node.params[j].type,inner.genericBindings);
+            requireType(args[j],annotation);
+            inner.define(node.params[j].name,args[j],annotation);
           }
-          try{for(const statement of node.body.body)stmt(statement,inner);}catch(e){if(e instanceof ReturnSignal){if(!usesBoundType(node.returnType,node.typeParameters))requireType(e.value,node.returnType,'return');return e.value;}throw e;}
+          try{for(const statement of node.body.body)stmt(statement,inner);}catch(e){if(e instanceof ReturnSignal){requireType(e.value,inner.returnType,'return');return e.value;}throw e;}
           return null;
         };
         scope.define(node.name,fn);break;
