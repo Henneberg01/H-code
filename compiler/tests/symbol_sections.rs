@@ -66,3 +66,17 @@ fn static_section_validation_rejects_invalid_operand_types_and_bad_callbacks(){
         assert!(err.contains(reason),"{source}: {err}");
     }
 }
+
+#[test]
+fn exact_m14_three_task_sources_compile_and_run_in_real_rust_backend(){
+    let root=std::path::Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
+    for (id,expected) in [
+        ("sum-typed-sequence","10\n"),
+        ("map-typed-sequence","20\n22\n"),
+        ("filter-typed-sequence","2\n2\n3\n")
+    ]{
+        let file=root.join(format!("compact/benchmarks/m14/{id}.hc"));
+        let text=std::fs::read_to_string(&file).unwrap();
+        assert_eq!(run(&text).unwrap(),expected,"{id}");
+    }
+}
