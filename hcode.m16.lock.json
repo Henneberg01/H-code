@@ -1,0 +1,12 @@
+{
+  "lockVersion": 1,
+  "packages": [
+    {
+      "name": "vec.math",
+      "version": "1.0.0",
+      "manifest": "packages/vec.math/manifest.json",
+      "manifestSha256": "5b6b2db2e4742954279a3db09aac11770904b95b2bc5ce1238f68fe45ec4285a",
+      "sourceSha256": "afae45ddd80d0166e85730bf30623bb53b5919d3fe184e8f90beadf8563fa15b"
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "format": 2,
+  "name": "vec.math",
+  "version": "1.0.0",
+  "source": "lib.hc",
+  "operations": [
+    {
+      "name": "total",
+      "glyph": "⊚",
+      "parameters": [{"name": "xs", "type": "⟦Number⟧"}],
+      "returns": "Number",
+      "effects": [],
+      "implementation": "total"
+    },
+    {
+      "name": "doubleAll",
+      "glyph": "⊛",
+      "parameters": [{"name": "xs", "type": "⟦Number⟧"}],
+      "returns": "⟦Number⟧",
+      "effects": [],
+      "implementation": "doubleAll"
+    }
+  ]
+}
