@@ -5,10 +5,10 @@ export const CORE_GLYPHS = Object.freeze({
   '\u2227': 'and', '\u2228': 'or', '\u00ac': 'not',
   '\u2261': '==', '\u2260': '!=', '\u2264': '<=', '\u2265': '>=',
   '\u22a2': 'if', '\u22a3': 'else', '\u27f3': 'while', '\u21d2': '=>',
-  '\u2237': '::', '\u25b7': '|>', '\u2218': '<<', '\u25c7': '?', '\u27e6': '[[', '\u27e7': ']]', '\u2317': '#', '\u29fa': '++', '\u2211': '@+', '\u2315': '@?', '\u21e2': '@>', '\u03bb': 'lambda'
+  '\u2237': '::', '\u25b7': '|>', '\u2218': '<<', '\u25c7': '?', '\u27e6': '[[', '\u27e7': ']]', '\u2317': '#', '\u29fa': '++', '\u2211': '@+', '\u2315': '@?', '\u21e2': '@>', '\u03bb': 'lambda', '\u2200': 'forall'
 });
 export const RESERVED_USER_GLYPHS = new Set(['\u2205', '\u2200', '\u2208', ...Object.keys(CORE_GLYPHS)]);
-const RESERVED = new Set(['fn','let','return','true','false','if','else','while','and','or','not','use','as','lambda']);
+const RESERVED = new Set(['fn','let','return','true','false','if','else','while','and','or','not','use','as','lambda','forall']);
 const TWO = new Set(['==','!=','<=','>=','->','::','|>','<<','[[',']]','++','@+','@?','@>','=>']);
 const ONE = new Set(['+','-','*','/','%','<','>','=','(',')','{','}',',',';',':','?','#']);
 const ILLEGAL = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]|\p{Default_Ignorable_Code_Point}/u;
@@ -110,7 +110,7 @@ class Parser {
   statementEnd(){
     if(this.accept(';'))return;
     const next=this.peek(),previous=this.t[this.i-1];
-    const certain=new Set(['fn','let','return','if','while','use','import','export','else']);
+    const certain=new Set(['fn','let','return','if','while','use','import','export','else','forall']);
     if(['}','eof'].includes(next.type)||certain.has(next.type)||
        (previous&&next.line>previous.line))return;
     throw new HCodeError('Expected ; or an unambiguous statement boundary',next.line,next.column);
@@ -129,6 +129,22 @@ class Parser {
     return this.expect('ident').value;
   }
   stmt(topLevel=false){
+    if(this.accept('forall')){
+      if(!topLevel)throw new HCodeError('∀ declarations must be top-level');
+      const typeParameters=[];
+      do {
+        const t=this.expect('ident'),v=t.value;
+        if(!/^[A-Z][A-Za-z0-9_]*$/.test(v)||v.length>32||
+            ['Number','String','Bool','Unit'].includes(v)||
+            typeParameters.includes(v)||typeParameters.length>=8)
+          throw new HCodeError('Invalid or duplicate ∀ binder '+v,t.line,t.column);
+        typeParameters.push(v);
+      } while(this.accept(','));
+      if(!this.at('fn'))throw new HCodeError('∀ must bind a function');
+      const declaration=this.stmt(topLevel);
+      if(declaration.kind!=='Function')throw new HCodeError('∀ must bind a function');
+      return {...declaration,typeParameters};
+    }
     if(this.at('use')){
       const t=this.expect('use');
       if(!topLevel)throw new HCodeError('Package imports must be top-level',t.line,t.column);
