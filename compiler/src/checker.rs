@@ -431,12 +431,22 @@ impl Checker {
                     return Err(Diagnostic::new("EFFECT","⤋ HTTP GET is only available in effectful top-level program flow; pure packages and sync closures cannot use network I/O".into(),expr.span));
                 }
                 let input=self.expression(value)?;
-                self.unify(&Type::String,&input.ty,value.span,"⤋ expects a String URL")?;
+                // One intrinsic ⤋ handles either a String URL or a typed
+                // sequence of URLs. List input performs real parallel GETs;
+                // the compiler never inserts a task-specific aggregator.
+                let batch=matches!(self.resolved(&input.ty),Type::Sequence(_));
+                if batch {
+                    let expected=Type::Sequence(Box::new(Type::String));
+                    self.unify(&expected,&input.ty,value.span,"⤋ batch expects ⟦String⟧ URLs")?;
+                } else {
+                    self.unify(&Type::String,&input.ty,value.span,"⤋ expects a String URL")?;
+                }
                 let structure=Type::Record(vec![
                     ("body".into(),Type::String),("ok".into(),Type::Bool),
                     ("retryAfter".into(),Type::Number),("status".into(),Type::Number)
                 ]);
-                (TypedExprKind::HttpGet(Box::new(input)),structure)
+                let output=if batch {Type::Sequence(Box::new(structure))}else{structure};
+                (TypedExprKind::HttpGet(Box::new(input)),output)
             }
             ExprKind::Sleep(value)=>{
                 if !self.allow_print || self.active_function.is_some() || self.lambda_depth>0 {
