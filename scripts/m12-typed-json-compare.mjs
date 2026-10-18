@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 // A single fixed, SHA-locked typed JSON round-trip microcase, NOT global M19/M58.
-import {readFileSync} from 'node:fs';
+import {readFileSync,mkdtempSync,rmSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import {join,resolve} from 'node:path';
+import {tmpdir} from 'node:os';
 import {spawnSync} from 'node:child_process';
 import {execute} from '../prototype/src/hcode.mjs';
 
@@ -36,6 +37,28 @@ export function compareTypedJson(){
     throw Error('TypeScript JSON baseline failed: '+(processResult.error?.message||processResult.stderr));
   if(processResult.stdout.replace(/\r\n/g,'\n')!==wanted)
     throw Error('TypeScript JSON baseline output mismatch');
+  // Generated JS is a separate runtime artifact, never developer-authored source.
+  // Compile the *exact* hash-frozen H-Code source and test its emitted Node output.
+  const temp=mkdtempSync(join(tmpdir(),'hcode-m12-json-measure-'));
+  let generated;
+  try {
+    const built=join(temp,'generated.mjs');
+    const compiler=spawnSync('cargo',[
+      'run','--quiet','--manifest-path','compiler/Cargo.toml','--',
+      'build',files.hc.path,'--out',built
+    ],{cwd:root,encoding:'utf8',windowsHide:true,timeout:180000});
+    if(compiler.error||compiler.status!==0)
+      throw Error('H-Code compiler could not build frozen JSON input: '+(compiler.error?.message||compiler.stderr));
+    const artifact=readFileSync(built);
+    generated={path:'temporary generated ESM output',utf8Bytes:artifact.length,
+      sha256:createHash('sha256').update(artifact).digest('hex')};
+    const executed=spawnSync(process.execPath,[built],{
+      cwd:root,encoding:'utf8',windowsHide:true,timeout:15000
+    });
+    if(executed.error||executed.status!==0||executed.stdout.replace(/\r\n/g,'\n')!==wanted)
+      throw Error('Rust-compiled JSON output did not match reference and TS: '+
+        (executed.error?.message||executed.stderr));
+  } finally {rmSync(temp,{recursive:true,force:true});}
   return {
     scope:'ONE fixed typed JSON round-trip microcase; NOT twenty canonical workloads',
     task:'parse a fixed JSON record; validate exactly two typed fields; print name and deterministic JSON',
@@ -46,7 +69,8 @@ export function compareTypedJson(){
     unicodeCodepointSavingsPercent:percent(hc.unicodeCodepoints,ts.unicodeCodepoints),
     utf8ByteSavingsPercent:percent(hc.utf8Bytes,ts.utf8Bytes),
     typeScriptWithoutRuntimeGuardNotEquivalent:true,
-    generatedJsRuntimeBytesMeasured:false,packageBytesMeasured:false,
+    generatedJsRuntimeBytesMeasured:true,generatedJsRuntime:generated,
+    packageBytesMeasured:false,
     compileTimeMeasured:false,runtimePerformanceMeasured:false,
     globalTwentyWorkloadCodepointMedian:null,
     seventyPercentGlobalGoalVerified:false,
