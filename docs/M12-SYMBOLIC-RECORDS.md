@@ -34,25 +34,18 @@ Dette er den faktiske kildekodeforkortelse: `⊞` beskriver **immutable kopi af 
 En TypeScript-konstruktion med tilsvarende kopi og feltudskiftning er eksempelvis `const q={...p,age:p.age+1};`. ASCII-aliaset `<+` parser til præcis samme typede AST. Rust kræver et statisk record, en eksisterende nøgle og en ny værdi med **samme type**; den gamle record ændres ikke. Referenceruntime følger samme form og afviser typeændring.
 
 ---
-## Frosset én-opgaves mikrobenchmark
+## To fastfrosne record-mikrobenchmarks (IKKE de kanoniske 20)
 
-| Kilde | Unicode-kodepunkter |
-|---|---:|
-| `compact/benchmarks/m12/records.hc` | 79 |
-| Idiomatisk `compact/benchmarks/m12/records.ts` | 96 |
+| Samme konkrete opgave | H-Code tegn | Idiomatisk TypeScript tegn | Besparelse |
+|---|---:|---:|---:|
+| Typet rekordinferens, nestet feltlæsning | 79 | 96 | **17,71 %** |
+| Immutable feltudskiftning med `⊞` | 81 | 114 | **28,95 %** |
 
-Samme output testes med rigtige runtime-kørsler. Det svarer til **17,71 % færre udviklerskrevne Unicode-kodepunkter på denne ene recordopgave**, ikke 70 % og ikke en global M19-status. UTF-8-bytes måles separat, fordi Unicode-tegn er dyrere i bytes. Testen bruger ingen bibliotekspakke; afhængigheder og compile/runtime-størrelse måles endnu ikke.
+Begge opgaver sammenlignes med præcis samme observerbare output og kildeindhold låst til Git-blob-SHA. `npm run m12:measure` udfører H-Code- og TS-kilderne og måler Unicode-kodepunkter og UTF-8-bytes hver for sig. De **28,95 % er alene denne ene opgave**, ikke en ny samlet H-Code-score. Målingen indeholder hele den udviklerskrevne kilde for opgaven; her bruges intet importeret bibliotek. Afhængighedsstørrelse og genereret runtime-kode er endnu ikke opgjort.
 
-Filerne er Git-blob-SHA-frosne i `scripts/m12-records-compare.mjs`. Den frosne M14-median **68,46 % på tre andre sum/map/filter-opgaver** forbliver uændret. De præregistrerede **20 universelle workloads er stadig 0 fuldt verificerede, 2 med delvist bevis og 18 uden dækning**.
+De oprindelige tre M14-eksempler måler fortsat **68,46 % færre Unicode-kodepunkter i median**. M19's 20 fastlagte universelle workloads forbliver **0 fuldt verificerede, 2 delvist belagte, 18 uverificerede**. Vi opfinder ikke en global 70 %-score fra mikrocases.
 
-Kør:
-
-```sh
-cargo test --manifest-path compiler/Cargo.toml --test m12_symbolic_records
-npm test
-npm run m12:measure
-npm run benchmark20:status
-```
+Kør: `cargo test --manifest-path compiler/Cargo.toml --test m12_symbolic_records`, `npm test`, `npm run m12:measure`, `npm run benchmark20:status`.
 
 ## Hvad M12 **ikke** lover
 

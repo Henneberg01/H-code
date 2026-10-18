@@ -2,14 +2,18 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {compareM12} from '../m12-records-compare.mjs';
 
-test('M12 microcase is a frozen runnable parity pair, not a 20-workload success',{skip:Number(process.versions.node.split('.')[0])<22},()=>{
- const m=compareM12();
- assert.equal(m.hcode.codepoints,79);
- assert.equal(m.typescript.codepoints,96);
- assert.equal(m.codepointSavingsPercent,17.71);
- assert.equal(m.generatedRuntimeSizeMeasured,false);
- assert.equal(m.dependenciesMeasured,false);
- assert.equal(m.global20Median,null);
- assert.equal(m.global70PercentAchieved,false);
- assert.equal(m.m14PreservedMedianCodepointReductionPct,68.46);
+test('fixed records and immutable ⊞ update both run with identical TS output',{skip:Number(process.versions.node.split('.')[0])<22},()=>{
+  const report=compareM12();
+  assert.equal(report.caseCount,2);
+  assert.equal(report.allInputsSourceFrozen,true);
+  assert.equal(report.outputVerifiedForAll,true);
+  assert.deepEqual(report.cases.map(c=>[c.id,c.hcode.unicodeCodepoints,c.typescript.unicodeCodepoints,c.codepointSavingsPercent]),[
+    ['nested-record-read',79,96,17.71],
+    ['immutable-record-update',81,114,28.95]
+  ]);
+  assert.equal(report.generatedRuntimeSizeMeasured,false);
+  assert.equal(report.dependenciesMeasured,false);
+  assert.equal(report.global20Median,null);
+  assert.equal(report.global70PercentAchieved,false);
+  assert.equal(report.historicalM14ThreeTaskMedianCodepointReductionPct,68.46);
 });
