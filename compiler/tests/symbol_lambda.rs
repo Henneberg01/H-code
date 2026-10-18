@@ -45,7 +45,7 @@ fn compiled_lambda_map_filter_are_real_general_purpose_functions(){
 fn actual_static_checker_rejects_ill_typed_lambda_callbacks(){
     for (src,reason) in [
         ("≔y←⟦1,2⟧⌕λx:x*2;","⌕ predicate must be unary and return Bool"),
-        ("≔y←⟦1,2⟧⇢λx:x+\"bad\";","⇢ transformer must be unary"),
+        ("≔y←⟦1,2⟧⇢λx:x+\"bad\";","+ operands must have matching types"),
         ("print((λx:x*2)(\"bad\"));","Call argument types or arity mismatch"),
         ("≔f←λx:x;","Cannot infer type"),
         ("print((λx:x+1)(1,2));","Call argument types or arity mismatch")
