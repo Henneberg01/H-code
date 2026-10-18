@@ -240,6 +240,15 @@ impl Parser {
             TokenKind::StdinText=>{self.index+=1;ExprKind::StdinText}
             TokenKind::ArithEval=>{self.index+=1;ExprKind::ArithEval(Box::new(self.expression(8)?))}
             TokenKind::FileRead=>{self.index+=1;ExprKind::FileRead(Box::new(self.expression(8)?))}
+            TokenKind::FileWrite=>{
+                self.index+=1;
+                self.expect(&TokenKind::LeftParen)?;
+                let filename=self.expression(0)?;
+                self.expect(&TokenKind::Comma)?;
+                let content=self.expression(0)?;
+                self.expect(&TokenKind::RightParen)?;
+                ExprKind::FileWrite{filename:Box::new(filename),content:Box::new(content)}
+            }
             TokenKind::HttpGet=>{self.index+=1;ExprKind::HttpGet(Box::new(self.expression(8)?))}
             TokenKind::Sleep=>{self.index+=1;ExprKind::Sleep(Box::new(self.expression(8)?))}
             TokenKind::CsvTyped=>{self.index+=1;let schema=self.type_name()?;ExprKind::CsvTyped{schema,value:Box::new(self.expression(8)?)}}

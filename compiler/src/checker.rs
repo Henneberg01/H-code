@@ -98,6 +98,7 @@ pub enum TypedExprKind {
     TextWords(Box<TypedExpr>),
     Histogram(Box<TypedExpr>),
     FileRead(Box<TypedExpr>),
+    FileWrite { filename:Box<TypedExpr>, content:Box<TypedExpr> },
     HttpGet(Box<TypedExpr>),
     Sleep(Box<TypedExpr>),
     StdinText,
@@ -423,6 +424,18 @@ impl Checker {
                 let input=self.expression(value)?;
                 self.unify(&Type::String,&input.ty,value.span,"⧄ requires String file name")?;
                 (TypedExprKind::FileRead(Box::new(input)),Type::String)
+            }
+            ExprKind::FileWrite{filename,content}=>{
+                // A write is only allowed in an explicit effectful program;
+                // neither verified packages nor synchronous closures can write.
+                if !self.allow_print || self.active_function.is_some() || self.lambda_depth>0 {
+                    return Err(Diagnostic::new("EFFECT","⧅ file write is only available in effectful top-level program flow".into(),expr.span));
+                }
+                let file=self.expression(filename)?;
+                self.unify(&Type::String,&file.ty,filename.span,"⧅ filename must be String")?;
+                let value=self.expression(content)?;
+                self.unify(&Type::String,&value.ty,content.span,"⧅ content must be String")?;
+                (TypedExprKind::FileWrite{filename:Box::new(file),content:Box::new(value)},Type::Number)
             }
             ExprKind::HttpGet(value)=>{
                 // HTTP is an application effect: pure packages, functions, and
@@ -769,6 +782,7 @@ impl Checker {
             TypedExprKind::JsonRead{value,..}|TypedExprKind::JsonWrite{value,..}=>self.finalize_expr(value)?,
             TypedExprKind::TextScalars(value)|TypedExprKind::TextWords(value)|TypedExprKind::Histogram(value)|TypedExprKind::FileRead(value)|TypedExprKind::HttpGet(value)|TypedExprKind::Sleep(value)|TypedExprKind::ArithEval(value)=>self.finalize_expr(value)?,
             TypedExprKind::CsvTyped{value,..}=>self.finalize_expr(value)?,
+            TypedExprKind::FileWrite{filename,content}=>{self.finalize_expr(filename)?;self.finalize_expr(content)?;},
             TypedExprKind::RecordUpdate{record,value,..}=>{self.finalize_expr(record)?;self.finalize_expr(value)?;},
             TypedExprKind::Index{sequence,index}=>{self.finalize_expr(sequence)?;self.finalize_expr(index)?;},
             TypedExprKind::Length(value)=>self.finalize_expr(value)?,

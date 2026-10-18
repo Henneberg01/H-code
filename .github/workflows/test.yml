@@ -115,6 +115,9 @@ jobs:
       - name: Prove canonical08 six frozen and eight generated real concurrent HTTP scenarios
         run: npm run benchmark20:verify08
         if: ${{ success() || failure() }}
+      - name: Prove original canonical07 file conversion and byte-exact Rust JS TypeScript parity
+        run: npm run benchmark20:verify07
+        if: ${{ success() || failure() }}
       - name: Canonical twenty source-locked readiness check
         run: npm run benchmark20:status
         if: ${{ success() || failure() }}

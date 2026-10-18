@@ -36,7 +36,8 @@
     "benchmark20:http-contract": "node --experimental-strip-types --test scripts/canonical20-http-contract.test.mjs",
     "benchmark20:verify06": "node --experimental-strip-types --test scripts/canonical20-verify-06.test.mjs",
     "benchmark20:batch08": "node --test scripts/canonical20-http-batch-compiler.test.mjs",
-    "benchmark20:verify08": "node --experimental-strip-types --test scripts/canonical20-verify-08.test.mjs"
+    "benchmark20:verify08": "node --experimental-strip-types --test scripts/canonical20-verify-08.test.mjs",
+    "benchmark20:verify07": "node --experimental-strip-types --test scripts/canonical20-verify-07.test.mjs"
   },
   "engines": {
     "node": ">=20"

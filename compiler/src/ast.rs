@@ -52,6 +52,8 @@ pub enum ExprKind {
     JsonRead { schema: String, value: Box<Expr> },
     JsonWrite(Box<Expr>),
     FileRead(Box<Expr>),
+    // M19.07: two typed operands; not a CSV->JSON application macro.
+    FileWrite { filename:Box<Expr>, content:Box<Expr> },
     // M19.06: effectful, implicitly-awaited GET; symbol ⤋.
     HttpGet(Box<Expr>),
     // Intrinsic bounded asynchronous delay (milliseconds).
