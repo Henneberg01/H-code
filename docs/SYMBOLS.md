@@ -29,15 +29,16 @@
 | 23 | ∑ | `@+` | **M13 core prototype; Rust tests pending** | Reduce any numeric sequence to its sum, including an empty one |
 | 24 | ⌕ | `@?` | **M13 core prototype; Rust tests pending** | Stable typed filtering by a unary H-Code predicate returning Bool |
 | 25 | ⇢ | `@>` | **M13 core prototype; Rust tests pending** | Stable generic transformation by a unary H-Code function, type-changing allowed |
-| 26 | ∅ | `none` | Reserved | Future Option/absence value |
-| 27 | ∀ | `for` | Reserved | Future iteration |
-| 28 | ∈ | `in` | Reserved | Future membership separator |
-| 29 | ⊕ | `packageAlias::operation` | **Demo package** | `demo.math@1.0.0::add`, two Numbers to Number |
-| 30 | ▦ | `packageAlias::operation` | **Demo package** | `demo.math@1.0.0::repeat2`, String to String |
-| 31 | ⊙ | `packageAlias::operation` | **Demo package** | `demo.math@1.0.0::is_positive`, Number to Bool |
-| 32 | ⊗ | `packageAlias::operation` | **Demo package** | `demo.math@1.0.0::factorial`, Number to Number |
+| 26 | λ | `lambda` | **M14 development branch; Rust tests pending** | Lexically scoped, first-class, typed unary H-Code function expression |
+| 27 | ∅ | `none` | Reserved | Future Option/absence value |
+| 28 | ∀ | `for` | Reserved | Future iteration |
+| 29 | ∈ | `in` | Reserved | Future membership separator |
+| 30 | ⊕ | `packageAlias::operation` | **Demo package** | `demo.math@1.0.0::add`, two Numbers to Number |
+| 31 | ▦ | `packageAlias::operation` | **Demo package** | `demo.math@1.0.0::repeat2`, String to String |
+| 32 | ⊙ | `packageAlias::operation` | **Demo package** | `demo.math@1.0.0::is_positive`, Number to Bool |
+| 33 | ⊗ | `packageAlias::operation` | **Demo package** | `demo.math@1.0.0::factorial`, Number to Number |
 
-Note: The symbols in rows 29–32 have **no language-global meaning**. These bindings are examples provided by a specifically imported, versioned demonstration library. Any permitted nonreserved symbol can represent a different operation in a different package. Two packages exporting the same glyph require explicit qualified access.
+Note: The symbols in rows 30–33 have **no language-global meaning**. These bindings are examples provided by a specifically imported, versioned demonstration library. Any permitted nonreserved symbol can represent a different operation in a different package. Two packages exporting the same glyph require explicit qualified access.
 
 ## M1 behavior
 
@@ -111,3 +112,23 @@ The implementation has distinct Rust AST and typechecker variants, with homogene
 - These are **core primitives**, not a claim that M13's larger generic package-manifest-v2/user-defined operator work is finished.
 
 See `docs/M13-COLLECTION-SIGNS.md` and the locked, same-task `compact/benchmarks/m13/` comparison.
+
+## M14 — `λ` functions and first-class operator sections (draft)
+
+Unicode-first H-Code supports `λx:x*2`, `λx:x>0` and general unary **operator sections** such as `(*2)`, `(>0)`, `(≤3)`, `(+2)`, `(≡"x")`. These are typed function **values**, not textual replacements for built-in TypeScript functions.
+
+`λx:body` is an expression that captures lexical H-Code scope and takes one argument `x`; its type is inferred from the body and its use site. ASCII fallback `lambda x:body` is an accessibility alternative. Anonymous identity with unconstrained type is rejected by Rust until context can fix the type; typed callbacks work in `⌕`, `⇢`, `∘` and regular calls.
+
+The expression `(*2)` creates a reusable unary function `Number→Number` which multiplies **its input** by 2. `(>0)` has `Number→Bool` type; `(+2)` supports Number or String with the usual H-Code `+` typing. The right-hand argument is evaluated exactly **once** when the section value is created, including when it has side effects; each future invocation uses the captured value. Equality operators operate only on comparable primitive types. Ordinary negative constants `(-2)` retain their existing meaning. These definitions are generic, typechecked and have no AI or application-specific shortcuts.
+
+```hcode
+≔ ys←⟦10,11⟧⇢(*2);
+print(ys⟦0⟧);
+print(ys⟦1⟧);
+```
+
+Expected `20`, `22`.
+
+Nested/combined applications: `∑(⟦-1,2,3,-2⟧⌕(>0)⇢(*2))` returns `10`. `⌕`, `⇢`, `∑` remain independent, general M13 core operators.
+
+**Status:** on `feat/m14-typed-lambda-glyph`, authored Rust AST/typechecker/backend plus tested JS reference. **Cargo/complete CI not yet run**, `main` unchanged. Full semantics and independent matched-task benchmark in `docs/M14-SYMBOL-LAMBDAS.md`.

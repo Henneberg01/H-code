@@ -105,3 +105,18 @@ print(∑(⟦-1,2,3,-2⟧⌕positive⇢twice));
 Expected output: `10`. Real static type constraints: `⌕:⟦T⟧×(T→Bool)→⟦T⟧`, `⇢:⟦T⟧×(T→U)→⟦U⟧` and `∑:⟦Number⟧→Number`. Accessible ASCII aliases exist but are not the primary language. Full Rust/Cargo tests and upstream PR integration are still pending; `main` remains unchanged.
 
 Same-task SHA-pinned benchmark: `compact/benchmarks/m13/`, run `npm run m13:measure`. This **three-task** source-only comparison shows a provisional **56.15% median fewer Unicode code points versus the unchanged TypeScript programs**; it is not the final 20-task 70% result. See `docs/M13-COLLECTION-SIGNS.md`.
+
+## M14 experimental first-class unary signs (unmerged)
+
+The latest development branch adds **typed `λ` closures** and unary operator sections like `(*2)` / `(>0)` to eliminate otherwise repetitive function declarations without hiding implementation logic:
+
+```hcode
+≔ ys←⟦10,11⟧⇢(*2);
+print(ys⟦0⟧);
+print(ys⟦1⟧);
+```
+Expected output: `20`, `22`. Function sections capture their right operand once, execute generically and are checked by Rust's type-inference system.
+
+In a frozen three-task comparison, interim median H-Code source size improved from 56.15% to **68.46% fewer Unicode code points** than the unchanged idiomatic TypeScript inputs. Byte-size reduction median **55.09%**. **This is not a 20-case study or proof of 70% across all programs.** Reproduce with `npm run m14:measure`, see `docs/M14-SYMBOL-LAMBDAS.md`.
+
+**Draft feature branch, not merged/released; cargo tests and full CI pending.**

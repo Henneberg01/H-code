@@ -191,3 +191,19 @@ De **samme tre M11-opgaver og identiske, SHA-låste TypeScript-programmer** blev
 Median **+56,15% i Unicode-kodepunkter**, median **+40,12% i UTF-8-bytes**, kun **tre foruddefinerede opgaver**, ikke universel 70%. Alle kilders Git SHA og forventet output findes i `compact/benchmarks/m13/manifest.json`. Reproducerbar kørsel: `npm run m13:measure` på Node 22+.
 
 **M13 release gate fortsat åben:** Cargo/Rust, fuld Node/Studio CI, gamle programmer, opdateret manifest-v2 og publiceret generisk operator-binding. M0–M9 og `main` er urørte. Inkludér ALLE 20 kanoniske programmer, også de dårlige, før universelle effektivitets-påstande.
+
+## 2026-10-18 — M14 sign-first expression work (draft only)
+
+The experimental **M14 λ anonymous unary closure** and **first-class operator sections** are implemented in both Rust sources and the JS reference on `feat/m14-typed-lambda-glyph`. M13 `∑ ⌕ ⇢` is untouched on its upstream draft branch.
+
+The same three M11 task IDs and **the same SHA-locked original TypeScript files** have a new, separately versioned M14 H-Code source variant. Exact program outputs are identical in the JS reference; no TypeScript examples have been shortened, enlarged or swapped.
+
+| Task | M11 H-Code | M13 H-Code | M14 H-Code | TypeScript | New code-point reduction vs TypeScript |
+|---|---:|---:|---:|---:|---:|
+| Sum | 113 | 17 | 17 | 100 | 83.00% |
+| Map | 159 | 57 | 41 | 130 | 68.46% |
+| Filter | 185 | 77 | 55 | 167 | 67.07% |
+
+**Median M14 = 68.46% fewer Unicode code points; 55.09% fewer UTF-8 bytes** than these three TypeScript programs. This is still below 70% on map and filter and is **not the canonical 20-case study**.
+
+Run the separately frozen comparisons on Node22+: `npm run m14:measure`. Cargo, full Node/Studio CI, upstream PR integration, future M14 field selectors and generic manifest-v2 remain open. Do not mark M14, M13 or the 70% global hypothesis complete.
