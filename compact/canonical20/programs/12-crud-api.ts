@@ -95,14 +95,17 @@ class AtomicStore {
   }
 }
 async function input(req:IncomingMessage):Promise<unknown>{
-  let length=0;
+  let length=0,tooLarge=false;
   const chunks:Buffer[]=[];
   for await(const chunk of req){
     const data=Buffer.isBuffer(chunk)?chunk:Buffer.from(chunk);
     length+=data.byteLength;
-    if(length>MAX_BODY)throw Object.assign(Error('too_large'),{httpStatus:413});
+    // Drain the request without retaining excess bytes. Throwing inside the
+    // async iterator would destroy the TCP socket before a real HTTP 413 reply.
+    if(length>MAX_BODY){tooLarge=true;continue;}
     chunks.push(data);
   }
+  if(tooLarge)throw Object.assign(Error('too_large'),{httpStatus:413});
   if(!req.headers['content-type']?.toLowerCase().startsWith('application/json'))
     throw Object.assign(Error('invalid'),{httpStatus:400});
   try{return JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(Buffer.concat(chunks)));}
