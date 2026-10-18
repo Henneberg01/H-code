@@ -44,12 +44,14 @@ fn inferred_structural_record_types_are_sorted_and_exact(){
             ("a".into(),Type::Number),("z".into(),Type::String)
         ]));
     }else{panic!("Expected record binding")};
-    assert_eq!(Type::from_name("⦃age:Number,inner:⦃n:String⦄⦄",
-        hcode_compiler::lexer::Span::new(1,1)).unwrap(),
-        Type::Record(vec![
+    let nested=check(&parse("≔u:⦃age:Number,inner:⦃n:String⦄⦄←⦃age:42,inner:⦃n:\"a\"⦄⦄;").unwrap(),
+        &PackageRegistry::default(),true).unwrap();
+    if let TypedStmtKind::Let{value,..}=&nested.statements[0].kind{
+        assert_eq!(value.ty,Type::Record(vec![
           ("age".into(),Type::Number),
           ("inner".into(),Type::Record(vec![("n".into(),Type::String)]))
         ]));
+    } else { panic!("Expected typed record"); }
 }
 
 #[test]
