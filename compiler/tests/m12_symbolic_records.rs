@@ -71,6 +71,14 @@ fn records_execute_as_real_frozen_null_prototype_values_with_nested_projections(
 }
 
 #[test]
+fn frozen_m12_record_microcase_executes_exactly_as_typescript(){
+ let path=std::path::Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap()
+     .join("compact/benchmarks/m12/records.hc");
+ let source=std::fs::read_to_string(path).unwrap();
+ assert_eq!(run(&source).unwrap(),"Ada\n51\n");
+}
+
+#[test]
 fn static_typechecker_rejects_missing_fields_duplicates_and_mismatches(){
     let cases=[
         ("≔x←⦃a:1,a:2⦄;","Duplicate record field"),
