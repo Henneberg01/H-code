@@ -607,16 +607,23 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
     for(const operation of pkg.manifest.operations){
       const implementation=libraryScope.get(operation.implementation);
       const id=`${node.spec}::${operation.name}`;
+      operationSpecs.set(id,operation);
       operations.set(id,(...args)=>{
         step();
         if(args.length!==operation.parameters.length)throw Error(`${id} expects ${operation.parameters.length} argument(s)`);
         for(let j=0;j<args.length;j++){
           const actual=runtimeType(args[j]),expected=operation.parameters[j].type;
-          if(actual!==expected)throw Error(`${id}: argument ${j+1} (${operation.parameters[j].name}) expects ${expected}, got ${actual}`);
+          if(pkg.manifest.format===2){
+            try{requireType(args[j],expected);}
+            catch(e){throw Error(`${id}: argument ${j+1} (${operation.parameters[j].name}) expects ${expected}: ${e.message}`);}
+          }else if(actual!==expected)throw Error(`${id}: argument ${j+1} (${operation.parameters[j].name}) expects ${expected}, got ${actual}`);
         }
         const result=implementation(...args);
         const actual=runtimeType(result);
-        if(actual!==operation.returns)throw Error(`${id}: return expects ${operation.returns}, got ${actual}`);
+        if(pkg.manifest.format===2){
+          try{requireType(result,operation.returns,'return');}
+          catch(e){throw Error(`${id}: return expects ${operation.returns}: ${e.message}`);}
+        }else if(actual!==operation.returns)throw Error(`${id}: return expects ${operation.returns}, got ${actual}`);
         return result;
       });
     }
