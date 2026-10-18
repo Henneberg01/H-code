@@ -7,7 +7,8 @@ test('≋ Unicode sign and markdown_tokens alias parse identically',()=>{
  assert.equal(CORE_GLYPHS['≋'],'markdown-tokens');
  assert.deepEqual(parse('print(⤒(≋"# T"));'),parse('print(⤒(markdown_tokens("# T")));'));
  const out=[];
- execute('print(⤒(≋"# Hello\n[Docs](https://example.com)"));',{stdout:x=>out.push(x)});
+ const sample='# Hello\n[Docs](https://example.com)';
+ execute('print(⤒(≋'+JSON.stringify(sample)+'));',{stdout:x=>out.push(x)});
  assert.deepEqual(JSON.parse(out[0]),[
   {href:'',kind:'heading',level:1,text:'Hello'},
   {href:'https://example.com',kind:'link',level:0,text:'Docs'}
