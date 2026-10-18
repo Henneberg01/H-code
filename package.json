@@ -44,7 +44,8 @@
     "benchmark20:serve12b1": "node --test scripts/m19-http-serve-b1.test.mjs",
     "benchmark20:state12b2a": "node --test scripts/m19-http-state-b2a.test.mjs",
     "benchmark20:state12b2b": "node --test scripts/m19-http-state-b2b.test.mjs",
-    "benchmark20:state12b2c1": "node --test scripts/m19-http-state-b2c1.test.mjs"
+    "benchmark20:state12b2c1": "node --test scripts/m19-http-state-b2c1.test.mjs",
+    "benchmark20:state12b2c2": "node --test scripts/m19-http-state-b2c2.test.mjs"
   },
   "engines": {
     "node": ">=20"
