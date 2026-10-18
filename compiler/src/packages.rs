@@ -65,7 +65,7 @@ fn ident(v:&str)->bool {
     matches!(cs.next(),Some(c) if c.is_ascii_alphabetic()||c=='_') && cs.all(|c|c.is_ascii_alphanumeric()||c=='_')
 }
 fn keyword(v:&str)->bool {
-    matches!(v,"fn"|"let"|"return"|"true"|"false"|"if"|"else"|"while"|"and"|"or"|"not"|"use"|"import"|"export"|"as"|"lambda"|"json_in"|"json_out"|"text_scalars"|"text_words"|"text_hist"|"file_read"|"csv_typed")
+    matches!(v,"fn"|"let"|"return"|"true"|"false"|"if"|"else"|"while"|"and"|"or"|"not"|"use"|"import"|"export"|"as"|"lambda"|"json_in"|"json_out"|"text_scalars"|"text_words"|"text_hist"|"file_read"|"csv_typed"|"stdin_text"|"arith_eval")
 }
 fn package_name(v:&str)->bool{
     !v.is_empty() && v.as_bytes()[0].is_ascii_lowercase() &&
@@ -89,7 +89,7 @@ fn parse_contract_type(ty:&str,format:u32,bound:&[String])->Result<Type,Diagnost
         .map_err(|_|failure(format!("Unsupported package contract type {ty}")))
 }
 pub(crate) fn reserved_glyph(c:char)->bool {
-    matches!(c,'ƒ'|'≔'|'↩'|'→'|'←'|'⊤'|'⊥'|'∧'|'∨'|'¬'|'≡'|'≠'|'≤'|'≥'|'∷'|'▷'|'∘'|'◇'|'⌗'|'⧺'|'∑'|'⌕'|'⇢'|'λ'|'⊢'|'⊣'|'⟳'|'⇒'|'⟦'|'⟧'|'⦃'|'⦄'|'·'|'⊞'|'⤓'|'⤒'|'⫶'|'⟟'|'⧉'|'⧄'|'⧇'|'∅'|'∀'|'∈')
+    matches!(c,'ƒ'|'≔'|'↩'|'→'|'←'|'⊤'|'⊥'|'∧'|'∨'|'¬'|'≡'|'≠'|'≤'|'≥'|'∷'|'▷'|'∘'|'◇'|'⌗'|'⧺'|'∑'|'⌕'|'⇢'|'λ'|'⊢'|'⊣'|'⟳'|'⇒'|'⟦'|'⟧'|'⦃'|'⦄'|'·'|'⊞'|'⤓'|'⤒'|'⫶'|'⟟'|'⧉'|'⧄'|'⧇'|'⌨'|'⩚'|'∅'|'∀'|'∈')
 }
 
 pub fn load_lockfile(path:&Path)->Result<PackageRegistry,Diagnostic>{

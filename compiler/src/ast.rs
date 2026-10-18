@@ -52,6 +52,8 @@ pub enum ExprKind {
     JsonRead { schema: String, value: Box<Expr> },
     JsonWrite(Box<Expr>),
     FileRead(Box<Expr>),
+    StdinText,
+    ArithEval(Box<Expr>),
     CsvTyped { schema: String, value: Box<Expr> },
     TextScalars(Box<Expr>),
     TextWords(Box<Expr>),
