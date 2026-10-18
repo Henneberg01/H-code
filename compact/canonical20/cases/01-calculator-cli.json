@@ -1,0 +1,240 @@
+{
+  "id": "01-calculator-cli",
+  "acceptance": "stdin expressions for +,-,*,/ with invalid division; stable stdout/stderr and exit status",
+  "registryBlobSha": "46653ef90ffb3e420fba4ddfbfac3c4cfd57f3b3",
+  "stdinProtocol": "one finite arithmetic expression per invocation; Unicode whitespace allowed; no eval/variables",
+  "numericGrammar": "(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?|\\.[0-9]+, optional exponent [eE][+-]?[0-9]+",
+  "operators": "left-associative +,-,*,/; parentheses and unary +/-; multiplication binds before addition",
+  "errorContract": "HCODE_ERROR: <safe deterministic message>\\n; exit 2; stdout empty",
+  "maxStdinUtf8Bytes": 65536,
+  "positives": [
+    {
+      "id": "add",
+      "input": "2+3",
+      "stdout": "5\n",
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "id": "precedence",
+      "input": "2+3*4",
+      "stdout": "14\n",
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "id": "grouped",
+      "input": "(2+3)*4",
+      "stdout": "20\n",
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "id": "div-minus",
+      "input": "8/2-1",
+      "stdout": "3\n",
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "id": "negative",
+      "input": "-5+2",
+      "stdout": "-3\n",
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "id": "unary-plus",
+      "input": "+3.5*2",
+      "stdout": "7\n",
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "id": "scientific",
+      "input": "1e2/4",
+      "stdout": "25\n",
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "id": "adjacent-unary",
+      "input": "2+-3",
+      "stdout": "-1\n",
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "id": "leading-dot",
+      "input": "-.5 * 8",
+      "stdout": "-4\n",
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "id": "fraction",
+      "input": ".125 + .375",
+      "stdout": "0.5\n",
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "id": "floating",
+      "input": "0.1 + 0.2",
+      "stdout": "0.30000000000000004\n",
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "id": "division-fraction",
+      "input": "3/2",
+      "stdout": "1.5\n",
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "id": "left-assoc",
+      "input": "8/4/2",
+      "stdout": "1\n",
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "id": "nested",
+      "input": "(2*(3+4))/7",
+      "stdout": "2\n",
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "id": "zero",
+      "input": "0",
+      "stdout": "0\n",
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "id": "stdin-newline",
+      "input": "1+2\n",
+      "stdout": "3\n",
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "id": "tabs",
+      "input": " 7\t+\t(-2) ",
+      "stdout": "5\n",
+      "stderr": "",
+      "exitCode": 0
+    }
+  ],
+  "negatives": [
+    {
+      "id": "division-zero",
+      "input": "8/0\n",
+      "stdout": "",
+      "stderr": "HCODE_ERROR: Division by zero\n",
+      "exitCode": 2
+    },
+    {
+      "id": "zero-zero",
+      "input": "0/0",
+      "stdout": "",
+      "stderr": "HCODE_ERROR: Division by zero\n",
+      "exitCode": 2
+    },
+    {
+      "id": "negative-zero-divisor",
+      "input": "5/-0",
+      "stdout": "",
+      "stderr": "HCODE_ERROR: Division by zero\n",
+      "exitCode": 2
+    },
+    {
+      "id": "bad-infix",
+      "input": "1+2*",
+      "stdout": "",
+      "stderr": "HCODE_ERROR: Invalid arithmetic expression\n",
+      "exitCode": 2
+    },
+    {
+      "id": "bad-unary",
+      "input": "1++",
+      "stdout": "",
+      "stderr": "HCODE_ERROR: Invalid arithmetic expression\n",
+      "exitCode": 2
+    },
+    {
+      "id": "empty",
+      "input": "",
+      "stdout": "",
+      "stderr": "HCODE_ERROR: Invalid arithmetic expression\n",
+      "exitCode": 2
+    },
+    {
+      "id": "zero-float-divisor",
+      "input": "1/0.0",
+      "stdout": "",
+      "stderr": "HCODE_ERROR: Division by zero\n",
+      "exitCode": 2
+    },
+    {
+      "id": "overflow",
+      "input": "1.5e309",
+      "stdout": "",
+      "stderr": "HCODE_ERROR: Numeric overflow\n",
+      "exitCode": 2
+    },
+    {
+      "id": "disallowed-operator",
+      "input": "2^3",
+      "stdout": "",
+      "stderr": "HCODE_ERROR: Invalid arithmetic expression\n",
+      "exitCode": 2
+    },
+    {
+      "id": "missing-close",
+      "input": "(2+3",
+      "stdout": "",
+      "stderr": "HCODE_ERROR: Invalid arithmetic expression\n",
+      "exitCode": 2
+    },
+    {
+      "id": "extra-close",
+      "input": "2+3)",
+      "stdout": "",
+      "stderr": "HCODE_ERROR: Invalid arithmetic expression\n",
+      "exitCode": 2
+    },
+    {
+      "id": "space-without-op",
+      "input": "1 2",
+      "stdout": "",
+      "stderr": "HCODE_ERROR: Invalid arithmetic expression\n",
+      "exitCode": 2
+    },
+    {
+      "id": "empty-group",
+      "input": "()",
+      "stdout": "",
+      "stderr": "HCODE_ERROR: Invalid arithmetic expression\n",
+      "exitCode": 2
+    },
+    {
+      "id": "nonnumeric",
+      "input": "ABC",
+      "stdout": "",
+      "stderr": "HCODE_ERROR: Invalid arithmetic expression\n",
+      "exitCode": 2
+    },
+    {
+      "id": "emoji",
+      "input": "🦊+2",
+      "stdout": "",
+      "stderr": "HCODE_ERROR: Invalid arithmetic expression\n",
+      "exitCode": 2
+    }
+  ],
+  "additionalInvalidUtf8BytesHex": "c328",
+  "additionalOversizeBytes": 65537
+}

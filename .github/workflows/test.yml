@@ -17,6 +17,7 @@ on:
       - main
       - feat/m19-canonical03-unicode-frequency
       - feat/m19-canonical04-csv-validation
+      - feat/m19-canonical01-stdin-arithmetic
       - feat/m14-typed-lambda-glyph
       - feat/m15-sign-blocks-delimiters
       - feat/m16-typed-user-signs
@@ -77,6 +78,9 @@ jobs:
         if: ${{ success() || failure() }}
       - name: Benchmark independent idiomatic TS csv-parse and Zod parity with package footprint
         run: npm run benchmark20:csv-idiomatic
+        if: ${{ success() || failure() }}
+      - name: Verify original canonical01 stdin calculator CLI status stderr and arithmetic semantics
+        run: npm run benchmark20:verify01
         if: ${{ success() || failure() }}
       - name: Verify canonical04 CSV parsing, filesystem and typed validation
         run: npm run benchmark20:verify04

@@ -11,6 +11,7 @@ import {verifyCanonical02} from './canonical20-verify-02.mjs';
 import {verifyCanonical10} from './canonical20-verify-10.mjs';
 import {verifyCanonical03} from './canonical20-verify-03.mjs';
 import {verifyCanonical04} from './canonical20-verify-04.mjs';
+import {verifyCanonical01} from './canonical20-verify-01.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
 const registryBytes=readFileSync(join(root,'compact/canonical20/workloads.json'));
@@ -84,7 +85,10 @@ export function readiness(){
     if(!Array.isArray(w.requiredCapabilities)||w.requiredCapabilities.length===0)throw Error('Missing capability contract: '+w.id);
     if(w.status==='unsupported'){
       if(w.evidence!==null)throw Error('Unsupported task falsely claims evidence: '+w.id);
-      if(w.id==='03-text-frequency-counter'){
+      if(w.id==='01-calculator-cli'){
+        fullEvidence[w.id]=verifyCanonical01();
+        verified++;
+      }else if(w.id==='03-text-frequency-counter'){
         // Do not relabel the historical preregistration. Verification must
         // come from the full source-SHA-locked Rust/JS/TS Unicode test suite.
         fullEvidence[w.id]=verifyCanonical03();

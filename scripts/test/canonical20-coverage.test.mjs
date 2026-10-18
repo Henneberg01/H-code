@@ -16,12 +16,19 @@ test('all 20 canonical tasks remain registered in source order, including unsupp
 test('source-locked reference-only examples cannot be misrepresented as global 70% proof',{skip:!canRunTs},()=>{
   const r=readiness();
   assert.equal(r.preregisteredTasks,20);
-  assert.equal(r.verifiedFullWorkloads,5);
+  assert.equal(r.verifiedFullWorkloads,6);
   assert.equal(r.partialReferenceEvidence,0);
-  assert.equal(r.unsupported,15);
+  assert.equal(r.unsupported,14);
   assert.equal(r.complete,false);
   assert.equal(r.globalMedianCodepointReduction,null);
   assert.equal(r.objectiveAchieved,false);
+  assert.equal(r.evidenceByFullTask['01-calculator-cli'].kind,'full-compiler-evidence');
+  assert.equal(r.evidenceByFullTask['01-calculator-cli'].positiveFrozenInputsVerified,17);
+  assert.equal(r.evidenceByFullTask['01-calculator-cli'].negativeFrozenInputsVerified,15);
+  assert.equal(r.evidenceByFullTask['01-calculator-cli'].previouslyUnseenGeneratedInputsVerified,64);
+  assert.equal(r.evidenceByFullTask['01-calculator-cli'].invalidUtf8Rejected,true);
+  assert.equal(r.evidenceByFullTask['01-calculator-cli'].oversizedStdinRejected,true);
+  assert.equal(r.evidenceByFullTask['01-calculator-cli'].rustStaticWrongTypesRejected,5);
   assert.equal(r.evidenceByFullTask['02-fibonacci-recursion'].kind,'full-compiler-evidence');
   assert.equal(r.evidenceByFullTask['02-fibonacci-recursion'].fixedAcceptanceOutput,'13\n');
   assert.equal(r.evidenceByFullTask['02-fibonacci-recursion'].positiveCasesVerified,16);
@@ -63,18 +70,21 @@ test('registry cannot claim an unsupported case is fully verified without compil
   } finally { target.status=previous; }
 });
 
+// This starts the real six-task cross-runtime Rust/JS/TS proof again in a new process.
+// On Windows, independent child runtimes exceed 30s; extending the timeout does
+// not skip a single test or loosen the original 20-task strict rejection.
 test('the strict twenty-workload CI gate intentionally fails until all 20 pass',{skip:!canRunTs},()=>{
   const root=fileURLToPath(new URL('../../',import.meta.url));
   const child=spawnSync(process.execPath,['scripts/canonical20-coverage.mjs','--require-complete'],{
-    cwd:root,encoding:'utf8',timeout:30_000,windowsHide:true
+    cwd:root,encoding:'utf8',timeout:180_000,windowsHide:true
   });
   assert.ifError(child.error);
   assert.equal(child.status,2);
   assert.match(child.stderr,/all 20 must be compiler-verified/);
   const report=JSON.parse(child.stdout);
   assert.equal(report.preregisteredTasks,20);
-  assert.equal(report.verifiedFullWorkloads,5);
-  assert.equal(report.unsupported,15);
+  assert.equal(report.verifiedFullWorkloads,6);
+  assert.equal(report.unsupported,14);
   assert.equal(report.globalMedianCodepointReduction,null);
   assert.equal(report.objectiveAchieved,false);
 });

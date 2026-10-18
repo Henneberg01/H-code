@@ -98,6 +98,8 @@ pub enum TypedExprKind {
     TextWords(Box<TypedExpr>),
     Histogram(Box<TypedExpr>),
     FileRead(Box<TypedExpr>),
+    StdinText,
+    ArithEval(Box<TypedExpr>),
     CsvTyped {schema:Type,value:Box<TypedExpr>},
     Index { sequence:Box<TypedExpr>,index:Box<TypedExpr> },
     Length(Box<TypedExpr>),
@@ -399,6 +401,17 @@ impl Checker {
                     return Err(Diagnostic::new("TYPE","⤒ expects statically typed JSON-compatible data".into(),expr.span));
                 }
                 (TypedExprKind::JsonWrite{value:Box::new(checked),schema:resolved},Type::String)
+            }
+            ExprKind::StdinText=>{
+                if !self.allow_print {
+                    return Err(Diagnostic::new("EFFECT","⌨ is an effectful stdin read; pure verified packages cannot access stdin".into(),expr.span));
+                }
+                (TypedExprKind::StdinText,Type::String)
+            }
+            ExprKind::ArithEval(value)=>{
+                let typed=self.expression(value)?;
+                self.unify(&Type::String,&typed.ty,value.span,"⩚ expects String arithmetic expression")?;
+                (TypedExprKind::ArithEval(Box::new(typed)),Type::Number)
             }
             ExprKind::FileRead(value)=>{
                 if !self.allow_print {
@@ -717,7 +730,7 @@ impl Checker {
             TypedExprKind::Record(fields)=>{for (_,value) in fields{self.finalize_expr(value)?;}},
             TypedExprKind::Field{record,..}=>self.finalize_expr(record)?,
             TypedExprKind::JsonRead{value,..}|TypedExprKind::JsonWrite{value,..}=>self.finalize_expr(value)?,
-            TypedExprKind::TextScalars(value)|TypedExprKind::TextWords(value)|TypedExprKind::Histogram(value)|TypedExprKind::FileRead(value)=>self.finalize_expr(value)?,
+            TypedExprKind::TextScalars(value)|TypedExprKind::TextWords(value)|TypedExprKind::Histogram(value)|TypedExprKind::FileRead(value)|TypedExprKind::ArithEval(value)=>self.finalize_expr(value)?,
             TypedExprKind::CsvTyped{value,..}=>self.finalize_expr(value)?,
             TypedExprKind::RecordUpdate{record,value,..}=>{self.finalize_expr(record)?;self.finalize_expr(value)?;},
             TypedExprKind::Index{sequence,index}=>{self.finalize_expr(sequence)?;self.finalize_expr(index)?;},

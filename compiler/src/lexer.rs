@@ -15,7 +15,7 @@ pub struct Token { pub kind: TokenKind, pub span: Span }
 pub enum TokenKind {
     Fn, Let, Return, If, Else, While, Then, Forall, Use, Import, Export, As, True, False, And, Or, Not,
     Identifier(String), Number(String), String(String), Glyph(char),
-    LeftParen, RightParen, LeftBrace, RightBrace, RecOpen, RecClose, Field, RecordUpdate, JsonRead, JsonWrite, TextScalars, TextWords, Histogram, FileRead, CsvTyped, Comma, Semicolon, Colon, DoubleColon, Pipe, Compose, Choice, Lambda, SeqOpen, SeqClose, SeqLength, SeqConcat, Sum, Filter, Map,
+    LeftParen, RightParen, LeftBrace, RightBrace, RecOpen, RecClose, Field, RecordUpdate, JsonRead, JsonWrite, TextScalars, TextWords, Histogram, FileRead, CsvTyped, StdinText, ArithEval, Comma, Semicolon, Colon, DoubleColon, Pipe, Compose, Choice, Lambda, SeqOpen, SeqClose, SeqLength, SeqConcat, Sum, Filter, Map,
     Assign, Arrow, Plus, Minus, Star, Slash, Percent,
     Equal, NotEqual, Less, Greater, LessEqual, GreaterEqual, Eof,
 }
@@ -125,6 +125,7 @@ pub fn lex(source: &str) -> Result<Vec<Token>, Diagnostic> {
                 "or"=>TokenKind::Or,"not"=>TokenKind::Not,"lambda"=>TokenKind::Lambda,"forall"=>TokenKind::Forall,
                 "json_in"=>TokenKind::JsonRead,"json_out"=>TokenKind::JsonWrite,
                 "file_read"=>TokenKind::FileRead,"csv_typed"=>TokenKind::CsvTyped,
+                "stdin_text"=>TokenKind::StdinText,"arith_eval"=>TokenKind::ArithEval,
                 "text_scalars"=>TokenKind::TextScalars,"text_words"=>TokenKind::TextWords,
                 "text_hist"=>TokenKind::Histogram,
                 _=>TokenKind::Identifier(word)
@@ -145,6 +146,7 @@ pub fn lex(source: &str) -> Result<Vec<Token>, Diagnostic> {
             '⤓'=>Some(TokenKind::JsonRead),'⤒'=>Some(TokenKind::JsonWrite),
             '⫶'=>Some(TokenKind::TextScalars),'⟟'=>Some(TokenKind::TextWords),'⧉'=>Some(TokenKind::Histogram),
             '⧄'=>Some(TokenKind::FileRead),'⧇'=>Some(TokenKind::CsvTyped),
+            '⌨'=>Some(TokenKind::StdinText),'⩚'=>Some(TokenKind::ArithEval),
             '⌗'=>Some(TokenKind::SeqLength),'⧺'=>Some(TokenKind::SeqConcat),
             '∑'=>Some(TokenKind::Sum),'⌕'=>Some(TokenKind::Filter),'⇢'=>Some(TokenKind::Map),'λ'=>Some(TokenKind::Lambda),'∀'=>Some(TokenKind::Forall),
             _=>None,

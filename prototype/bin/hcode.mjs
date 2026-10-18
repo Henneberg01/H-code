@@ -2,6 +2,7 @@
 import {readFileSync} from 'node:fs';
 import {parse,evaluate,linkProgram} from '../src/hcode.mjs';
 import {loadLockedPackages} from '../src/packages.mjs';
+import {ArithmeticInputError} from '../src/arithmetic-pure.mjs';
 
 const [action,file,...flags]=process.argv.slice(2);
 function usage(){console.error('Usage: node prototype/bin/hcode.mjs <check|run|ast> <file.hc> [--lock <hcode.lock.json>]');}
@@ -18,6 +19,14 @@ else {
     const ast=linkProgram(parse(source),registry);
     if(action==='check')console.log(`Syntax/link OK: ${file} (${ast.body.length} top-level statement(s))`);
     if(action==='ast')console.log(JSON.stringify(ast,null,2));
-    if(action==='run')evaluate(ast,{registry,stdout:line=>console.log(line)});
-  } catch(error){console.error(`${error.name}: ${error.message}`);process.exitCode=1;}
+    if(action==='run')evaluate(ast,{registry,stdout:line=>console.log(line),readStdin:()=>{
+      const bytes=readFileSync(0);
+      if(bytes.length>65536)throw new ArithmeticInputError('Arithmetic input exceeds 64 KiB');
+      try{return new TextDecoder('utf-8',{fatal:true}).decode(bytes);}
+      catch{throw new ArithmeticInputError('Invalid UTF-8');}
+    }});
+  } catch(error){
+    if(error?.code==='HCODE_CLI'){console.error('HCODE_ERROR: '+error.message);process.exitCode=2;}
+    else{console.error(`${error.name}: ${error.message}`);process.exitCode=1;}
+  }
 }
