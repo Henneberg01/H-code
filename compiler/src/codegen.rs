@@ -222,7 +222,7 @@ fn stmt_uses_markdown(s:&TypedStmt)->bool {
 fn expr_uses_http_serve(e:&TypedExpr)->bool {
  match &e.kind {
   TypedExprKind::HttpServe(_)=>true,
-  TypedExprKind::Markdown(value)|TypedExprKind::HttpServe(value)=>expr_uses_http_serve(value),
+  TypedExprKind::Markdown(value)=>expr_uses_http_serve(value),
   TypedExprKind::FileWrite{filename,content}=>expr_uses_http_serve(filename)||expr_uses_http_serve(content),
   TypedExprKind::JsonRead{value,..}|TypedExprKind::JsonWrite{value,..}=>expr_uses_http_serve(value),
   TypedExprKind::Record(fields)=>fields.iter().any(|(_,v)|expr_uses_http_serve(v)),
