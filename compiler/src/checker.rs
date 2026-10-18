@@ -92,6 +92,8 @@ pub enum TypedExprKind {
     Record(Vec<(String,TypedExpr)>),
     Field { record:Box<TypedExpr>,name:String },
     RecordUpdate { record:Box<TypedExpr>,name:String,value:Box<TypedExpr> },
+    JsonRead { schema:Type,value:Box<TypedExpr> },
+    JsonWrite { value:Box<TypedExpr>,schema:Type },
     Index { sequence:Box<TypedExpr>,index:Box<TypedExpr> },
     Length(Box<TypedExpr>),
     Sum(Box<TypedExpr>),
@@ -363,8 +365,36 @@ impl Checker {
             _=>ty.clone()
         }
     }
+    // JSON is a data boundary: never erase functions, ∀T, Unit or unknown types.
+    fn valid_json_type(ty:&Type,depth:usize)->bool {
+        if depth>32 {return false;}
+        match ty {
+            Type::Number|Type::String|Type::Bool=>true,
+            Type::Sequence(value)=>Self::valid_json_type(value,depth+1),
+            Type::Record(fields)=>fields.len()<=64 &&
+                fields.iter().all(|(_,ty)|Self::valid_json_type(ty,depth+1)),
+            _=>false
+        }
+    }
     fn expression(&mut self,expr:&Expr)->Result<TypedExpr,Diagnostic>{
         let (kind,ty)=match &expr.kind {
+            ExprKind::JsonRead{schema,value}=>{
+                let resolved=Type::from_name(schema,expr.span)?;
+                if !Self::valid_json_type(&resolved,0){
+                    return Err(Diagnostic::new("TYPE","⤓ schema must be a concrete JSON-compatible type with depth <=32".into(),expr.span));
+                }
+                let input=self.expression(value)?;
+                self.unify(&Type::String,&input.ty,value.span,"⤓ expects JSON text of type String")?;
+                (TypedExprKind::JsonRead{schema:resolved.clone(),value:Box::new(input)},resolved)
+            }
+            ExprKind::JsonWrite(value)=>{
+                let checked=self.expression(value)?;
+                let resolved=self.resolved(&checked.ty);
+                if !Self::valid_json_type(&resolved,0){
+                    return Err(Diagnostic::new("TYPE","⤒ expects statically typed JSON-compatible data".into(),expr.span));
+                }
+                (TypedExprKind::JsonWrite{value:Box::new(checked),schema:resolved},Type::String)
+            }
             ExprKind::Record(fields)=>{
                 let mut typed=Vec::with_capacity(fields.len());
                 let mut structure=Vec::with_capacity(fields.len());
@@ -637,6 +667,7 @@ impl Checker {
             TypedExprKind::Sequence(items)=>{for item in items {self.finalize_expr(item)?;}},
             TypedExprKind::Record(fields)=>{for (_,value) in fields{self.finalize_expr(value)?;}},
             TypedExprKind::Field{record,..}=>self.finalize_expr(record)?,
+            TypedExprKind::JsonRead{value,..}|TypedExprKind::JsonWrite{value,..}=>self.finalize_expr(value)?,
             TypedExprKind::RecordUpdate{record,value,..}=>{self.finalize_expr(record)?;self.finalize_expr(value)?;},
             TypedExprKind::Index{sequence,index}=>{self.finalize_expr(sequence)?;self.finalize_expr(index)?;},
             TypedExprKind::Length(value)=>self.finalize_expr(value)?,

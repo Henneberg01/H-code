@@ -225,6 +225,18 @@ impl Parser {
             TokenKind::Minus=>{
                 self.index+=1; ExprKind::Unary{op:UnaryOp::Negate,operand:Box::new(self.expression(8)?)}
             }
+            // ⤓<T> is a schema-checked JSON decoder, not unsafe JSON.parse as T.
+            TokenKind::JsonRead=>{
+                self.index+=1;
+                let schema=self.type_name()?;
+                let value=self.expression(8)?;
+                ExprKind::JsonRead{schema,value:Box::new(value)}
+            }
+            // ⤒ is a schema-safe, deterministic JSON serializer for typed data.
+            TokenKind::JsonWrite=>{
+                self.index+=1;
+                ExprKind::JsonWrite(Box::new(self.expression(8)?))
+            }
             TokenKind::SeqLength=>{self.index+=1;ExprKind::Length(Box::new(self.expression(8)?))}
             TokenKind::Sum=>{self.index+=1;ExprKind::Sum(Box::new(self.expression(8)?))}
             TokenKind::Lambda=>{

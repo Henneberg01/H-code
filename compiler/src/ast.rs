@@ -49,6 +49,8 @@ pub enum ExprKind {
     Record(Vec<(String,Expr)>),
     Field { record: Box<Expr>, name: String },
     RecordUpdate { record: Box<Expr>, name: String, value: Box<Expr> },
+    JsonRead { schema: String, value: Box<Expr> },
+    JsonWrite(Box<Expr>),
     Index { sequence: Box<Expr>, index: Box<Expr> },
     Length(Box<Expr>),
     Sum(Box<Expr>),
