@@ -6,6 +6,7 @@ on:
       - feat/m16-2-universal-sign-types
       - feat/m16-3-glyph-package-generator
       - feat/m19-canonical20-m163-integration
+      - feat/m12-symbolic-records-post-m19
   push:
     branches:
       - feat/m14-typed-lambda-glyph
@@ -53,6 +54,9 @@ jobs:
         if: ${{ success() || failure() }}
       - name: Verify M12 frozen records vs idiomatic TypeScript
         run: npm run m12:measure
+        if: ${{ success() || failure() }}
+      - name: Verify M12 schema-checked JSON roundtrip against TypeScript
+        run: npm run m12:json-measure
         if: ${{ success() || failure() }}
       - run: npm run m13:measure
         if: ${{ success() || failure() }}
