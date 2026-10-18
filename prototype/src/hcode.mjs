@@ -206,7 +206,16 @@ class Parser {
       } else left={kind:'Identifier',name:t.value};
     }
     else if(this.at('glyph')){const t=this.expect('glyph');left={kind:'GlyphOperation',glyph:t.value,line:t.line,column:t.column};}
-    else if(this.accept('(')){left=this.expr();this.expect(')');}
+    else if(this.accept('(')){
+      const sections=new Set(['*','/','%','+','<','>','<=','>=','==','!=']);
+      if(sections.has(this.peek().type)){
+        const operator=this.peek().type;
+        this.i++;
+        const right=this.expr();
+        this.expect(')');
+        left={kind:'Section',operator,right};
+      } else {left=this.expr();this.expect(')');}
+    }
     else {const t=this.peek();throw new HCodeError(`Expected expression, got ${t.type}`,t.line,t.column);}
     while(true){
       if(this.at('[[')&&9>=min){
@@ -295,6 +304,7 @@ export function linkProgram(ast, registry=new Map()) {
     if(node.kind==='Length')return {...node,value:expression(node.value)};
     if(node.kind==='Sum')return {...node,value:expression(node.value)};
     if(node.kind==='Lambda')return {...node,body:expression(node.body)};
+    if(node.kind==='Section')return {...node,right:expression(node.right)};
     if(node.kind==='Binary')return {...node,left:expression(node.left),right:expression(node.right)};
     if(node.kind==='Choice')return {...node,condition:expression(node.condition),whenTrue:expression(node.whenTrue),whenFalse:expression(node.whenFalse)};
     if(node.kind==='Call'){
@@ -408,6 +418,35 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
         return total;
       }
       case 'Identifier':return scope.get(node.name);
+      case 'Section':{
+        const captured=expr(node.right,scope);
+        const op=node.operator;
+        if(['+','*','/','%','<','>','<=','>='].includes(op)){
+          if(op==='+' && typeof captured!=='number' && typeof captured!=='string')throw Error('Operator section + expects Number or String');
+          if(op!=='+' && typeof captured!=='number')throw Error('Operator section expects Numbers');
+        }
+        return (...args)=>{
+          step();
+          if(args.length!==1)throw Error('Operator section expects exactly one argument');
+          const left=args[0];
+          if(op==='==')return typeof left===typeof captured&&left===captured;
+          if(op==='!=')return !(typeof left===typeof captured&&left===captured);
+          if(op==='+' && typeof left==='string' && typeof captured==='string')return left+captured;
+          if(typeof left!=='number'||typeof captured!=='number')throw Error('Operator section expects Numbers');
+          if((op==='/'||op==='%')&&captured===0)throw Error('Division by zero');
+          switch(op){
+            case '+':return left+captured;
+            case '*':return left*captured;
+            case '/':return left/captured;
+            case '%':return left%captured;
+            case '<':return left<captured;
+            case '>':return left>captured;
+            case '<=':return left<=captured;
+            case '>=':return left>=captured;
+            default:throw Error('Unknown operator section');
+          }
+        };
+      }
       case 'Lambda':
         return (...args)=>{
           step();
