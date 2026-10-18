@@ -21,6 +21,7 @@ on:
       - feat/m14-typed-lambda-glyph
       - feat/m15-sign-blocks-delimiters
       - feat/m16-typed-user-signs
+      - 'feat/m19-*'
       - feat/m16-2-universal-sign-types
 permissions:
   contents: read
@@ -147,6 +148,9 @@ jobs:
         if: ${{ success() || failure() }}
       - name: M19.12 B2c-3 bounded CAS crash-point fault injection and corruption tests
         run: npm run benchmark20:state12b2c3-fault
+        if: ${{ success() || failure() }}
+      - name: M19.12 B3a typed HTTP MIME and durable CAS receipt parity
+        run: npm run benchmark20:b3a-envelope
         if: ${{ success() || failure() }}
       - name: Canonical twenty source-locked readiness check
         run: npm run benchmark20:status
