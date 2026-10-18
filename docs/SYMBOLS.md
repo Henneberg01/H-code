@@ -169,3 +169,9 @@ Se `docs/M12-SYMBOLIC-RECORDS.md` for kildefaste Rust/JS/TS-paritetstests, typer
 - 1 MiB input / histogram-stringbudget, 16.384 sekvenselementer, uparrede UTF-16-surrogater afvises. Records er immutable og prototypefrie. Core-symboler er reserveret, kan ikke skygge verificerede brugerpakker.
 - Original M19 benchmarkregistrering for opgave `03-text-frequency-counter` er SHA-frossen og skal forblive uændret. Se `compact/canonical20/PROOF-03.md` for fuldt bevis og begrænsninger, når CI består.
 
+
+## M19.04 — `⧄` filadgang og `⧇` typed CSV (draft #29)
+
+Tegnene er kernesyntaks i Rust AST/typecheck/emitter og JS-reference; ikke genveje til benchmark-output. `⧄path` (`file_read`) er en eksplicit String-filadgang, der er afvist som standard og kræver `HCODE_ALLOW_FILE_READ=1` i Node. Kun projektets `data/` og højst 1 MiB er tilladt; traversal, symlinks og unsafe paths afvises. Pure verificerede biblioteker må ikke bruge fil-effekten. Ekstra OS-sandbox er nødvendig, hvis filsystemet kan ændres af angribere.
+
+`⧇⦃age:Number,active:Bool,name:String⦄csvText` (`csv_typed`) parser RFC4180-lignende citeret tekst til en immutable typekontrolleret `⟦Record⟧` med nøjagtige headers, escaped quotes, embedded newlines, BOM/CRLF, endelige Number og lowercase Bool. Den er ren og tilgængelig uden `⧄`-filadgang. Se `compact/canonical20/PROOF-04.md` og `npm run benchmark20:verify04`.
