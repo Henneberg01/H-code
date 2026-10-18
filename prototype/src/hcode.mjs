@@ -22,6 +22,12 @@ const ONE = new Set(['+','-','*','/','%','<','>','=','(',')','{','}',',',';',':'
 const ILLEGAL = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]|\p{Default_Ignorable_Code_Point}/u;
 const SYMBOL_CHARACTER = /^\p{S}$/u;
 
+// Reference interpreter suspends on HTTP and replays the deterministic pure
+// prefix after receiving a host-injected result. This is NOT a production async
+// engine; the source program, not JavaScript glue, owns retry policy and state.
+class PendingHttpEffect extends Error {
+  constructor(url,index){super('Pending H-Code HTTP request');this.url=url;this.index=index;}
+}
 export class HCodeError extends Error {
   constructor(message, line=1, column=1) {
     super(`${message} at ${line}:${column}`);
@@ -470,8 +476,8 @@ class Scope {
 class ReturnSignal{constructor(value){this.value=value;}}
 const runtimeType=value=>value===null?'Unit':typeof value==='number'?'Number':typeof value==='string'?'String':typeof value==='boolean'?'Bool':'unsupported';
 
-export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=16384,registry=new Map(),readFile=null,readStdin=null}={}){
-  const root=new Scope(),operations=new Map(),operationSpecs=new Map(),loadedLibraries=new Set();let steps=0,stdinConsumed=false;
+export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=16384,registry=new Map(),readFile=null,readStdin=null,httpEffects=null}={}){
+  const root=new Scope(),operations=new Map(),operationSpecs=new Map(),loadedLibraries=new Set();let steps=0,stdinConsumed=false,httpIndex=0,pureDepth=0;
   const step=()=>{if(++steps>maxSteps)throw Error('Execution step limit exceeded');};
   root.define('print',(...args)=>{stdout(args.map(x=>x===null?'none':String(x)).join(' '));return null;});
   const truth=v=>{if(typeof v!=='boolean')throw Error('Condition must be Boolean');return v;};
@@ -687,7 +693,21 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
         return data;
       }
       case 'ArithEval':return safeArithmetic(expr(node.value,scope));
-      case 'HttpGet':throw Error('⤋ requires asynchronous H-Code interpreter; synchronous execution cannot perform HTTP');
+      case 'HttpGet':{
+        if(pureDepth>0)throw Error('⤋ HTTP effect denied in verified pure package');
+        if(!Array.isArray(httpEffects))
+          throw Error('⤋ requires asynchronous H-Code interpreter; synchronous execution cannot perform HTTP');
+        const url=expr(node.value,scope);
+        if(typeof url!=='string')throw TypeError('⤋ expects String URL');
+        const index=httpIndex++;
+        if(index<httpEffects.length){
+          const previous=httpEffects[index];
+          if(previous.url!==url)throw Error('Non-deterministic H-Code HTTP replay');
+          return previous.value;
+        }
+        if(index!==httpEffects.length)throw Error('H-Code HTTP journal sequence gap');
+        throw new PendingHttpEffect(url,index);
+      }
       case 'FileRead':{
         const path=expr(node.value,scope);
         if(typeof path!=='string')throw Error('⧄ requires String file name');
@@ -963,7 +983,10 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
             catch(e){throw Error(`${id}: argument ${j+1} (${operation.parameters[j].name}) expects ${expected}: ${e.message}`);}
           }else if(actual!==expected)throw Error(`${id}: argument ${j+1} (${operation.parameters[j].name}) expects ${expected}, got ${actual}`);
         }
-        const result=implementation(...args);
+        let result;
+        // SHA-verified package code remains effect-free even during async replay.
+        pureDepth++;
+        try{result=implementation(...args);}finally{pureDepth--;}
         const actual=runtimeType(result);
         if(pkg.manifest.format===3){
           checkSpecializedReturn(result,specialized,maxSequenceItems);
@@ -984,6 +1007,71 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
   }
   return {steps};
 }
+
+/**
+ * Reference async effect runner. Only the host-supplied function performs I/O.
+ * All H-Code control flow is evaluated by the independent JS interpreter, with
+ * bounded deterministic replay and no unsafe eval/new Function.
+ *
+ * Async task 06 is not complete until a general async interpreter is added:
+ * this replay strategy deliberately handles only top-level effectful programs.
+ */
+export async function executeAsync(source,options={}){
+  if(typeof options.httpGet!=='function')
+    throw Error('H-Code HTTP capability denied: inject a trusted httpGet host');
+  const maxHttpRequests=options.maxHttpRequests??32;
+  if(!Number.isInteger(maxHttpRequests)||maxHttpRequests<1||maxHttpRequests>64)
+    throw RangeError('Invalid bounded H-Code HTTP request limit');
+  const registry=options.registry??new Map();
+  const program=linkProgram(parse(source),registry);
+  const journal=[];
+  let cachedStdin=false,stdinValue;
+  const cachedFiles=new Map();
+  const readStdin=typeof options.readStdin==='function'?()=>{
+    if(!cachedStdin){stdinValue=options.readStdin();cachedStdin=true;}
+    return stdinValue;
+  }:null;
+  const readFile=typeof options.readFile==='function'?name=>{
+    if(!cachedFiles.has(name))cachedFiles.set(name,options.readFile(name));
+    return cachedFiles.get(name);
+  }:null;
+  for(;;){
+    const lines=[];
+    try{
+      const result=evaluate(program,{...options,registry,readStdin,readFile,httpEffects:journal,stdout:line=>lines.push(line)});
+      for(const line of lines)options.stdout?.(line);
+      return {...result,httpRequests:journal.length};
+    }catch(error){
+      if(!(error instanceof PendingHttpEffect))throw error;
+      if(journal.length>=maxHttpRequests)throw Error('H-Code HTTP effect budget exceeded');
+      if(error.index!==journal.length)throw Error('Out-of-order H-Code HTTP effect');
+      let url;
+      try{url=new URL(error.url);}catch{throw TypeError('H-Code HTTP URL is invalid');}
+      if(!['http:','https:'].includes(url.protocol)||url.username||url.password)
+        throw TypeError('H-Code HTTP(S) URL required without embedded credentials');
+      let answer;
+      try{answer=await options.httpGet(error.url);}
+      catch{answer={status:0,ok:false,body:'',retryAfter:0};}
+      // Normalize and freeze the host boundary; input records cannot carry
+      // arbitrary fields, prototypes, functions or unbounded response bodies.
+      if(answer===null||typeof answer!=='object'||Array.isArray(answer)||
+         Object.keys(answer).sort().join(',')!=='body,ok,retryAfter,status'||
+         !Number.isInteger(answer.status)||
+         !(answer.status===0||answer.status>=200&&answer.status<=599)||
+         typeof answer.ok!=='boolean'||typeof answer.body!=='string'||
+         !Number.isInteger(answer.retryAfter)||answer.retryAfter<0||answer.retryAfter>120000||
+         (answer.status===0&&(answer.ok||answer.body!==''))||
+         (answer.status!==0&&answer.ok!==(answer.status>=200&&answer.status<300))||
+         new TextEncoder().encode(answer.body).byteLength>65536)
+        throw TypeError('Invalid H-Code HTTP response from host');
+      const response=Object.assign(Object.create(null),{
+        body:answer.body,ok:answer.ok,retryAfter:answer.retryAfter,status:answer.status
+      });
+      journal.push({url:error.url,value:Object.freeze(response)});
+    }
+  }
+}
+
 export function execute(source,options={}){
   const registry=options.registry??new Map();
   return evaluate(linkProgram(parse(source),registry),{...options,registry});

@@ -14,11 +14,11 @@ print(r·body)
 
 Network is disabled by default. The emitting Node runtime refuses all I/O unless the embedding host sets **`HCODE_HTTP_ALLOWED_ORIGINS`** to a comma-separated, exact, non-wildcard list of permitted URL origins. Examples include `http://127.0.0.1:1234` and `https://api.example.com`. This is not a command-line bypass; output JS is independently protected even if someone compiles without executing via the H-Code CLI. Userinfo and non-HTTP schemes are rejected. Verified pure packages, current sync functions and sync lambdas cannot perform HTTP. These restrictions avoid silently introducing promises into existing sync functions; general async functions are future work.
 
-The source lexer/parser in the independent JS reference interpreter recognizes the same symbol and ASCII fallback, but **the synchronous interpreter deliberately fails closed** for this asynchronous effect. Do not count it as JS runtime parity yet.
+The independent JavaScript reference lexer/parser recognizes the same sign. A new `executeAsync(source,{httpGet, ...options})` interface interprets the same top-level H-Code statements independently with a host-injected request implementation, replaying a bounded pure execution prefix after each awaited request. The synchronous `execute` continues to fail closed. Verified pure packages are blocked from HTTP. This is a bounded reference strategy, **not general async function support**; that is still required for complete task06 verification.
 
 ## Next, required before canonical verification
 
-1. True asynchronous execution in the JS reference interpreter and controlled async function/call semantics in both engines.
+1. General, non-replaying asynchronous execution and controlled async function/call semantics in both engines (the reference runner currently handles bounded top-level request replay).
 2. A generic bounded sleep/scheduler effect (symbol) for deterministic retry backoff.
 3. Author the retry policy in actual H-Code source (loops, conditions, state, trace), with no task-specific runtime macro.
 4. Run real loopback 200/500/429/502/503/400/404 fixtures against Rust-generated JavaScript, the independent JS interpreter, and the fixed idiomatic TypeScript oracle.
