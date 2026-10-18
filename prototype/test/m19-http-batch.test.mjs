@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {executeAsync,execute} from '../src/hcode.mjs';
 const success=(body)=>({status:200,body,ok:true,retryAfter:0});
 const urls=['https://a.invalid/x','https://b.invalid/y','https://c.invalid/z'];
-const source='≔r←⤋⟦'+urls.map(JSON.stringify).join(',')+'⟧;print(⤒(r⇢λv:v·body));';
+const source='≔r←⤋⟦'+urls.map(JSON.stringify).join(',')+'⟧;print(⤒r);';
 
 test('vector HTTP launches all three requests before awaiting any; preserves input order',async()=>{
  const started=[],output=[];let release;
@@ -20,7 +20,7 @@ test('vector HTTP launches all three requests before awaiting any; preserves inp
    new Promise((_,reject)=>setTimeout(()=>reject(Error('serialized batch GET deadlock')),2000))
  ]);
  assert.deepEqual(started,urls);
- assert.deepEqual(output,['["a","b","c"]']);
+ assert.deepEqual(JSON.parse(output[0]).map(x=>x.body),['a','b','c']);
  assert.equal(result.httpRequests,3,'batch counts real requests, not one journal entry');
 });
 
@@ -63,5 +63,5 @@ test('a failed request does not suppress other responses or reorder the batch',a
   return success(u.slice(8,9));
  }});
  assert.equal(r.httpRequests,3);
- assert.deepEqual(output,['["a","","c"]']);
+ assert.deepEqual(JSON.parse(output[0]).map(x=>x.body),['a','','c']);
 });

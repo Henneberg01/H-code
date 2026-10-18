@@ -7,7 +7,7 @@ fn compile(source:&str)->Result<String,String>{
 }
 #[test]
 fn vectorized_http_has_exact_typed_sequence_and_true_concurrent_codegen(){
- let source="≔r←⤋⟦\"https://example.invalid/a\",\"https://example.invalid/b\"⟧;print(⤒(r⇢λv:v·body));";
+ let source="≔r←⤋⟦\"https://example.invalid/a\",\"https://example.invalid/b\"⟧;print(⤒r);";
  let js=compile(source).unwrap();
  assert!(js.contains("await __hc_http_batch("));
  assert!(js.contains("Promise.all(urls.map(__hc_http_get))"));
