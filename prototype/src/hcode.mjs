@@ -11,7 +11,7 @@ export const CORE_GLYPHS = Object.freeze({
   '\u2913':'json-read', '\u2912':'json-write', '\u2317': '#', '\u29fa': '++', '\u2211': '@+', '\u2315': '@?', '\u21e2': '@>', '\u03bb': 'lambda', '\u2200': 'forall'
 });
 export const RESERVED_USER_GLYPHS = new Set(['\u2205', '\u2200', '\u2208', ...Object.keys(CORE_GLYPHS)]);
-const RESERVED = new Set(['fn','let','return','true','false','if','else','while','and','or','not','use','as','lambda','forall']);
+const RESERVED = new Set(['fn','let','return','true','false','if','else','while','and','or','not','use','as','lambda','forall','json_in','json_out']);
 const TWO = new Set(['==','!=','<=','>=','->','::','|>','<<','[[',']]','++','@+','@?','@>','=>','<+']);
 const ONE = new Set(['+','-','*','/','%','<','>','=','(',')','{','}',',',';',':','?','#','.']);
 const ILLEGAL = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]|\p{Default_Ignorable_Code_Point}/u;
@@ -81,7 +81,7 @@ export function tokenize(source) {
     }
     if(letter(c)){
       let word='';while(alnum(peek()))word+=advance();
-      emit(RESERVED.has(word)?word:'ident',word,ln,col);continue;
+      emit(word==='json_in'?'json-read':word==='json_out'?'json-write':(RESERVED.has(word)?word:'ident'),word,ln,col);continue;
     }
     if(Object.hasOwn(CORE_GLYPHS,c)){
       advance();const alias=CORE_GLYPHS[c];emit(alias,alias,ln,col);continue;
