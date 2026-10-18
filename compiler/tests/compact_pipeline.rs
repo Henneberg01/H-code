@@ -58,12 +58,18 @@ fn pipeline_left_expression_executes_once_even_when_chained(){
 
 #[test]
 fn malformed_pipelines_fail_with_source_locations(){
-    for source in ["print(1 ▷ 2);","print(1 ▷ (f));","print(1 ▷ f + 2);","print(1 ▷ f and true);","print(1 |>);"] {
+    for source in ["print(1 ▷ 2);","print(1 ▷ f + 2);","print(1 ▷ f and true);","print(1 |>);"] {
         let err=parse(source).unwrap_err().to_string();
         assert!(err.contains("PARSE") && err.contains("1:"),"{source}: {err}");
     }
     assert!(parse("print(1 | > f);").is_err());
+    assert!(hcode_compiler::lexer::lex("1 | > f;").is_err());
     assert!(parse("ƒ f(n) ↩ n*2; print((1 ▷ f)+2);").is_ok());
+    // Once H-Code supports first-class functions, grouped functions and operator
+    // sections are valid right operands of a pipeline, never syntax errors.
+    assert_eq!(output("ƒ f(n) ↩ n*2; print(21 ▷ (f));",&bare()).unwrap(),"42\n");
+    assert_eq!(output("print(21 ▷ (*2));",&bare()).unwrap(),"42\n");
+    assert!(compile("print(21 ▷ (2));",&bare()).unwrap_err().contains("TYPE"));
 }
 
 #[test]

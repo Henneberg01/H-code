@@ -333,6 +333,14 @@ impl Checker {
                 let arg=self.expression(right)?;
                 let (parameter,returned)=match op {
                     BinaryOp::Add=>{
+                        // Reject concretely invalid RHS types at the site of
+                        // (+value). Delaying all checks to verify_constraints()
+                        // can otherwise mask a genuine + type error behind an
+                        // unrelated call-argument mismatch at use sites.
+                        let rhs=self.resolved(&arg.ty);
+                        if !matches!(rhs,Type::Number|Type::String|Type::Variable(_)) {
+                            return Err(Diagnostic::new("TYPE",format!("+ requires Number or String, got {rhs:?}"),right.span));
+                        }
                         self.pending_add.push((arg.ty.clone(),expr.span));
                         (arg.ty.clone(),arg.ty.clone())
                     }
