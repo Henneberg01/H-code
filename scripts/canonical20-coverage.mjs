@@ -10,6 +10,7 @@ import {verifyCanonical05} from './canonical20-verify-05.mjs';
 import {verifyCanonical02} from './canonical20-verify-02.mjs';
 import {verifyCanonical10} from './canonical20-verify-10.mjs';
 import {verifyCanonical03} from './canonical20-verify-03.mjs';
+import {verifyCanonical04} from './canonical20-verify-04.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
 const registryBytes=readFileSync(join(root,'compact/canonical20/workloads.json'));
@@ -87,6 +88,9 @@ export function readiness(){
         // Do not relabel the historical preregistration. Verification must
         // come from the full source-SHA-locked Rust/JS/TS Unicode test suite.
         fullEvidence[w.id]=verifyCanonical03();
+        verified++;
+      }else if(w.id==='04-csv-validation'){
+        fullEvidence[w.id]=verifyCanonical04();
         verified++;
       }else if(w.id==='05-json-transformation'){
         // The frozen original preregistry remains untouched; promotion is derived
