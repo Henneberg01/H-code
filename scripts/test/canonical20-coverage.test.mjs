@@ -16,8 +16,8 @@ test('all 20 canonical tasks remain registered in source order, including unsupp
 test('source-locked reference-only examples cannot be misrepresented as global 70% proof',{skip:!canRunTs},()=>{
   const r=readiness();
   assert.equal(r.preregisteredTasks,20);
-  assert.equal(r.verifiedFullWorkloads,2);
-  assert.equal(r.partialReferenceEvidence,1);
+  assert.equal(r.verifiedFullWorkloads,3);
+  assert.equal(r.partialReferenceEvidence,0);
   assert.equal(r.unsupported,17);
   assert.equal(r.complete,false);
   assert.equal(r.globalMedianCodepointReduction,null);
@@ -27,7 +27,10 @@ test('source-locked reference-only examples cannot be misrepresented as global 7
   assert.equal(r.evidenceByFullTask['02-fibonacci-recursion'].positiveCasesVerified,16);
   assert.equal(r.evidenceByFullTask['02-fibonacci-recursion'].compilerStaticTypeFailuresVerified,3);
   assert.equal(r.evidenceByFullTask['02-fibonacci-recursion'].unicodeCodepointReductionPct,-2.13);
-  assert.equal(r.evidenceByPartialTask['10-generic-collection-transforms'].subcasesVerified,3);
+  assert.equal(r.evidenceByFullTask['10-generic-collection-transforms'].kind,'full-compiler-evidence');
+  assert.equal(r.evidenceByFullTask['10-generic-collection-transforms'].frozenM14ProgramsCompiledAndExecuted.length,3);
+  assert.equal(r.evidenceByFullTask['10-generic-collection-transforms'].compilerRejectedIllTypedPrograms,6);
+  assert.equal(r.evidenceByFullTask['10-generic-collection-transforms'].historicalM14MedianCodepointReductionPct,68.46);
   assert.equal(r.historicalM14MedianCodepointReductionPct,68.46);
   assert.equal(r.historicalM14IsGlobalMetric,false);
   assert.equal(r.immutableRegistryGitBlobSha,PREREGISTERED_GIT_BLOB_SHA);
@@ -59,7 +62,7 @@ test('the strict twenty-workload CI gate intentionally fails until all 20 pass',
   assert.match(child.stderr,/all 20 must be compiler-verified/);
   const report=JSON.parse(child.stdout);
   assert.equal(report.preregisteredTasks,20);
-  assert.equal(report.verifiedFullWorkloads,2);
+  assert.equal(report.verifiedFullWorkloads,3);
   assert.equal(report.unsupported,17);
   assert.equal(report.globalMedianCodepointReduction,null);
   assert.equal(report.objectiveAchieved,false);
