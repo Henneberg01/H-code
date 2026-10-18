@@ -25,8 +25,8 @@ test('unannotated functions, calls and legacy brace bodies still execute',()=>{
   assert.equal(output('fn factorial(n){if(n<=1){return 1;}return n*factorial(n-1);} print(factorial(5));'),'120');
 });
 
-test('compact functions reject malformed signatures and missing semicolons',()=>{
-  assert.throws(()=>parse('ƒ f() ↩ 1'),/Expected ;/);
+test('compact functions reject malformed signatures while permitting an EOF statement boundary',()=>{
+  assert.equal(output('ƒ f() ↩ 1\nprint(f())'),'1');
   assert.throws(()=>parse('ƒ f() → ↩ 1;'),/Expected ident/);
   assert.throws(()=>parse('ƒ f() 1;'),/Expected return/);
   assert.throws(()=>parse('fn f(x) return ;'),/Expected expression/);

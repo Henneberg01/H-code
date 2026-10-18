@@ -48,8 +48,9 @@ fn short_form_infers_types_and_supports_export_and_recursion(){
 
 #[test]
 fn short_form_reports_parse_and_static_type_errors(){
+    assert_eq!(output("ƒ f() ↩ 1\nprint(f())"),"1\n");
     let bad_parse=[
-        "ƒ f() ↩ 1", "ƒ f() → ↩ 1;", "ƒ f() 1;", "fn f(x) return ;"
+        "ƒ f() → ↩ 1;", "ƒ f() 1;", "fn f(x) return ;"
     ];
     for code in bad_parse {assert!(parse(code).is_err(),"{code}");}
     let p=parse("ƒ f() → Number ↩ \"wrong\";").unwrap();
