@@ -13,7 +13,7 @@ pub struct Token { pub kind: TokenKind, pub span: Span }
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum TokenKind {
-    Fn, Let, Return, If, Else, While, Then, Use, Import, Export, As, True, False, And, Or, Not,
+    Fn, Let, Return, If, Else, While, Then, Forall, Use, Import, Export, As, True, False, And, Or, Not,
     Identifier(String), Number(String), String(String), Glyph(char),
     LeftParen, RightParen, LeftBrace, RightBrace, Comma, Semicolon, Colon, DoubleColon, Pipe, Compose, Choice, Lambda, SeqOpen, SeqClose, SeqLength, SeqConcat, Sum, Filter, Map,
     Assign, Arrow, Plus, Minus, Star, Slash, Percent,
@@ -122,7 +122,7 @@ pub fn lex(source: &str) -> Result<Vec<Token>, Diagnostic> {
                 "if"=>TokenKind::If,"else"=>TokenKind::Else,"while"=>TokenKind::While,
                 "use"=>TokenKind::Use,"import"=>TokenKind::Import,"export"=>TokenKind::Export,"as"=>TokenKind::As,
                 "true"=>TokenKind::True,"false"=>TokenKind::False,"and"=>TokenKind::And,
-                "or"=>TokenKind::Or,"not"=>TokenKind::Not,"lambda"=>TokenKind::Lambda,
+                "or"=>TokenKind::Or,"not"=>TokenKind::Not,"lambda"=>TokenKind::Lambda,"forall"=>TokenKind::Forall,
                 _=>TokenKind::Identifier(word)
             };
             result.push(Token{kind,span});continue;
@@ -138,7 +138,7 @@ pub fn lex(source: &str) -> Result<Vec<Token>, Diagnostic> {
             '∷'=>Some(TokenKind::DoubleColon),'▷'=>Some(TokenKind::Pipe),'∘'=>Some(TokenKind::Compose),'◇'=>Some(TokenKind::Choice),
             '⟦'=>Some(TokenKind::SeqOpen),'⟧'=>Some(TokenKind::SeqClose),
             '⌗'=>Some(TokenKind::SeqLength),'⧺'=>Some(TokenKind::SeqConcat),
-            '∑'=>Some(TokenKind::Sum),'⌕'=>Some(TokenKind::Filter),'⇢'=>Some(TokenKind::Map),'λ'=>Some(TokenKind::Lambda),
+            '∑'=>Some(TokenKind::Sum),'⌕'=>Some(TokenKind::Filter),'⇢'=>Some(TokenKind::Map),'λ'=>Some(TokenKind::Lambda),'∀'=>Some(TokenKind::Forall),
             _=>None,
         };
         if let Some(kind)=core { advance(&mut pos,&mut line,&mut column); result.push(Token{kind,span}); continue; }

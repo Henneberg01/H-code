@@ -41,7 +41,7 @@ impl Parser {
         let certain=matches!(next.kind,
             TokenKind::Eof|TokenKind::RightBrace|TokenKind::Fn|TokenKind::Let|
             TokenKind::Return|TokenKind::If|TokenKind::While|TokenKind::Use|
-            TokenKind::Import|TokenKind::Export|TokenKind::Else);
+            TokenKind::Import|TokenKind::Export|TokenKind::Else|TokenKind::Forall);
         let previous=self.index.checked_sub(1).and_then(|i|self.tokens.get(i));
         if certain || previous.is_some_and(|t|next.span.line>t.span.line){return Ok(());}
         Err(Diagnostic::new("PARSE",
@@ -96,6 +96,41 @@ impl Parser {
                 let value=self.expression(0)?;self.statement_end()?;
                 StmtKind::Let{name,annotation,value}
             }
+            TokenKind::Forall=>{
+                self.index+=1;
+                if !top_level {return Err(Diagnostic::new("PARSE","∀ declarations must be top-level".into(),span));}
+                let mut bound=Vec::new();
+                loop {
+                    let (name,at)=self.ident()?;
+                    if !name.starts_with(|c:char|c.is_ascii_uppercase()) ||
+                        name.len()>32 || matches!(name.as_str(),"Number"|"String"|"Bool"|"Unit") ||
+                        bound.contains(&name) || bound.len()>=8 {
+                        return Err(Diagnostic::new("PARSE",format!("Invalid or duplicate ∀ binder {name}"),at));
+                    }
+                    bound.push(name);
+                    if self.accept(&TokenKind::Comma).is_none(){break;}
+                }
+                self.expect(&TokenKind::Fn)?;
+                let (name,_)=self.ident()?;
+                self.expect(&TokenKind::LeftParen)?;
+                let mut parameters=Vec::new();
+                if !self.at(&TokenKind::RightParen) {
+                    loop {
+                        let (name,param_span)=self.ident()?;
+                        let annotation=if self.accept(&TokenKind::Colon).is_some(){Some(self.type_name()?)}else{None};
+                        parameters.push(Parameter{name,annotation,span:param_span});
+                        if self.accept(&TokenKind::Comma).is_none(){break;}
+                    }
+                }
+                self.expect(&TokenKind::RightParen)?;
+                let returns=if self.accept(&TokenKind::Arrow).is_some(){Some(self.type_name()?)}else{None};
+                let body=if self.at(&TokenKind::LeftBrace){self.block()?}else{
+                    let ret=self.expect(&TokenKind::Return)?;
+                    let value=self.expression(0)?;self.statement_end()?;
+                    vec![Stmt{kind:StmtKind::Return(value),span:ret.span}]
+                };
+                StmtKind::Function{name,type_parameters:bound,parameters,returns,body}
+            }
             TokenKind::Fn=>{
                 self.index+=1;let (name,_)=self.ident()?;
                 self.expect(&TokenKind::LeftParen)?;
@@ -116,7 +151,7 @@ impl Parser {
                     self.statement_end()?;
                     vec![Stmt{kind:StmtKind::Return(value),span:ret.span}]
                 };
-                StmtKind::Function{name,parameters,returns,body}
+                StmtKind::Function{name,type_parameters:Vec::new(),parameters,returns,body}
             }
             TokenKind::Return=>{
                 self.index+=1;let value=self.expression(0)?;

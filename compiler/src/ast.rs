@@ -19,7 +19,7 @@ pub enum StmtKind {
     Export { declaration: Box<Stmt> },
     Let { name: String, annotation: Option<String>, value: Expr },
     Assign { name: String, value: Expr },
-    Function { name: String, parameters: Vec<Parameter>, returns: Option<String>, body: Vec<Stmt> },
+    Function { name: String, type_parameters: Vec<String>, parameters: Vec<Parameter>, returns: Option<String>, body: Vec<Stmt> },
     Return(Expr),
     If { condition: Expr, then_body: Vec<Stmt>, else_body: Option<Vec<Stmt>> },
     While { condition: Expr, body: Vec<Stmt> },
