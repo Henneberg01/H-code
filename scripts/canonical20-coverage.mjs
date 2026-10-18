@@ -7,6 +7,7 @@ import {spawnSync} from 'node:child_process';
 import {execute} from '../prototype/src/hcode.mjs';
 import {compareM14} from './m14-compare.mjs';
 import {verifyCanonical05} from './canonical20-verify-05.mjs';
+import {verifyCanonical02} from './canonical20-verify-02.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
 const registryBytes=readFileSync(join(root,'compact/canonical20/workloads.json'));
@@ -87,9 +88,18 @@ export function readiness(){
         verified++;
       }else{unsupported++;}
     }else if(w.status==='reference_partial'){
-      partial++;
-      if(w.evidence==='m10:fibonacci'){if(w.id!=='02-fibonacci-recursion')throw Error('Misassigned reference');evidence[w.id]=fibonacciEvidence();}
-      else if(w.evidence==='m14:collections'){if(w.id!=='10-generic-collection-transforms')throw Error('Misassigned reference');evidence[w.id]=collectionEvidence();}
+      if(w.evidence==='m10:fibonacci'){
+        if(w.id!=='02-fibonacci-recursion')throw Error('Misassigned reference');
+        // Never promote a status by editing the original JSON registry. The
+        // original frozen source must actually pass Rust + JS + TS runtime and
+        // explicit compiler type-error conformance, including varied n.
+        fullEvidence[w.id]=verifyCanonical02();
+        verified++;
+      }else if(w.evidence==='m14:collections'){
+        if(w.id!=='10-generic-collection-transforms')throw Error('Misassigned reference');
+        evidence[w.id]=collectionEvidence();
+        partial++;
+      }
       else throw Error('Unknown or fabricated partial evidence for '+w.id);
     }else{
       // A future report must implement full compiler-proof verification; changing
