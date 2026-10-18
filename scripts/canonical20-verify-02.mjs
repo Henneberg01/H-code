@@ -17,7 +17,8 @@ export const FROZEN=Object.freeze({
   m10:['compact/results/frozen-baseline-m10-eight.json','a556d1e08146569515a9a89ec2adc0f2ae62ef6d'],
   fixtures:['compact/canonical20/cases/02-fibonacci-recursion.json','8d17955cbe4672aa1596d68c438d1ff69c8b9d51'],
   hc:['compact/benchmarks/paired/recursive-fibonacci.hc','66f02e2dce678b51f8d02766742d9d24aa5d66f7'],
-  ts:['compact/benchmarks/paired/recursive-fibonacci.ts','2a4e6ac1ef469a6e0c64381b79f901ee26085125']
+  ts:['compact/benchmarks/paired/recursive-fibonacci.ts','2a4e6ac1ef469a6e0c64381b79f901ee26085125'],
+  glyphCandidate:['compact/canonical20/candidates/02-fibonacci-glyph-first.hc','9f60ca57fec6dd77c1b4ee358913224e860b140c']
 });
 const gitBlob=bytes=>createHash('sha1').update('blob '+bytes.length+'\0').update(bytes).digest('hex');
 const sha256=bytes=>createHash('sha256').update(bytes).digest('hex');
@@ -128,6 +129,26 @@ export function verifyCanonical02(){
           'TypeScript varying Fibonacci inputs')!==expected)
       throw Error('Fibonacci recursion and output parity failed across varied n');
 
+    // Shortened, symbol-first authoring is an independently SHA-frozen optional
+    // candidate. It cannot replace or rewrite the historical M10 source in
+    // the official baseline without an explicit reviewed benchmark decision.
+    const glyph=original.glyphCandidate;
+    if(glyph.codepoints>=original.hc.codepoints)
+      throw Error('Symbol-first candidate did not actually shorten original H-Code');
+    const glyphOutput=join(temp,'symbol-first.mjs');
+    const glyphGenerated=compile(join(root,glyph.path),glyphOutput);
+    if(runReference(glyph.source)!==wanted||
+       requireSuccess(processRun(process.execPath,[glyphOutput]),'symbol-first compiled Fibonacci')!==wanted)
+      throw Error('Shorter glyph code failed frozen original n=7');
+    const glyphMany=programForMany(glyph.source,numbers,'hc');
+    const glyphManyFile=join(temp,'glyph-many.hc');
+    const glyphManyJS=join(temp,'glyph-many.mjs');
+    writeFileSync(glyphManyFile,glyphMany);
+    compile(glyphManyFile,glyphManyJS);
+    if(runReference(glyphMany)!==expected||
+       requireSuccess(processRun(process.execPath,[glyphManyJS]),'symbol-first varying Fibonacci')!==expected)
+      throw Error('Shorter symbolic Fibonacci does not preserve all frozen positive cases');
+
     // Proof that H-Code compiler enforces the declared (n:Number)->Number,
     // rather than accepting dynamic implicit casts or a constant output.
     const hcPrefix=original.hc.source.slice(0,-'print(fib(7));\n'.length);
@@ -164,6 +185,15 @@ export function verifyCanonical02(){
       hcodeDeveloperAuthored:{unicodeCodepoints:original.hc.codepoints,utf8Bytes:original.hc.bytes},
       typescriptDeveloperAuthored:{unicodeCodepoints:original.ts.codepoints,utf8Bytes:original.ts.bytes},
       unicodeCodepointReductionPct:percent(original.hc.codepoints,original.ts.codepoints),
+      symbolFirstAlternate:{
+        NOT_AN_AUTOMATIC_REPLACEMENT_FOR_ORIGINAL_FROZEN_M10:true,
+        sourcePath:glyph.path,gitBlobSha:glyph.blobSha,
+        authoredUnicodeCodepoints:glyph.codepoints,authoredUtf8Bytes:glyph.bytes,
+        unicodeCodepointReductionPctVsSameFrozenTS:percent(glyph.codepoints,original.ts.codepoints),
+        utf8ByteReductionPctVsSameFrozenTS:percent(glyph.bytes,original.ts.bytes),
+        validatedSame16CasesWithRustAndJS:true,
+        generatedJsNotAuthored:glyphGenerated
+      },
       utf8ByteReductionPct:percent(original.hc.bytes,original.ts.bytes),
       generatedJsNotAuthored:compiled,
       libraryDependencyBytesMeasured:false,
