@@ -1,6 +1,6 @@
 //! M16.3: deterministic, offline, glyph-first package authoring.
 //! Author a .hcs file; generated .hc/manifest/lock are build artifacts.
-use std::{collections::HashSet,fs,path::{Path,PathBuf}};
+use std::{collections::HashSet,fs,path::{Path,PathBuf},time::{SystemTime,UNIX_EPOCH}};
 use sha2::{Digest,Sha256};
 use serde_json::json;
 use unicode_normalization::UnicodeNormalization;
@@ -9,9 +9,11 @@ use crate::{ast::StmtKind,checker::check,lexer::{lex,is_symbol,TokenKind},packag
 fn sha(data:&[u8])->String{format!("{:x}",Sha256::digest(data))}
 fn fail(s:impl Into<String>)->String{format!("M16.3: {}",s.into())}
 fn legal_name(s:&str)->bool{
-    !s.is_empty() && s.as_bytes()[0].is_ascii_lowercase()
-        && s.bytes().all(|c|c.is_ascii_lowercase()||c.is_ascii_digit()||c==b'.'||c==b'-')
-        && !s.contains("..") && !s.ends_with('.') && !s.ends_with('-')
+    // Identical grammar to the existing JS loader's PACKAGE contract.
+    let components:Vec<_>=s.split(['.','-']).collect();
+    s.starts_with(|c:char|c.is_ascii_lowercase()) &&
+        components.iter().all(|part|!part.is_empty()&&
+            part.bytes().all(|c|c.is_ascii_lowercase()||c.is_ascii_digit()))
 }
 fn legal_version(s:&str)->bool{
     let p:Vec<_>=s.split('.').collect();
@@ -40,6 +42,24 @@ fn write_or_check(path:&Path,content:&[u8],check_only:bool)->Result<(),String>{
     }
     Ok(())
 }
+// Verify the final format-3 package with the real loader BEFORE touching
+// existing output files. A source contract failure must not leave a bad lock.
+struct PreviewDir(PathBuf);
+impl Drop for PreviewDir{fn drop(&mut self){let _=fs::remove_dir_all(&self.0);}}
+fn verify_generated(name:&str,source:&[u8],manifest:&[u8],lock:&[u8])->Result<(),String>{
+    let now=SystemTime::now().duration_since(UNIX_EPOCH).map_err(|e|fail(e.to_string()))?.as_nanos();
+    let temp=std::env::temp_dir().join(format!("hcode-m163-preview-{}-{now}",std::process::id()));
+    fs::create_dir(&temp).map_err(|e|fail(format!("Create preview: {e}")))?;
+    let cleanup=PreviewDir(temp);
+    let pkg=cleanup.0.join("packages").join(name);
+    fs::create_dir_all(&pkg).map_err(|e|fail(format!("Preview package: {e}")))?;
+    fs::write(pkg.join("lib.hc"),source).map_err(|e|fail(format!("Preview source: {e}")))?;
+    fs::write(pkg.join("manifest.json"),manifest).map_err(|e|fail(format!("Preview manifest: {e}")))?;
+    let path=cleanup.0.join("hcode.lock.json");
+    fs::write(&path,lock).map_err(|e|fail(format!("Preview lock: {e}")))?;
+    load_lockfile(&path).map_err(|e|fail(format!("Generated package rejected: {e}")))?;
+    Ok(())
+}
 /// Usage: hcodec pack --name NAME --version X.Y.Z --source packages/NAME/signs.hcs
 ///                   --lock hcode.NAME.lock.json [--check]
 /// Paths must be within a canonical project root; no network access.
@@ -47,6 +67,7 @@ pub fn generate(name:&str,version:&str,source:&Path,lock:&Path,check_only:bool)-
     if !legal_name(name)||!legal_version(version){return Err(fail("Invalid package name/version"))}
     if source.extension().and_then(|x|x.to_str())!=Some("hcs"){return Err(fail("Source must be .hcs"))}
     let project=canonical_dir(Path::new("."))?;
+    let authored=source_text(source)?; // Inspect the requested leaf path, before symlink resolution.
     let input=fs::canonicalize(source).map_err(|e|fail(format!("Source: {e}")))?;
     if !input.starts_with(&project){return Err(fail("Source escapes project directory"))}
     let package=canonical_dir(input.parent().ok_or_else(||fail("Missing source directory"))?)?;
@@ -56,7 +77,6 @@ pub fn generate(name:&str,version:&str,source:&Path,lock:&Path,check_only:bool)-
     if lock_parent!=project || lock.file_name().and_then(|x|x.to_str()).is_none_or(|s|!s.starts_with("hcode.")||!s.ends_with(".lock.json")){
         return Err(fail("Lock must be a hcode.*.lock.json file in project root"));
     }
-    let authored=source_text(&input)?;
     let tokens=lex(&authored).map_err(|e|fail(e.to_string()))?;
     let mut positions=Vec::new();
     let mut glyphs=HashSet::new();
@@ -116,6 +136,7 @@ pub fn generate(name:&str,version:&str,source:&Path,lock:&Path,check_only:bool)-
     }]});
     let mut lock_bytes=serde_json::to_vec_pretty(&lock_object).map_err(|e|fail(e.to_string()))?;
     lock_bytes.push(b'\n');
+    verify_generated(name,output.as_bytes(),&manifest_bytes,&lock_bytes)?;
     let manifest_path=package.join("manifest.json");
     let source_path=package.join("lib.hc");
     // In check mode reject any drift; in write mode use deterministic bytes.
