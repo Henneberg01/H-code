@@ -72,6 +72,12 @@ jobs:
         if: ${{ success() || failure() }}
       - run: npm run m15:measure
         if: ${{ success() || failure() }}
+      - name: Install exact pinned idiomatic TypeScript CSV comparator packages
+        run: npm ci --prefix compact/canonical20/baselines/04-idiomatic-typescript --ignore-scripts --no-audit --no-fund
+        if: ${{ success() || failure() }}
+      - name: Benchmark independent idiomatic TS csv-parse and Zod parity with package footprint
+        run: npm run benchmark20:csv-idiomatic
+        if: ${{ success() || failure() }}
       - name: Verify canonical04 CSV parsing, filesystem and typed validation
         run: npm run benchmark20:verify04
         if: ${{ success() || failure() }}
