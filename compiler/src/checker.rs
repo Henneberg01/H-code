@@ -91,6 +91,7 @@ pub enum TypedExprKind {
     Sequence(Vec<TypedExpr>),
     Record(Vec<(String,TypedExpr)>),
     Field { record:Box<TypedExpr>,name:String },
+    RecordUpdate { record:Box<TypedExpr>,name:String,value:Box<TypedExpr> },
     Index { sequence:Box<TypedExpr>,index:Box<TypedExpr> },
     Length(Box<TypedExpr>),
     Sum(Box<TypedExpr>),
@@ -385,6 +386,18 @@ impl Checker {
                     .ok_or_else(||Diagnostic::new("TYPE",format!("Unknown record field {name}"),expr.span))?;
                 (TypedExprKind::Field{record:Box::new(typed),name:name.clone()},selected)
             }
+            ExprKind::RecordUpdate{record,name,value}=>{
+                let checked_record=self.expression(record)?;
+                let Type::Record(fields)=self.resolved(&checked_record.ty) else{
+                    return Err(Diagnostic::new("TYPE","⊞ requires a typed record".into(),record.span));
+                };
+                let expected=fields.iter().find(|(key,_)|key==name).map(|(_,ty)|ty.clone())
+                    .ok_or_else(||Diagnostic::new("TYPE",format!("Unknown record field {name}"),expr.span))?;
+                let checked_value=self.expression(value)?;
+                self.unify(&expected,&checked_value.ty,value.span,"Record update field type mismatch")?;
+                (TypedExprKind::RecordUpdate{record:Box::new(checked_record),name:name.clone(),
+                  value:Box::new(checked_value)},Type::Record(fields))
+            }
             ExprKind::Sequence(items)=>{
                 let element=self.fresh();
                 let mut checked=Vec::with_capacity(items.len());
@@ -624,6 +637,7 @@ impl Checker {
             TypedExprKind::Sequence(items)=>{for item in items {self.finalize_expr(item)?;}},
             TypedExprKind::Record(fields)=>{for (_,value) in fields{self.finalize_expr(value)?;}},
             TypedExprKind::Field{record,..}=>self.finalize_expr(record)?,
+            TypedExprKind::RecordUpdate{record,value,..}=>{self.finalize_expr(record)?;self.finalize_expr(value)?;},
             TypedExprKind::Index{sequence,index}=>{self.finalize_expr(sequence)?;self.finalize_expr(index)?;},
             TypedExprKind::Length(value)=>self.finalize_expr(value)?,
             TypedExprKind::Sum(value)=>self.finalize_expr(value)?,
