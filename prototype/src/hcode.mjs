@@ -504,7 +504,7 @@ const runtimeType=value=>value===null?'Unit':typeof value==='number'?'Number':ty
 export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=16384,registry=new Map(),readFile=null,readStdin=null,httpEffects=null,httpServe=null,httpServeState=null,sleepEffects=null,fileEffects=null}={}){
   const root=new Scope(),operations=new Map(),operationSpecs=new Map(),loadedLibraries=new Set();let steps=0,stdinConsumed=false,httpIndex=0,sleepIndex=0,fileIndex=0,pureDepth=0,functionDepth=0,httpServerRegistered=false;
   const step=()=>{if(++steps>maxSteps)throw Error('Execution step limit exceeded');};
-  root.define('print',(...args)=>{stdout(args.map(x=>x===null?'none':String(x)).join(' '));return null;});
+  root.define('print',(...args)=>{if(pureDepth>0)throw Error('CAS reducer effect denied: print');stdout(args.map(x=>x===null?'none':String(x)).join(' '));return null;});
   const truth=v=>{if(typeof v!=='boolean')throw Error('Condition must be Boolean');return v;};
   // The parser emits ⦃name:Type,...⦄. Split top-level commas without
   // losing recursively nested sequence/record types.
@@ -730,7 +730,7 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
         if(typeof handler!=='function'||typeof initial!=='string'||
            !initial.isWellFormed()||new TextEncoder().encode(initial).length>1048576)
           throw TypeError('⤊ stateful handler requires Function and bounded String initial state');
-        httpServeState(handler,initial);
+        httpServeState((...args)=>{pureDepth++;try{return handler(...args);}finally{pureDepth--;}},initial);
         httpServerRegistered=true;
         return null;
       }

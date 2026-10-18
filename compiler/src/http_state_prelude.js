@@ -8,7 +8,10 @@ const __hc_http_serve_state=(handler,initial)=>{
   const root=process.env.HCODE_HTTP_STATE_ROOT;
   if(typeof root!=='string' || !root)
     throw Error('⤊ persistent state capability denied: HCODE_HTTP_STATE_ROOT required');
-  const store=createHttpStateStore({root,initial});
+  const mode=process.env.HCODE_HTTP_STATE_MODE??'legacy';
+  if(mode!=='legacy'&&mode!=='cas-v1')throw Error('⤊ unknown persistence mode');
+  const cas=mode==='cas-v1';
+  const store=cas?createHttpCasStateStore({root,initial}):createHttpStateStore({root,initial});
   try {
     return __hc_http_serve((request,metadata)=>{
       const requestId=metadata.requestId;
@@ -16,6 +19,17 @@ const __hc_http_serve_state=(handler,initial)=>{
         return __hc_record([['body','invalid_request_id'],['status',400]]);
       const digest=requestId?__hc_state_request_digest(
         request.method,request.path,request.body,metadata.contentType):null;
+      if(cas){
+        const result=executeHttpCasTransaction({
+          store,handler,request,metadata,digest,
+          invoke:(fn,r,state)=>{
+            __hc_cas_reducer_active=true;
+            try{return fn(r,state);}
+            finally{__hc_cas_reducer_active=false;}
+          }
+        });
+        return __hc_record([['body',result.body],['status',result.status]]);
+      }
       const previous=requestId?store.receiptFor(requestId):null;
       if(previous){
         if(previous.digest!==digest)

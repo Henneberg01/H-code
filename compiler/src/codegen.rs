@@ -613,7 +613,7 @@ const __hc_stdin=()=>{
  }
 
  output.push_str("let __hc_fuel = 100000; let __hc_depth=0; const __hc_tick = () => { if (--__hc_fuel < 0) throw Error('H-Code instruction budget exceeded'); };\n");
- output.push_str("const __hc_print = (...xs) => { console.log(xs.map(x => x === null ? 'none' : String(x)).join(' ')); return null; };\n");
+ output.push_str("let __hc_cas_reducer_active=false;\nconst __hc_print = (...xs) => { if(__hc_cas_reducer_active)throw Error('CAS reducer effect denied'); console.log(xs.map(x => x === null ? 'none' : String(x)).join(' ')); return null; };\n");
  output.push_str("const __hc_div = (a,b) => { if (b === 0) throw Error('Division by zero'); return a/b; };\n");
  output.push_str("const __hc_mod = (a,b) => { if (b === 0) throw Error('Division by zero'); return a%b; };\n");
  output.push_str("const __hc_compose = (outer,inner) => { if (typeof outer !== 'function' || typeof inner !== 'function') throw Error('Composition expects unary functions'); return (x) => { __hc_tick(); return outer(inner(x)); }; };\n");
@@ -755,7 +755,7 @@ const __hc_hist = input => {
   }
   if requires_http {output.push_str(include_str!("http_get_prelude.js"));}
   if requires_http_serve {output.push_str(include_str!("http_serve_prelude.js"));}
-  if requires_http_state {output.push_str(include_str!("../../runtime/http-state.mjs"));output.push_str(include_str!("http_state_prelude.js"));}
+  if requires_http_state {output.push_str(include_str!("../../runtime/http-state.mjs"));output.push_str(include_str!("../../runtime/http-state-cas.mjs"));output.push_str(include_str!("../../runtime/http-state-cas-adapter.mjs"));output.push_str(include_str!("http_state_prelude.js"));}
   if requires_sleep {output.push_str(include_str!("sleep_prelude.js"));}
   output.push_str("const __hc_operations = Object.create(null);\n");
  for (pkg,_) in imported {
