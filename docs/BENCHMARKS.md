@@ -79,3 +79,7 @@ The formerly reported **26.73%/30.71%** reference-program reductions, initial M1
 ## M15 signed source-level comparison with the SAME eight M10 tasks
 
 The new M15 variants live in `compact/benchmarks/m15/` and preserve the complete original eight-task M10/TypeScript dataset. All 24 source Git blobs are pinned and `npm run m15:measure` compiles old and new H-Code with actual Rust and executes the unchanged Node22 TypeScript programs. Code point and UTF-8 distributions are separate. Do not mix this eight-task population with the distinct three-task M14 corpus or the unfinished canonical twenty-task study. See `docs/M15-SIGN-BLOCKS.md`.
+
+## M19: fixed twenty-workload preregistration
+
+The twenty workloads listed above are registered in `compact/canonical20/workloads.json` without exclusions, renames, or substitutions. Run `npm run benchmark20:status` for independently validated partial evidence from SHA-locked M10 and M14 sources. In the current scope **0/20 are fully verified, 2/20 have partial evidence, and 18/20 are unverified**. The original three-example M14 median **68.46%** is retained as historical M14 evidence, never presented as the global twenty-workload score. The strict gate `npm run benchmark20:strict` intentionally fails until the full twenty are compiler-validated. Package authoring source is part of the authored code metric. See `compact/canonical20/README.md` and `docs/M16-3-GLYPH-PACKAGES.md`.
