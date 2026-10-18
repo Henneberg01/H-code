@@ -58,6 +58,7 @@ pub enum ExprKind {
     HttpGet(Box<Expr>),
     // M19.12 B1: inbound loopback server effect with typed pure handler.
     HttpServe(Box<Expr>),
+    HttpServeState {handler:Box<Expr>,initial:Box<Expr>},
     // Intrinsic bounded asynchronous delay (milliseconds).
     Sleep(Box<Expr>),
     StdinText,

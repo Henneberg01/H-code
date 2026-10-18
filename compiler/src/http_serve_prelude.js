@@ -3,7 +3,7 @@
 // This is a stateless server primitive, NOT a CRUD API or storage engine.
 import {createServer as __hc_create_server} from 'node:http';
 let __hc_server_active=false;
-const __hc_http_serve = handler => {
+const __hc_http_serve = (handler,onClose=null) => {
   __hc_tick();
   if(typeof handler!=='function')throw TypeError('⤊ requires a request-handler function');
   const grant=process.env.HCODE_HTTP_LISTEN;
@@ -66,6 +66,7 @@ const __hc_http_serve = handler => {
   server.maxRequestsPerSocket=100;
   server.requestTimeout=5000;
   server.headersTimeout=6000;
+  if(typeof onClose==='function')server.once('close',onClose);
   server.on('error',error=>{
     process.stderr.write('HCODE_HTTP_ERROR: '+error.message+'\n');
     process.exitCode=2;

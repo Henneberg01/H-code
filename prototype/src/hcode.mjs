@@ -270,7 +270,12 @@ class Parser {
       this.expect(')');left={kind:'FileWrite',filename,content};
     }
     else if(this.accept('http-get'))left={kind:'HttpGet',value:this.expr(8)};
-    else if(this.accept('http-serve'))left={kind:'HttpServe',value:this.expr(8)};
+    else if(this.accept('http-serve')){
+      if(this.accept('(')){
+        const handler=this.expr(0);this.expect(',');const initial=this.expr(0);this.expect(')');
+        left={kind:'HttpServeState',handler,initial};
+      } else left={kind:'HttpServe',value:this.expr(8)};
+    }
     else if(this.accept('sleep-ms'))left={kind:'Sleep',value:this.expr(8)};
     else if(this.accept('csv-typed')){
       const schema=this.typeName();
@@ -449,6 +454,7 @@ export function linkProgram(ast, registry=new Map()) {
     if(node.kind==='Field')return {...node,record:expression(node.record)};
     if(node.kind==='JsonRead'||node.kind==='JsonWrite'||node.kind==='TextScalars'||node.kind==='TextWords'||node.kind==='Histogram'||node.kind==='Markdown'||node.kind==='FileRead'||node.kind==='HttpGet'||node.kind==='HttpServe'||node.kind==='Sleep'||node.kind==='CsvTyped'||node.kind==='ArithEval')return {...node,value:expression(node.value)};
     if(node.kind==='FileWrite')return {...node,filename:expression(node.filename),content:expression(node.content)};
+    if(node.kind==='HttpServeState')return {...node,handler:expression(node.handler),initial:expression(node.initial)};
     if(node.kind==='RecordUpdate')return {...node,record:expression(node.record),value:expression(node.value)};
     if(node.kind==='Index')return {...node,sequence:expression(node.sequence),index:expression(node.index)};
     if(node.kind==='Length')return {...node,value:expression(node.value)};
@@ -495,7 +501,7 @@ class Scope {
 class ReturnSignal{constructor(value){this.value=value;}}
 const runtimeType=value=>value===null?'Unit':typeof value==='number'?'Number':typeof value==='string'?'String':typeof value==='boolean'?'Bool':'unsupported';
 
-export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=16384,registry=new Map(),readFile=null,readStdin=null,httpEffects=null,httpServe=null,sleepEffects=null,fileEffects=null}={}){
+export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=16384,registry=new Map(),readFile=null,readStdin=null,httpEffects=null,httpServe=null,httpServeState=null,sleepEffects=null,fileEffects=null}={}){
   const root=new Scope(),operations=new Map(),operationSpecs=new Map(),loadedLibraries=new Set();let steps=0,stdinConsumed=false,httpIndex=0,sleepIndex=0,fileIndex=0,pureDepth=0,functionDepth=0,httpServerRegistered=false;
   const step=()=>{if(++steps>maxSteps)throw Error('Execution step limit exceeded');};
   root.define('print',(...args)=>{stdout(args.map(x=>x===null?'none':String(x)).join(' '));return null;});
@@ -712,6 +718,22 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
         return data;
       }
       case 'ArithEval':return safeArithmetic(expr(node.value,scope));
+      case 'HttpServeState':{
+        if(pureDepth>0||functionDepth>0)
+          throw Error('⤊ persistent HTTP server effect denied in a pure function');
+        if(typeof httpServeState!=='function')
+          throw Error('⤊ persistent HTTP state capability denied: inject trusted httpServeState host');
+        if(Array.isArray(httpEffects)||Array.isArray(sleepEffects)||Array.isArray(fileEffects))
+          throw Error('⤊ persistent HTTP server cannot replay top-level async effects');
+        if(httpServerRegistered)throw Error('⤊ only one server may be registered');
+        const handler=expr(node.handler,scope),initial=expr(node.initial,scope);
+        if(typeof handler!=='function'||typeof initial!=='string'||
+           !initial.isWellFormed()||new TextEncoder().encode(initial).length>1048576)
+          throw TypeError('⤊ stateful handler requires Function and bounded String initial state');
+        httpServeState(handler,initial);
+        httpServerRegistered=true;
+        return null;
+      }
       case 'HttpServe':{
         if(pureDepth>0 || functionDepth>0)
           throw Error('⤊ HTTP serve effect denied in pure package or handler function');
