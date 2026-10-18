@@ -79,6 +79,18 @@ jobs:
       - name: Benchmark independent idiomatic TS csv-parse and Zod parity with package footprint
         run: npm run benchmark20:csv-idiomatic
         if: ${{ success() || failure() }}
+      - name: Resolve calculator library package lock with registry SHA512 (temporary bootstrap)
+        run: npm install --package-lock-only --prefix compact/canonical20/baselines/01-idiomatic-typescript --ignore-scripts --no-audit --no-fund
+        if: ${{ success() || failure() }}
+      - name: Print exact calculator library lock metadata (temporary bootstrap)
+        run: node -e "const x=require('./compact/canonical20/baselines/01-idiomatic-typescript/package-lock.json');console.log('M19_CALCULATOR_LOCK='+JSON.stringify(x))"
+        if: ${{ success() || failure() }}
+      - name: Install fixed mathematical expression library comparator
+        run: npm ci --prefix compact/canonical20/baselines/01-idiomatic-typescript --ignore-scripts --no-audit --no-fund
+        if: ${{ success() || failure() }}
+      - name: Compare exact stdin calculator CLI against maintained TS expression package
+        run: npm run benchmark20:calc-idiomatic
+        if: ${{ success() || failure() }}
       - name: Verify original canonical01 stdin calculator CLI status stderr and arithmetic semantics
         run: npm run benchmark20:verify01
         if: ${{ success() || failure() }}
