@@ -6,6 +6,7 @@ import {parse,execute,tokenize,HCodeError} from '../src/hcode.mjs';
 import {loadLockedPackages} from '../src/packages.mjs';
 const folder=resolve('examples');
 const registry=loadLockedPackages(resolve('hcode.lock.json'));
+const m16Registry=loadLockedPackages(resolve('hcode.m16.lock.json'));
 function out(source,config){const lines=[];execute(source,{registry,...config,stdout:v=>lines.push(v)});return lines;}
 
 test('glyphs and ASCII spellings result in exactly the same AST',()=>{
@@ -18,7 +19,10 @@ test('all example files parse and execute under the M1 reference runtime',()=>{
  for(const file of readdirSync(folder).filter(f=>f.endsWith('.hc'))){
   const content=readFileSync(join(folder,file),'utf8');
   assert.doesNotThrow(()=>parse(content),`${file} syntax`);
-  assert.doesNotThrow(()=>out(content),`${file} runtime`);
+  assert.doesNotThrow(()=>{
+    const lines=[];
+    execute(content,{registry:file==='m16_vec_operations.hc'?m16Registry:registry,stdout:v=>lines.push(v)});
+  },`${file} runtime`);
  }
 });
 test('operator canonicalization and Boolean precedence',()=>{

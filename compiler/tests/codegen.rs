@@ -16,6 +16,7 @@ fn run(source:&str,packages:&PackageRegistry)->Result<String,String>{
 fn all_reference_examples_execute_as_compiled_js(){
  let base=root();
  let registry=load_lockfile(&base.join("hcode.lock.json")).unwrap();
+ let vec_registry=load_lockfile(&base.join("hcode.m16.lock.json")).unwrap();
  let empty=PackageRegistry::default();
   let mut count=0;
   for entry in fs::read_dir(base.join("examples")).unwrap() {
@@ -23,16 +24,22 @@ fn all_reference_examples_execute_as_compiled_js(){
     if path.extension().and_then(|s|s.to_str())!=Some("hc"){continue;}
     let file=path.file_name().unwrap().to_str().unwrap();
     let source=fs::read_to_string(&path).unwrap();
-    let got=run(&source,if file=="user_symbols.hc"{&registry}else{&empty}).unwrap();
+    let selected=match file {
+        "user_symbols.hc"=>&registry,
+        "m16_vec_operations.hc"=>&vec_registry,
+        _=>&empty
+    };
+    let got=run(&source,selected).unwrap();
     let mut cmd=Command::new("node");
     cmd.current_dir(&base).arg("prototype/bin/hcode.mjs").arg("run").arg(&path);
     if file=="user_symbols.hc"{cmd.args(["--lock","hcode.lock.json"]);}
+    if file=="m16_vec_operations.hc"{cmd.args(["--lock","hcode.m16.lock.json"]);}
     let output=cmd.output().unwrap();
     assert!(output.status.success(),"M1 failed {file}: {}",String::from_utf8_lossy(&output.stderr));
     assert_eq!(got,String::from_utf8_lossy(&output.stdout).replace("\r\n","\n"),"{file}");
     count+=1;
   }
-  assert_eq!(count,11);
+  assert_eq!(count,12);
 }
 #[test]
 fn glyph_and_ascii_compilation_agree(){

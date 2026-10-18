@@ -6,7 +6,8 @@ fn check_source(source:&str)->Result<hcode_compiler::checker::TypedProgram,Strin
 }
 fn check_with_registry(source:&str)->Result<hcode_compiler::checker::TypedProgram,String>{
     let root=Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
-    let registry=load_lockfile(&root.join("hcode.lock.json")).map_err(|e|e.to_string())?;
+    let path=if source.contains("vec.math@1.0.0") {"hcode.m16.lock.json"} else {"hcode.lock.json"};
+    let registry=load_lockfile(&root.join(path)).map_err(|e|e.to_string())?;
     check(&parse(source).map_err(|e|e.to_string())?,&registry,true).map_err(|e|e.to_string())
 }
 fn fail(source:&str,needle:&str){
@@ -48,13 +49,13 @@ fn parses_and_statically_checks_all_existing_reference_examples(){
         if path.extension().and_then(|x|x.to_str())!=Some("hc"){continue;}
         let source=fs::read_to_string(&path).unwrap();
         let parsed=parse(&source).unwrap_or_else(|e|panic!("{}: {e}",path.display()));
-        let checked=if path.file_name().unwrap()=="user_symbols.hc" {
+        let checked=if matches!(path.file_name().and_then(|n|n.to_str()),Some("user_symbols.hc"|"m16_vec_operations.hc")) {
             check_with_registry(&source)
         } else {check_source(&source)};
         checked.unwrap_or_else(|e|panic!("{}: {e}",path.display()));
         assert!(!parsed.statements.is_empty());count+=1;
     }
-    assert!(count>=11,"Expected all M1 examples");
+    assert!(count>=12,"Expected existing examples and M16 v2 sample");
 }
 #[test]
 fn infers_unannotated_function_parameter_and_return_types(){
