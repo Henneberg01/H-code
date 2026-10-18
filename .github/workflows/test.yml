@@ -121,6 +121,9 @@ jobs:
       - name: Verify task09 fake-clock TTL cache compiler interpreter and TS parity
         run: npm run benchmark20:verify09
         if: ${{ success() || failure() }}
+      - name: Verify task11 Markdown heading and link extraction on six locked fixtures and nineteen generated cases
+        run: npm run benchmark20:verify11
+        if: ${{ success() || failure() }}
       - name: Canonical twenty source-locked readiness check
         run: npm run benchmark20:status
         if: ${{ success() || failure() }}
