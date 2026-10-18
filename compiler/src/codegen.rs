@@ -6,6 +6,22 @@ fn q(s:&str)->String {serde_json::to_string(s).expect("serializable string")}
 fn name(s:&str)->String {format!("h_{}",s.bytes().map(|b|format!("{b:02x}")).collect::<String>())}
 fn pkg_name(s:&str)->String {name(&format!("package_{s}"))}
 
+// Emit structural runtime schemas only from Rust-checked H-Code types.
+// The output is a JS array/string *literal*, never interpolated source text.
+fn json_schema(ty:&Type)->String {
+ match ty {
+  Type::Number=>"\"n\"".to_string(),
+  Type::String=>"\"s\"".to_string(),
+  Type::Bool=>"\"b\"".to_string(),
+  Type::Sequence(item)=>format!("[\"a\",{}]",json_schema(item)),
+  Type::Record(fields)=>{
+   let items=fields.iter().map(|(key,value)|format!("[{},{}]",q(key),json_schema(value)))
+    .collect::<Vec<_>>().join(",");
+   format!("[\"o\",[{items}]]")
+  },
+  _=>unreachable!("JSON schemas must have passed structural typechecking")
+ }
+}
 struct Emitter { depth:usize }
 impl Emitter {
  fn ind(&self)->String {"  ".repeat(self.depth)}
@@ -22,6 +38,8 @@ impl Emitter {
      format!("__hc_record([{pairs}])")
    }
    TypedExprKind::Field{record,name:field}=>format!("__hc_field({}, {})",self.expr(record),q(field)),
+   TypedExprKind::JsonRead{schema,value}=>format!("__hc_json_read({}, {})",self.expr(value),json_schema(schema)),
+   TypedExprKind::JsonWrite{schema,value}=>format!("__hc_json_write({}, {})",self.expr(value),json_schema(schema)),
    TypedExprKind::RecordUpdate{record,name:field,value}=>format!("__hc_update({}, {}, {})",self.expr(record),q(field),self.expr(value)),
     TypedExprKind::Index{sequence,index}=>format!("__hc_index({}, {})",self.expr(sequence),self.expr(index)),
     TypedExprKind::Length(value)=>format!("__hc_len({})",self.expr(value)),
@@ -123,6 +141,49 @@ pub fn emit(program:&TypedProgram,registry:&PackageRegistry)->Result<String,Stri
  output.push_str("const __hc_sum = (xs) => { __hc_seq(xs); let total=0; for (const item of xs) { __hc_tick(); if (typeof item !== 'number') throw Error('∑ requires a numeric sequence'); total+=item; } return total; };\n");
   output.push_str("const __hc_filter = (xs,fn) => { __hc_seq(xs); if (typeof fn!=='function') throw Error('⌕ requires a unary predicate'); const output=[]; for (const item of xs) { __hc_tick(); const keep=fn(item); if (typeof keep!=='boolean') throw Error('⌕ predicate must return Bool'); if (keep) output.push(item); if (output.length>16384) throw Error('Sequence allocation limit exceeded'); } return __hc_seq(output); };\n");
   output.push_str("const __hc_map = (xs,fn) => { __hc_seq(xs); if (typeof fn!=='function') throw Error('⇢ requires a unary transform'); const output=[]; for (const item of xs) { __hc_tick(); output.push(fn(item)); if (output.length>16384) throw Error('Sequence allocation limit exceeded'); } return __hc_seq(output); };\n");
+  // A deterministic, bounded JSON boundary shared in meaning with the JS reference.
+  // It cannot be bypassed with "as T": every scalar, field and array element is checked.
+  output.push_str(r#"
+const __hc_json_limit = 1048576;
+const __hc_json_bytes = text => new TextEncoder().encode(text).length;
+const __hc_json_guard = (data,schema,depth=0) => {
+  __hc_tick(); if(depth>32)throw Error('JSON nesting depth exceeded');
+  if(schema==='n'){ if(typeof data!=='number'||!Number.isFinite(data))throw Error('JSON Number type mismatch'); return data; }
+  if(schema==='s'){ if(typeof data!=='string')throw Error('JSON String type mismatch'); return data; }
+  if(schema==='b'){ if(typeof data!=='boolean')throw Error('JSON Bool type mismatch'); return data; }
+  if(Array.isArray(schema)&&schema[0]==='a'){
+    if(!Array.isArray(data))throw Error('JSON Sequence type mismatch');
+    if(data.length>16384)throw Error('JSON Sequence length exceeded');
+    return Object.freeze(data.map(value=>__hc_json_guard(value,schema[1],depth+1)));
+  }
+  if(Array.isArray(schema)&&schema[0]==='o'){
+    if(data===null||typeof data!=='object'||Array.isArray(data))throw Error('JSON Record type mismatch');
+    const proto=Object.getPrototypeOf(data);
+    if(proto!==null&&proto!==Object.prototype)throw Error('JSON Record prototype mismatch');
+    const fields=schema[1];
+    if(fields.length>64||Object.keys(data).length!==fields.length)throw Error('JSON Record shape mismatch');
+    const out=Object.create(null);
+    for(const [key,expected] of fields){
+      if(!Object.hasOwn(data,key))throw Error('JSON Record missing field '+key);
+      out[key]=__hc_json_guard(data[key],expected,depth+1);
+    }
+    return Object.freeze(out);
+  }
+  throw Error('Invalid internal JSON schema');
+};
+const __hc_json_read = (text,schema) => {
+  __hc_tick(); if(typeof text!=='string')throw Error('⤓ expects JSON String');
+  if(__hc_json_bytes(text)>__hc_json_limit)throw Error('JSON input size exceeded');
+  let input;try{ input=JSON.parse(text); }catch{ throw Error('Invalid JSON text'); }
+  return __hc_json_guard(input,schema);
+};
+const __hc_json_write = (data,schema) => {
+  __hc_tick();const checked=__hc_json_guard(data,schema);
+  const text=JSON.stringify(checked);
+  if(__hc_json_bytes(text)>__hc_json_limit)throw Error('JSON output size exceeded');
+  return text;
+};
+"#);
   output.push_str("const __hc_operations = Object.create(null);\n");
  let mut imported=BTreeMap::<String,()>::new();
  for stmt in &program.statements { if let TypedStmtKind::Use{package,..}=&stmt.kind {imported.insert(package.clone(),());}}
