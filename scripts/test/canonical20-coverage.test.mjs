@@ -16,9 +16,9 @@ test('all 20 canonical tasks remain registered in source order, including unsupp
 test('source-locked reference-only examples cannot be misrepresented as global 70% proof',{skip:!canRunTs},()=>{
   const r=readiness();
   assert.equal(r.preregisteredTasks,20);
-  assert.equal(r.verifiedFullWorkloads,0);
+  assert.equal(r.verifiedFullWorkloads,1);
   assert.equal(r.partialReferenceEvidence,2);
-  assert.equal(r.unsupported,18);
+  assert.equal(r.unsupported,17);
   assert.equal(r.complete,false);
   assert.equal(r.globalMedianCodepointReduction,null);
   assert.equal(r.objectiveAchieved,false);
@@ -29,7 +29,11 @@ test('source-locked reference-only examples cannot be misrepresented as global 7
   assert.equal(r.immutableRegistryGitBlobSha,PREREGISTERED_GIT_BLOB_SHA);
   assert.equal(r.capabilityDemandIsNotCompilerCoverage,true);
   assert.deepEqual(r.requestedByUnverifiedTasks.slice(0,3).map(x=>[x.capability,x.workloads]),
-    [['records',5],['async',3],['multi-file-project',3]]);
+    [['records',4],['async',3],['multi-file-project',3]]);
+  assert.equal(r.evidenceByFullTask['05-json-transformation'].kind,'full-compiler-evidence');
+  assert.equal(r.evidenceByFullTask['05-json-transformation'].positiveFixturesVerified,3);
+  assert.equal(r.evidenceByFullTask['05-json-transformation'].generatedVariantsVerified,12);
+  assert.equal(r.evidenceByFullTask['05-json-transformation'].invalidFixturesRejectedByAll,11);
 });
 
 test('registry cannot claim an unsupported case is fully verified without compiler proof',()=>{
@@ -51,6 +55,8 @@ test('the strict twenty-workload CI gate intentionally fails until all 20 pass',
   assert.match(child.stderr,/all 20 must be compiler-verified/);
   const report=JSON.parse(child.stdout);
   assert.equal(report.preregisteredTasks,20);
+  assert.equal(report.verifiedFullWorkloads,1);
+  assert.equal(report.unsupported,17);
   assert.equal(report.globalMedianCodepointReduction,null);
   assert.equal(report.objectiveAchieved,false);
 });
