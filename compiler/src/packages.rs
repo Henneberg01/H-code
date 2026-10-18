@@ -183,6 +183,7 @@ pub fn load_lockfile(path:&Path)->Result<PackageRegistry,Diagnostic>{
                     match ty {
                         Type::Generic(v)=>v==name,
                         Type::Sequence(inner)=>mentions(inner,name),
+                        Type::Record(fields)=>fields.iter().any(|(_,ty)|mentions(ty,name)),
                         Type::Function(xs,ret)=>xs.iter().any(|a|mentions(a,name))||mentions(ret,name),
                         _=>false
                     }
