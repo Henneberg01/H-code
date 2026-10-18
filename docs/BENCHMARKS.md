@@ -75,3 +75,7 @@ Run `npm run compact:measure` for seven Unicode/ASCII **H-Code-only** fixture pa
 ## Correction: different benchmark corpora are NOT a before/after regression
 
 The formerly reported **26.73%/30.71%** reference-program reductions, initial M10 two-case **31.25%/47.86%**, and expanded M10 eight-case median **2.27%** came from **different program selections, baselines or execution levels**. They must not be described as repeated measurements of identical tests. Source pairs were not frozen for the two oldest results and cannot be reconciled as an exact before/after measurement. **Both original M10 task results are preserved unchanged** in the eight-case corpus. See `docs/BENCHMARK-PROVENANCE.md` for frozen Git blob SHAs and the test `scripts/test/compact-frozen-benchmark.test.mjs`. The universal 20-case, Rust-verified result is still pending.
+
+## M19 early registration of the real 20 tasks
+
+The canonical fixed 20-workload registry is now machine-readable at `compact/canonical20/workloads.json`. `npm run benchmark20:status` reports 20 tasks: **0 fully verified, 2 with narrow reference evidence, 18 unsupported**. The separate M14 median 68.46% from three examples is not generalized. A strict coverage command intentionally fails while any of the twenty tasks is unsupported; see `compact/canonical20/README.md`.

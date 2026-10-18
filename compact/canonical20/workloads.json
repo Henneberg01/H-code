@@ -1,0 +1,248 @@
+{
+  "schemaVersion": 1,
+  "id": "HCODE-CANONICAL20-2026-10-18-PREREG-1",
+  "objective": {
+    "comparison": "H-Code developer-authored source vs idiomatic TypeScript",
+    "codepointMedianTargetPct": 70,
+    "all20MustPass": true,
+    "unsupportedsCountAsFailures": true
+  },
+  "description": "Frozen scope follows docs/BENCHMARKS.md. No workload may be omitted, cherry-picked, combined or called complete without compiler-level evidence.",
+  "workloads": [
+    {
+      "id": "01-calculator-cli",
+      "title": "Basic calculator CLI",
+      "acceptance": "stdin expressions for +,-,*,/ with invalid division; stable stdout/stderr and exit status",
+      "requiredCapabilities": [
+        "stdin",
+        "cli-io"
+      ],
+      "status": "unsupported",
+      "evidence": null
+    },
+    {
+      "id": "02-fibonacci-recursion",
+      "title": "Fibonacci recursion",
+      "acceptance": "input n=7; stdout 13; recursion and type equivalence against fixed TypeScript baseline",
+      "requiredCapabilities": [
+        "functions",
+        "recursion"
+      ],
+      "status": "reference_partial",
+      "evidence": "m10:fibonacci"
+    },
+    {
+      "id": "03-text-frequency-counter",
+      "title": "Text frequency counter",
+      "acceptance": "normalize and count tokens; deterministic frequency ordering including Unicode cases",
+      "requiredCapabilities": [
+        "strings",
+        "maps",
+        "unicode-text"
+      ],
+      "status": "unsupported",
+      "evidence": null
+    },
+    {
+      "id": "04-csv-validation",
+      "title": "CSV reader with validation",
+      "acceptance": "parse quoted CSV, reject malformed rows and validate column types deterministically",
+      "requiredCapabilities": [
+        "filesystem-read",
+        "csv-parser",
+        "records"
+      ],
+      "status": "unsupported",
+      "evidence": null
+    },
+    {
+      "id": "05-json-transformation",
+      "title": "JSON transformation",
+      "acceptance": "deserialize structured input, transform nested typed fields, serialize valid JSON",
+      "requiredCapabilities": [
+        "records",
+        "json-io"
+      ],
+      "status": "unsupported",
+      "evidence": null
+    },
+    {
+      "id": "06-http-retries",
+      "title": "HTTP client with retries",
+      "acceptance": "fake 500/429/200 responses, bounded retries and deterministic trace",
+      "requiredCapabilities": [
+        "http-client",
+        "async",
+        "effect-control"
+      ],
+      "status": "unsupported",
+      "evidence": null
+    },
+    {
+      "id": "07-file-conversion",
+      "title": "Local file conversion",
+      "acceptance": "read a file, convert content, write destination and verify bytes",
+      "requiredCapabilities": [
+        "filesystem-read",
+        "filesystem-write"
+      ],
+      "status": "unsupported",
+      "evidence": null
+    },
+    {
+      "id": "08-concurrent-requests",
+      "title": "Async concurrent request aggregation",
+      "acceptance": "fan out to three deterministic fake HTTP endpoints and combine results without serial blocking",
+      "requiredCapabilities": [
+        "async",
+        "http-client",
+        "concurrency"
+      ],
+      "status": "unsupported",
+      "evidence": null
+    },
+    {
+      "id": "09-expiring-cache",
+      "title": "Cache with expiration",
+      "acceptance": "fake clock, set/get/expire, prevent stale reads and bounded memory",
+      "requiredCapabilities": [
+        "map",
+        "time",
+        "state"
+      ],
+      "status": "unsupported",
+      "evidence": null
+    },
+    {
+      "id": "10-generic-collection-transforms",
+      "title": "Generic collection transforms",
+      "acceptance": "typed sum, map and filter of arbitrary compatible values with stable outputs",
+      "requiredCapabilities": [
+        "typed-sequences",
+        "sum",
+        "map",
+        "filter"
+      ],
+      "status": "reference_partial",
+      "evidence": "m14:collections"
+    },
+    {
+      "id": "11-markdown-processing",
+      "title": "Markdown document processing",
+      "acceptance": "parse headings/links into deterministic structured output on an agreed fixture",
+      "requiredCapabilities": [
+        "string-processing",
+        "records",
+        "markdown-library"
+      ],
+      "status": "unsupported",
+      "evidence": null
+    },
+    {
+      "id": "12-crud-api",
+      "title": "Basic CRUD API",
+      "acceptance": "server endpoints create/read/update/delete, request validation and deterministic persistence",
+      "requiredCapabilities": [
+        "http-server",
+        "records",
+        "storage"
+      ],
+      "status": "unsupported",
+      "evidence": null
+    },
+    {
+      "id": "13-form-validation-ui",
+      "title": "Form validation UI",
+      "acceptance": "interactive required/email validation with accessible error feedback",
+      "requiredCapabilities": [
+        "dom",
+        "ui-events",
+        "form-controls"
+      ],
+      "status": "unsupported",
+      "evidence": null
+    },
+    {
+      "id": "14-todo-app",
+      "title": "Interactive todo app",
+      "acceptance": "add/complete/remove with persisted state and accessible UI updates",
+      "requiredCapabilities": [
+        "dom",
+        "ui-events",
+        "persistence"
+      ],
+      "status": "unsupported",
+      "evidence": null
+    },
+    {
+      "id": "15-db-dashboard",
+      "title": "Database-backed dashboard",
+      "acceptance": "query seeded data, aggregate metrics and render result views",
+      "requiredCapabilities": [
+        "database",
+        "records",
+        "ui"
+      ],
+      "status": "unsupported",
+      "evidence": null
+    },
+    {
+      "id": "16-auth-sessions",
+      "title": "Authentication session handling",
+      "acceptance": "issue/rotate/revoke a signed session using deterministic fixture identity",
+      "requiredCapabilities": [
+        "cryptography",
+        "http-server",
+        "persistent-session"
+      ],
+      "status": "unsupported",
+      "evidence": null
+    },
+    {
+      "id": "17-websocket-chat",
+      "title": "Simple WebSocket chat",
+      "acceptance": "two isolated clients, room join, ordered message delivery and disconnect",
+      "requiredCapabilities": [
+        "websocket",
+        "async",
+        "server"
+      ],
+      "status": "unsupported",
+      "evidence": null
+    },
+    {
+      "id": "18-refactor-task",
+      "title": "Unit-test refactor task",
+      "acceptance": "refactor a frozen baseline without modifying its required behavior or assertions",
+      "requiredCapabilities": [
+        "test-runner",
+        "multi-file-project"
+      ],
+      "status": "unsupported",
+      "evidence": null
+    },
+    {
+      "id": "19-bug-repair-task",
+      "title": "Bug reproduction and repair task",
+      "acceptance": "reproduce seeded failure, fix actual root cause and verify regression test",
+      "requiredCapabilities": [
+        "test-runner",
+        "multi-file-project"
+      ],
+      "status": "unsupported",
+      "evidence": null
+    },
+    {
+      "id": "20-incremental-feature",
+      "title": "Incremental feature on existing app",
+      "acceptance": "extend frozen starter app while retaining all prior behavior and passing new acceptance",
+      "requiredCapabilities": [
+        "app-runtime",
+        "multi-file-project",
+        "integration-tests"
+      ],
+      "status": "unsupported",
+      "evidence": null
+    }
+  ]
+}
