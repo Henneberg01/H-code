@@ -496,7 +496,7 @@ class ReturnSignal{constructor(value){this.value=value;}}
 const runtimeType=value=>value===null?'Unit':typeof value==='number'?'Number':typeof value==='string'?'String':typeof value==='boolean'?'Bool':'unsupported';
 
 export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=16384,registry=new Map(),readFile=null,readStdin=null,httpEffects=null,httpServe=null,sleepEffects=null,fileEffects=null}={}){
-  const root=new Scope(),operations=new Map(),operationSpecs=new Map(),loadedLibraries=new Set();let steps=0,stdinConsumed=false,httpIndex=0,sleepIndex=0,fileIndex=0,pureDepth=0,functionDepth=0;
+  const root=new Scope(),operations=new Map(),operationSpecs=new Map(),loadedLibraries=new Set();let steps=0,stdinConsumed=false,httpIndex=0,sleepIndex=0,fileIndex=0,pureDepth=0,functionDepth=0,httpServerRegistered=false;
   const step=()=>{if(++steps>maxSteps)throw Error('Execution step limit exceeded');};
   root.define('print',(...args)=>{stdout(args.map(x=>x===null?'none':String(x)).join(' '));return null;});
   const truth=v=>{if(typeof v!=='boolean')throw Error('Condition must be Boolean');return v;};
@@ -717,10 +717,14 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
           throw Error('⤊ HTTP serve effect denied in pure package or handler function');
         if(typeof httpServe!=='function')
           throw Error('⤊ HTTP server capability denied: inject trusted httpServe host');
+        if(Array.isArray(httpEffects)||Array.isArray(sleepEffects)||Array.isArray(fileEffects))
+          throw Error('⤊ B1 cannot run through async replay; request-scoped effects require B2');
+        if(httpServerRegistered)throw Error('⤊ only one server may be registered in B1');
         const handler=expr(node.value,scope);
         if(typeof handler!=='function')
           throw TypeError('⤊ requires a typed H-Code request-handler function');
         httpServe(handler);
+        httpServerRegistered=true;
         return null;
       }
       case 'HttpGet':{
