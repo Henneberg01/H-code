@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feat/m14-typed-lambda-glyph
+      - feat/m15-sign-blocks-delimiters
 permissions:
   contents: read
 jobs:

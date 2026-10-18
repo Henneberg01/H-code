@@ -22,12 +22,12 @@ function loadPalette(){
  vm.runInNewContext(palette,{document:doc,el:()=>host,source,changed:()=>changed++,clearApproval:()=>cleared++});
  return {buttons:host.children,source,changes:()=>changed,approvalsCleared:()=>cleared};
 }
-const pairs=[['ƒ','fn'],['≔','let'],['↩','return'],['→','->'],['←','='],['⊤','true'],['⊥','false'],['∧','and'],['∨','or'],['¬','not'],['≡','=='],['≠','!='],['≤','<='],['≥','>='],['∷','::'],['▷','|>'],['∘','<<'],['◇','?'],['⟦','[['],['⟧',']]'],['⌗','#'],['⧺','++'],['∑','@+'],['⌕','@?'],['⇢','@>'],['λ','lambda']];
+const pairs=[['ƒ','fn'],['≔','let'],['↩','return'],['→','->'],['←','='],['⊤','true'],['⊥','false'],['∧','and'],['∨','or'],['¬','not'],['≡','=='],['≠','!='],['≤','<='],['≥','>='],['∷','::'],['▷','|>'],['∘','<<'],['◇','?'],['⟦','[['],['⟧',']]'],['⌗','#'],['⧺','++'],['∑','@+'],['⌕','@?'],['⇢','@>'],['λ','lambda'],['⊢','if'],['⊣','else'],['⟳','while'],['⇒','=>']];
 test('palette provides every existing language-level sign with correct accessible alias',()=>{
  const {buttons}=loadPalette();
  const found=buttons.map(b=>[b.children[0].textContent,b.children[1].textContent]);
  assert.deepEqual(found,pairs);
- assert.equal(new Set(found.map(p=>p[0])).size,26);
+ assert.equal(new Set(found.map(p=>p[0])).size,30);
  for(const button of buttons){
   const sign=button.children[0].textContent,alias=button.children[1].textContent;
   assert.match(button.attributes['aria-label']??'',new RegExp(sign.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
