@@ -6,6 +6,7 @@ import {createHash} from 'node:crypto';
 import {spawnSync} from 'node:child_process';
 import {execute} from '../prototype/src/hcode.mjs';
 import {compareM14} from './m14-compare.mjs';
+import {verifyCanonical05} from './canonical20-verify-05.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
 const registryBytes=readFileSync(join(root,'compact/canonical20/workloads.json'));
@@ -71,14 +72,20 @@ export function readiness(){
   if(registry.objective?.all20MustPass!==true||registry.objective.unsupportedsCountAsFailures!==true)
     throw Error('Canonical-20 integrity policy was weakened');
   const evidence={};
-  let partial=0,unsupported=0;
+  let partial=0,unsupported=0,verified=0;
+  const fullEvidence={};
   for(let index=0;index<canonicalIds.length;index++){
     const w=registry.workloads[index];
     if(w.id!==canonicalIds[index]||!w.title||!w.acceptance)throw Error('Workload identity/order changed: '+canonicalIds[index]);
     if(!Array.isArray(w.requiredCapabilities)||w.requiredCapabilities.length===0)throw Error('Missing capability contract: '+w.id);
     if(w.status==='unsupported'){
-      unsupported++;
       if(w.evidence!==null)throw Error('Unsupported task falsely claims evidence: '+w.id);
+      if(w.id==='05-json-transformation'){
+        // The frozen original preregistry remains untouched; promotion is derived
+        // exclusively from repeatable, SHA-locked full Rust/JS/TS execution.
+        fullEvidence[w.id]=verifyCanonical05();
+        verified++;
+      }else{unsupported++;}
     }else if(w.status==='reference_partial'){
       partial++;
       if(w.evidence==='m10:fibonacci'){if(w.id!=='02-fibonacci-recursion')throw Error('Misassigned reference');evidence[w.id]=fibonacciEvidence();}
@@ -95,7 +102,7 @@ export function readiness(){
   // the benchmark or promising that a glyph alone can solve I/O/security.
   const capabilityDemand=new Map();
   for(const task of registry.workloads){
-    if(task.status==='verified')continue;
+    if(fullEvidence[task.id])continue;
     for(const capability of new Set(task.requiredCapabilities)){
       const old=capabilityDemand.get(capability)??[];
       old.push(task.id);
@@ -110,13 +117,14 @@ export function readiness(){
     immutableRegistryGitBlobSha:PREREGISTERED_GIT_BLOB_SHA,
     capabilityDemandIsNotCompilerCoverage:true,
     requestedByUnverifiedTasks,
-    verifiedFullWorkloads:0,partialReferenceEvidence:partial,unsupported,
+    verifiedFullWorkloads:verified,partialReferenceEvidence:partial,unsupported,
     complete:false,globalMedianCodepointReduction:null,globalMedianUtf8Reduction:null,
     objectiveAchieved:false,compilerProvenanceValidated:false,
     historicalM14MedianCodepointReductionPct:evidence['10-generic-collection-transforms'].historicalM14MedianUnicodeCodepointReductionPct,
     historicalM14IsGlobalMetric:false,
+    evidenceByFullTask:fullEvidence,
     evidenceByPartialTask:evidence,
-    explanation:'20-workload goal remains incomplete; no missing task is excluded from denominator.'
+    explanation:'Full verification is derived from frozen compiler/TS runs; original preregistration remains SHA-frozen and every unsupported task stays in the denominator.'
   };
 }
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){
