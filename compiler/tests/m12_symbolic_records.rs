@@ -99,3 +99,27 @@ fn static_typechecker_rejects_missing_fields_duplicates_and_mismatches(){
         assert!(failure.contains(expected),"{src}: {failure}");
     }
 }
+
+#[test]
+fn record_update_sign_replaces_js_spread_with_static_typechecking(){
+ let glyph="≔p←⦃age:42,name:\"Ada\"⦄;≔q←p⊞age:p·age+1;print(p·age);print(q·age);print(q·name);";
+ let alias="let p={age:42,name:\"Ada\"};let q=p<+age:p.age+1;print(p.age);print(q.age);print(q.name);";
+ assert_eq!(compile(glyph).unwrap(),compile(alias).unwrap());
+ assert_eq!(run(glyph).unwrap(),"42\n43\nAda\n");
+ assert_eq!(run(alias).unwrap(),"42\n43\nAda\n");
+ assert_eq!(lex("⊞").unwrap()[0].kind,TokenKind::RecordUpdate);
+ assert_eq!(lex("<+").unwrap()[0].kind,TokenKind::RecordUpdate);
+ assert_eq!(run("≔p←⦃__proto__:1⦄;≔q←p⊞__proto__:3;print(p·__proto__);print(q·__proto__);").unwrap(),"1\n3\n");
+}
+#[test]
+fn statically_reject_wrong_record_update_shape_or_type(){
+ for (source,reason) in [
+    ("≔p←⦃age:42⦄;≔q←p⊞missing:2;","Unknown record field"),
+    ("≔p←⦃age:42⦄;≔q←p⊞age:\"bad\";","Record update field type mismatch"),
+    ("≔q←42⊞age:10;","⊞ requires a typed record"),
+    ("≔p←⦃age:⟦1,2⟧⦄;≔q←p⊞age:⟦\"bad\"⟧;","Record update field type mismatch")
+ ] {
+    let error=compile(source).unwrap_err();
+    assert!(error.contains(reason),"{source}: {error}");
+ }
+}

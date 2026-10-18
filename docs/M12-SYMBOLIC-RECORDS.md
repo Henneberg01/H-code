@@ -23,6 +23,17 @@ Record-typer er statisk infererede, **præcise og strukturelle**: felter kan st�
 
 Genereret JavaScript opretter **immutable objekter med null-prototype**, kun med eksplicit deklarerede egne felter. Feltlæsning kontrollerer egen nøgle, så `constructor`, `__proto__` og `toString` ikke giver skjult adgang til JS-prototypen. JS-referenceinterpreteren udfører samme egne-felt/kollision/typekontroller.
 
+## ⊞ — ét tegn erstatter objektkopi og feltopdatering
+
+Dette er den faktiske kildekodeforkortelse: `⊞` beskriver **immutable kopi af et record med et eksisterende felt udskiftet**. Ikke en dekorativ stavevariant.
+
+```hcode
+≔ q←p⊞age:p·age+1;
+```
+
+En TypeScript-konstruktion med tilsvarende kopi og feltudskiftning er eksempelvis `const q={...p,age:p.age+1};`. ASCII-aliaset `<+` parser til præcis samme typede AST. Rust kræver et statisk record, en eksisterende nøgle og en ny værdi med **samme type**; den gamle record ændres ikke. Referenceruntime følger samme form og afviser typeændring.
+
+---
 ## Frosset én-opgaves mikrobenchmark
 
 | Kilde | Unicode-kodepunkter |
@@ -45,7 +56,7 @@ npm run benchmark20:status
 
 ## Hvad M12 **ikke** lover
 
-- Records er i denne første iteration **immutable**; der er endnu ingen feltmutation, pattern matching, record spread/update, enums/Option/Result eller felt-constraints på generics.
+- Records er i denne første iteration **immutable**; `⊞` udfører nu en typesikker kopi/opdatering. Der er endnu ingen direkte feltmutation, generelt spread, pattern matching, enums/Option/Result eller felt-constraints på generics.
 - Feltnavne skal være statiske ASCII-identifikatorer. Ingen arbitrær dictionary/map-indexering.
 - Record-generics via SHA-låste eksterne pakker afventer særskilt format-3 JS-signaturparitet; den almindelige AST/Rust-typechecker understøtter allerede strukturerne.
 - Der er endnu ingen parsing/serialisering af JSON, persistens, HTTP-endpoints eller UI. Disse kræver **rigtige, sikre sprog- og runtime-funktioner**, ikke en “magisk” en-tegns-erstatning.
