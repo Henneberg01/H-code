@@ -58,6 +58,7 @@ pub enum TypedExprKind {
     Length(Box<TypedExpr>),
     Sum(Box<TypedExpr>),
     Lambda { parameter:String, body:Box<TypedExpr> },
+    Section { op:BinaryOp, right:Box<TypedExpr> },
 }
 
 #[derive(Clone)]
@@ -321,6 +322,30 @@ impl Checker {
                 self.unify(&seq.ty,&Type::Sequence(Box::new(elem)),value.span,"⌗ requires sequence")?;
                 (TypedExprKind::Length(Box::new(seq)),Type::Number)
             }
+            ExprKind::Section{op,right}=>{
+                let arg=self.expression(right)?;
+                let (parameter,returned)=match op {
+                    BinaryOp::Add=>{
+                        self.pending_add.push((arg.ty.clone(),expr.span));
+                        (arg.ty.clone(),arg.ty.clone())
+                    }
+                    BinaryOp::Multiply|BinaryOp::Divide|BinaryOp::Modulo=>{
+                        self.unify(&Type::Number,&arg.ty,right.span,"Operator section requires Number")?;
+                        (Type::Number,Type::Number)
+                    }
+                    BinaryOp::Less|BinaryOp::Greater|BinaryOp::LessEqual|BinaryOp::GreaterEqual=>{
+                        self.unify(&Type::Number,&arg.ty,right.span,"Operator section requires Number")?;
+                        (Type::Number,Type::Bool)
+                    }
+                    BinaryOp::Equal|BinaryOp::NotEqual=>{
+                        self.pending_equal.push((arg.ty.clone(),expr.span));
+                        (arg.ty.clone(),Type::Bool)
+                    }
+                    _=>return Err(Diagnostic::new("TYPE","Unsupported operator section".into(),expr.span))
+                };
+                let ty=Type::Function(vec![parameter],Box::new(returned));
+                (TypedExprKind::Section{op:*op,right:Box::new(arg)},ty)
+            }
             ExprKind::Lambda{parameter,body}=>{
                 let arg=self.fresh();
                 self.push();
@@ -488,6 +513,7 @@ impl Checker {
             TypedExprKind::Length(value)=>self.finalize_expr(value)?,
             TypedExprKind::Sum(value)=>self.finalize_expr(value)?,
             TypedExprKind::Lambda{body,..}=>self.finalize_expr(body)?,
+            TypedExprKind::Section{right,..}=>self.finalize_expr(right)?,
             TypedExprKind::Unary{operand,..}=>self.finalize_expr(operand)?,
             TypedExprKind::Binary{left,right,..}=>{self.finalize_expr(left)?;self.finalize_expr(right)?;},
             TypedExprKind::Choice{condition,when_true,when_false}=>{

@@ -49,6 +49,7 @@ pub enum ExprKind {
     Length(Box<Expr>),
     Sum(Box<Expr>),
     Lambda { parameter: String, body: Box<Expr> },
+    Section { op: BinaryOp, right: Box<Expr> },
     Identifier(String),
     Operation { alias: Option<String>, name_or_glyph: String, is_glyph: bool },
     Unary { op: UnaryOp, operand: Box<Expr> },

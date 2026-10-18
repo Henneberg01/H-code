@@ -20,6 +20,23 @@ impl Emitter {
     TypedExprKind::Length(value)=>format!("__hc_len({})",self.expr(value)),
     TypedExprKind::Sum(value)=>format!("__hc_sum({})",self.expr(value)),
     TypedExprKind::Lambda{parameter,body}=>format!("(({}) => ({}))",name(parameter),self.expr(body)),
+    TypedExprKind::Section{op,right}=>{
+     // Exactly one evaluation of the captured right operand at section creation.
+     let action=match op{
+       BinaryOp::Add=>"(__hc_section_x + __hc_section_rhs)",
+       BinaryOp::Multiply=>"(__hc_section_x * __hc_section_rhs)",
+       BinaryOp::Divide=>"__hc_div(__hc_section_x,__hc_section_rhs)",
+       BinaryOp::Modulo=>"__hc_mod(__hc_section_x,__hc_section_rhs)",
+       BinaryOp::Less=>"(__hc_section_x < __hc_section_rhs)",
+       BinaryOp::Greater=>"(__hc_section_x > __hc_section_rhs)",
+       BinaryOp::LessEqual=>"(__hc_section_x <= __hc_section_rhs)",
+       BinaryOp::GreaterEqual=>"(__hc_section_x >= __hc_section_rhs)",
+       BinaryOp::Equal=>"(__hc_section_x === __hc_section_rhs)",
+       BinaryOp::NotEqual=>"(__hc_section_x !== __hc_section_rhs)",
+       _=>unreachable!("only typed supported sections are emitted")
+     };
+     format!("((__hc_section_rhs) => ((__hc_section_x) => {{ __hc_tick(); return {action}; }}))({})",self.expr(right))
+    },
     TypedExprKind::Bool(b)=>b.to_string(),TypedExprKind::Identifier(s)=>if matches!(e.ty,Type::BuiltinPrint) {"__hc_print".into()}else{name(s)},
    TypedExprKind::OperationRef{id}=>format!("__hc_operations[{}]",q(id)),
    TypedExprKind::Unary{op,operand}=>format!("({}{})",match op{UnaryOp::Not=>"!",UnaryOp::Negate=>"-"},self.expr(operand)),

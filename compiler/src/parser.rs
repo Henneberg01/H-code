@@ -191,7 +191,20 @@ impl Parser {
             }
             TokenKind::Glyph(c)=>{self.index+=1;ExprKind::Operation{alias:None,name_or_glyph:c.to_string(),is_glyph:true}}
             TokenKind::LeftParen=>{
-                self.index+=1;let value=self.expression(0)?;self.expect(&TokenKind::RightParen)?;
+                self.index+=1;
+                let section_operator=match &self.peek().kind {
+                    TokenKind::Plus|TokenKind::Star|TokenKind::Slash|TokenKind::Percent|
+                    TokenKind::Less|TokenKind::Greater|TokenKind::LessEqual|TokenKind::GreaterEqual|
+                    TokenKind::Equal|TokenKind::NotEqual=>self.binary_operator(),
+                    _=>None
+                };
+                if let Some(op)=section_operator {
+                    self.index+=1;
+                    let right=self.expression(0)?;
+                    self.expect(&TokenKind::RightParen)?;
+                    return self.suffixes(Expr{kind:ExprKind::Section{op,right:Box::new(right)},span},min_power);
+                }
+                let value=self.expression(0)?;self.expect(&TokenKind::RightParen)?;
                 return self.suffixes(value,min_power);
             }
             _=>return Err(Diagnostic::new("PARSE",format!("Expected expression, got {:?}",self.peek().kind),self.peek().span))
