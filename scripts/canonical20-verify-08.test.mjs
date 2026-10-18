@@ -205,3 +205,27 @@ test('canonical08 generated compiled effect preflights permissions and fanout be
   assert.equal(fx.hits.length,0);
  }finally{await fx.close();rmSync(built.tmp,{recursive:true,force:true});}
 });
+
+
+test('canonical08 rejects four invalid typed/effectful H-Code programs in both engines',async()=>{
+ const programs=[
+  ['bad-batch-elements','⤋⟦1,2⟧;','⤋ batch expects',/String URLs/],
+  ['bad-scalar-type','⤋⊤;','⤋ expects a String URL',/String URL/],
+  ['http-in-sync-function','ƒ f(u:⟦String⟧)→Number ↩ ⌗(⤋u);print(f(⟦"https://example.invalid/x"⟧));','only available in effectful top-level',/HTTP effect denied/],
+  ['http-in-sync-lambda','≔f←λu:⌗(⤋u);print(f(⟦"https://example.invalid/x"⟧));','only available in effectful top-level',/HTTP effect denied/]
+ ];
+ const tmp=mkdtempSync(join(tmpdir(),'hcode-canonical08-invalid-'));
+ try{
+  for(const [id,src,expectedCompiler,expectedInterpreter] of programs){
+    const path=join(tmp,id+'.hc');writeFileSync(path,src);
+    const res=spawnSync('cargo',['run','--quiet','--manifest-path','compiler/Cargo.toml',
+       '--','check',path],{cwd:root,encoding:'utf8',windowsHide:true,timeout:180000});
+    assert.ifError(res.error);
+    assert.notEqual(res.status,0,id+' accepted by Rust checker');
+    assert.match(res.stderr,new RegExp(expectedCompiler),id+' compiler diagnostic');
+    let calls=0;
+    await assert.rejects(executeAsync(src,{httpGet:async()=>{calls++;throw Error('unsafe');}}),expectedInterpreter,id+' JS interpreter');
+    assert.equal(calls,0,id+' performed forbidden HTTP');
+  }
+ }finally{rmSync(tmp,{recursive:true,force:true});}
+});
