@@ -99,6 +99,7 @@ pub enum TypedExprKind {
     Histogram(Box<TypedExpr>),
     FileRead(Box<TypedExpr>),
     HttpGet(Box<TypedExpr>),
+    Sleep(Box<TypedExpr>),
     StdinText,
     ArithEval(Box<TypedExpr>),
     CsvTyped {schema:Type,value:Box<TypedExpr>},
@@ -437,6 +438,14 @@ impl Checker {
                 ]);
                 (TypedExprKind::HttpGet(Box::new(input)),structure)
             }
+            ExprKind::Sleep(value)=>{
+                if !self.allow_print || self.active_function.is_some() || self.lambda_depth>0 {
+                    return Err(Diagnostic::new("EFFECT","⌛ delay is only available in effectful top-level program flow; pure packages and sync closures cannot wait".into(),expr.span));
+                }
+                let input=self.expression(value)?;
+                self.unify(&Type::Number,&input.ty,value.span,"⌛ expects Number milliseconds")?;
+                (TypedExprKind::Sleep(Box::new(input)),Type::Unit)
+            }
             ExprKind::CsvTyped{schema,value}=>{
                 let ty=Type::from_name(schema,expr.span)?;
                 let Type::Record(ref fields)=ty else {
@@ -748,7 +757,7 @@ impl Checker {
             TypedExprKind::Record(fields)=>{for (_,value) in fields{self.finalize_expr(value)?;}},
             TypedExprKind::Field{record,..}=>self.finalize_expr(record)?,
             TypedExprKind::JsonRead{value,..}|TypedExprKind::JsonWrite{value,..}=>self.finalize_expr(value)?,
-            TypedExprKind::TextScalars(value)|TypedExprKind::TextWords(value)|TypedExprKind::Histogram(value)|TypedExprKind::FileRead(value)|TypedExprKind::HttpGet(value)|TypedExprKind::ArithEval(value)=>self.finalize_expr(value)?,
+            TypedExprKind::TextScalars(value)|TypedExprKind::TextWords(value)|TypedExprKind::Histogram(value)|TypedExprKind::FileRead(value)|TypedExprKind::HttpGet(value)|TypedExprKind::Sleep(value)|TypedExprKind::ArithEval(value)=>self.finalize_expr(value)?,
             TypedExprKind::CsvTyped{value,..}=>self.finalize_expr(value)?,
             TypedExprKind::RecordUpdate{record,value,..}=>{self.finalize_expr(record)?;self.finalize_expr(value)?;},
             TypedExprKind::Index{sequence,index}=>{self.finalize_expr(sequence)?;self.finalize_expr(index)?;},

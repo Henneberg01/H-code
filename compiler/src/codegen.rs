@@ -58,6 +58,7 @@ impl Emitter {
     TypedExprKind::Histogram(value)=>format!("__hc_hist({})",self.expr(value)),
     TypedExprKind::FileRead(value)=>format!("__hc_csv_read_file({})",self.expr(value)),
     TypedExprKind::HttpGet(value)=>format!("(await __hc_http_get({}))",self.expr(value)),
+    TypedExprKind::Sleep(value)=>format!("(await __hc_sleep({}))",self.expr(value)),
     TypedExprKind::CsvTyped{schema,value}=>format!("__hc_csv_typed({}, {})",self.expr(value),csv_schema(schema)),
     TypedExprKind::StdinText=>"__hc_stdin()".into(),
     TypedExprKind::ArithEval(value)=>format!("__hc_arith({})",self.expr(value)),
@@ -152,7 +153,7 @@ fn expr_uses_json(e:&TypedExpr)->bool {
   TypedExprKind::Sequence(items)=>items.iter().any(expr_uses_json),
   TypedExprKind::Index{sequence,index}=>expr_uses_json(sequence)||expr_uses_json(index),
   TypedExprKind::Length(x)|TypedExprKind::Sum(x)|
-  TypedExprKind::TextScalars(x)|TypedExprKind::TextWords(x)|TypedExprKind::Histogram(x)|TypedExprKind::FileRead(x)|TypedExprKind::HttpGet(x)=>expr_uses_json(x),
+  TypedExprKind::TextScalars(x)|TypedExprKind::TextWords(x)|TypedExprKind::Histogram(x)|TypedExprKind::FileRead(x)|TypedExprKind::HttpGet(x)|TypedExprKind::Sleep(x)=>expr_uses_json(x),
   TypedExprKind::CsvTyped{value,..}|TypedExprKind::ArithEval(value)=>expr_uses_json(value),
   TypedExprKind::Lambda{body,..}|TypedExprKind::Section{right:body,..}|TypedExprKind::Unary{operand:body,..}=>expr_uses_json(body),
   TypedExprKind::Binary{left,right,..}=>expr_uses_json(left)||expr_uses_json(right),
@@ -179,7 +180,7 @@ fn stmt_uses_json(s:&TypedStmt)->bool {
 fn expr_uses_text(e:&TypedExpr)->bool {
  match &e.kind {
   TypedExprKind::TextScalars(..)|TypedExprKind::TextWords(..)|TypedExprKind::Histogram(..)=>true,
-  TypedExprKind::FileRead(value)|TypedExprKind::HttpGet(value)|TypedExprKind::CsvTyped{value,..}|TypedExprKind::ArithEval(value)=>expr_uses_text(value),
+  TypedExprKind::FileRead(value)|TypedExprKind::HttpGet(value)|TypedExprKind::Sleep(value)|TypedExprKind::CsvTyped{value,..}|TypedExprKind::ArithEval(value)=>expr_uses_text(value),
   TypedExprKind::JsonRead{value,..}|TypedExprKind::JsonWrite{value,..}=>expr_uses_text(value),
   TypedExprKind::Record(fields)=>fields.iter().any(|(_,v)|expr_uses_text(v)),
   TypedExprKind::Field{record,..}=>expr_uses_text(record),
@@ -211,7 +212,7 @@ fn stmt_uses_text(s:&TypedStmt)->bool {
 
 fn expr_uses_csv(e:&TypedExpr)->bool {
   match &e.kind {
-   TypedExprKind::FileRead(v)|TypedExprKind::HttpGet(v)=>expr_uses_csv(v),
+   TypedExprKind::FileRead(v)|TypedExprKind::HttpGet(v)|TypedExprKind::Sleep(v)=>expr_uses_csv(v),
    TypedExprKind::CsvTyped{..}=>true,
    TypedExprKind::ArithEval(value)=>expr_uses_csv(value),
    TypedExprKind::JsonRead{value,..}|TypedExprKind::JsonWrite{value,..}|
@@ -244,7 +245,7 @@ fn stmt_uses_csv(s:&TypedStmt)->bool {
 fn expr_uses_file(e:&TypedExpr)->bool {
   match &e.kind {
    TypedExprKind::FileRead(..)=>true,
-   TypedExprKind::CsvTyped{value,..}|TypedExprKind::ArithEval(value)|TypedExprKind::HttpGet(value)=>expr_uses_file(value),
+   TypedExprKind::CsvTyped{value,..}|TypedExprKind::ArithEval(value)|TypedExprKind::HttpGet(value)|TypedExprKind::Sleep(value)=>expr_uses_file(value),
    TypedExprKind::JsonRead{value,..}|TypedExprKind::JsonWrite{value,..}|
    TypedExprKind::TextScalars(value)|TypedExprKind::TextWords(value)|
    TypedExprKind::Histogram(value)|TypedExprKind::Length(value)|
@@ -278,7 +279,7 @@ fn expr_uses_http(e:&TypedExpr)->bool {
  match &e.kind {
   TypedExprKind::HttpGet(_)=>true,
   TypedExprKind::JsonRead{value,..}|TypedExprKind::JsonWrite{value,..}|
-  TypedExprKind::FileRead(value)|TypedExprKind::CsvTyped{value,..}|
+  TypedExprKind::Sleep(value)|TypedExprKind::FileRead(value)|TypedExprKind::CsvTyped{value,..}|
   TypedExprKind::ArithEval(value)|TypedExprKind::TextScalars(value)|
   TypedExprKind::TextWords(value)|TypedExprKind::Histogram(value)|
   TypedExprKind::Length(value)|TypedExprKind::Sum(value)|
@@ -307,11 +308,44 @@ fn stmt_uses_http(s:&TypedStmt)->bool {
  }
 }
 
+fn expr_uses_sleep(e:&TypedExpr)->bool {
+ match &e.kind {
+  TypedExprKind::Sleep(_)=>true,
+  TypedExprKind::JsonRead{value,..}|TypedExprKind::JsonWrite{value,..}|
+  TypedExprKind::HttpGet(value)|TypedExprKind::FileRead(value)|TypedExprKind::CsvTyped{value,..}|
+  TypedExprKind::ArithEval(value)|TypedExprKind::TextScalars(value)|
+  TypedExprKind::TextWords(value)|TypedExprKind::Histogram(value)|
+  TypedExprKind::Length(value)|TypedExprKind::Sum(value)|
+  TypedExprKind::Unary{operand:value,..}|TypedExprKind::Lambda{body:value,..}|
+  TypedExprKind::Section{right:value,..}=>expr_uses_sleep(value),
+  TypedExprKind::Record(fields)=>fields.iter().any(|(_,value)|expr_uses_sleep(value)),
+  TypedExprKind::Field{record,..}=>expr_uses_sleep(record),
+  TypedExprKind::RecordUpdate{record,value,..}=>expr_uses_sleep(record)||expr_uses_sleep(value),
+  TypedExprKind::Sequence(items)=>items.iter().any(expr_uses_sleep),
+  TypedExprKind::Index{sequence,index}=>expr_uses_sleep(sequence)||expr_uses_sleep(index),
+  TypedExprKind::Binary{left,right,..}=>expr_uses_sleep(left)||expr_uses_sleep(right),
+  TypedExprKind::Choice{condition,when_true,when_false}=>expr_uses_sleep(condition)||expr_uses_sleep(when_true)||expr_uses_sleep(when_false),
+  TypedExprKind::Call{callee,arguments}=>expr_uses_sleep(callee)||arguments.iter().any(expr_uses_sleep),
+  _=>false
+ }
+}
+fn stmt_uses_sleep(s:&TypedStmt)->bool {
+ match &s.kind {
+  TypedStmtKind::Use{..}|TypedStmtKind::Import{..}=>false,
+  TypedStmtKind::Export{declaration}=>stmt_uses_sleep(declaration),
+  TypedStmtKind::Let{value,..}|TypedStmtKind::Assign{value,..}|
+  TypedStmtKind::Return(value)|TypedStmtKind::Expression(value)=>expr_uses_sleep(value),
+  TypedStmtKind::Function{body,..}|TypedStmtKind::While{body,..}=>body.iter().any(stmt_uses_sleep),
+  TypedStmtKind::If{condition,then_body,else_body}=>expr_uses_sleep(condition)||
+    then_body.iter().any(stmt_uses_sleep)||else_body.as_ref().is_some_and(|body|body.iter().any(stmt_uses_sleep))
+ }
+}
+
 fn expr_cli_flags(e:&TypedExpr)->u8 {
   match &e.kind {
     TypedExprKind::StdinText=>1,
     TypedExprKind::ArithEval(v)=>2|expr_cli_flags(v),
-    TypedExprKind::FileRead(v)|TypedExprKind::HttpGet(v)|TypedExprKind::JsonRead{value:v,..}|
+    TypedExprKind::FileRead(v)|TypedExprKind::HttpGet(v)|TypedExprKind::Sleep(v)|TypedExprKind::JsonRead{value:v,..}|
     TypedExprKind::JsonWrite{value:v,..}|TypedExprKind::CsvTyped{value:v,..}|
     TypedExprKind::TextScalars(v)|TypedExprKind::TextWords(v)|TypedExprKind::Histogram(v)|
     TypedExprKind::Length(v)|TypedExprKind::Sum(v)|TypedExprKind::Unary{operand:v,..}|
@@ -362,6 +396,7 @@ pub fn emit(program:&TypedProgram,registry:&PackageRegistry)->Result<String,Stri
   imported.keys().any(|id|registry.packages.get(id)
     .is_some_and(|pkg|pkg.typed_source.statements.iter().any(stmt_uses_csv)));
  let requires_http=program.statements.iter().any(stmt_uses_http);
+ let requires_sleep=program.statements.iter().any(stmt_uses_sleep);
  let requires_file=program.statements.iter().any(stmt_uses_file) ||
   imported.keys().any(|id|registry.packages.get(id)
     .is_some_and(|pkg|pkg.typed_source.statements.iter().any(stmt_uses_file)));
@@ -536,6 +571,7 @@ const __hc_hist = input => {
   if requires_csv {output.push_str(include_str!("csv_parser_prelude.js"));}
   if requires_file {output.push_str(include_str!("file_read_prelude.js"));}
   if requires_http {output.push_str(include_str!("http_get_prelude.js"));}
+  if requires_sleep {output.push_str(include_str!("sleep_prelude.js"));}
   output.push_str("const __hc_operations = Object.create(null);\n");
  for (pkg,_) in imported {
   let def=registry.packages.get(&pkg).ok_or_else(||format!("Unverified package {pkg}"))?;
