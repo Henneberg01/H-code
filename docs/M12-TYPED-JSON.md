@@ -42,7 +42,7 @@ Det **samme konkrete JSON-roundtrip** måles med `compact/benchmarks/m12/json-ty
 - Idiomatisk TypeScript uden ekstern validator: **637 udviklerskrevne Unicode-kodepunkter** inkl. eksplicit `isPerson`-type guard og JSON.parse/JSON.stringify.
 - Baseret alene på denne source-frosne opgave er kodepunktsbesparelsen **85,40 %**, forudsat runtime output-paritet. Det er et **mikrocase** og siger intet om medianen over de 20 fastlagte universelle arbejdsopgaver. TypeScript uden runtime-schema-validering er ikke en semantisk ligeværdig sammenligning. Alternative TS-kilder med en ekstern validator skal opgøre alt forfattet kode, import og bibliotek/dependencies særskilt.
 
-`npm run m12:json-measure` måler kodepunkter og UTF-8 bytes **separat**, SHA-kontrollerer begge fixture-kilder, eksekverer begge og sammenligner eksakt stdout. **Genererede JS-runtime-bytes, compiler tid, eksekveringshastighed og dependency-size er endnu ikke benchmarks**, og må ikke fejlagtigt tælle som forfattet kilde.
+`npm run m12:json-measure` måler kodepunkter og UTF-8 bytes **separat**, SHA-kontrollerer begge fixture-kilder, eksekverer begge og sammenligner eksakt stdout. **Genereret JS-runtime-størrelse måles nu særskilt i bytes og med SHA-256, og det kompilerede output eksekveres også**. Compiler tid, eksekveringshastighed og dependency-size er endnu ikke reproducerbare benchmarks, og må ikke fejlagtigt tælle som forfattet kilde.
 
 **Historisk benchmark:** M14's originale tre sum/map/filter-eksempler er fortsat **68,46 % median færre Unicode-kodepunkter**, og M19's kanoniske 20-opgave-undersøgelse er fortsat **0/20 fuldt verificerede**. M12 JSON-casen må ikke lægges ind som en ny “let” 21. opgave, erstatte en af de 20 eller tælles som en global 70%-måling.
 
