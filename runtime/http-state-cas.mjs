@@ -70,7 +70,13 @@ function validEnvelope(data,revision,initialHash,previousHash){
   }
 }
 
-export function createHttpCasStateStore({root,initial}){
+export function createHttpCasStateStore({root,initial,faultHook=null}){
+  // Injection exists only for the standalone trusted-host fault tests. H-Code
+  // compiled source and HTTP clients have no access to this callback.
+  if(faultHook!==null &&
+     (process.env.HCODE_CAS_TEST_FAULTS!=='1'||typeof faultHook!=='function'))
+    throw Error('H-Code CAS fault injection is disabled');
+  const inject=phase=>{if(faultHook)faultHook(phase);};
   if(!text(initial,STATE_MAX))
     throw TypeError('H-Code CAS initial state must be a bounded valid UTF-8 String');
   const dir=strictRoot(root);
@@ -139,8 +145,11 @@ export function createHttpCasStateStore({root,initial}){
     try{
       fd=openSync(temporary,'wx',0o600);
       writeFileSync(fd,bytes);
+      inject('before-temp-fsync');
       fsyncSync(fd);
+      inject('after-temp-fsync');
       closeSync(fd);fd=undefined;
+      inject('before-link');
       try{linkSync(temporary,target);linked=true;}
       catch(error){
         if(error?.code==='EEXIST'){
@@ -153,11 +162,14 @@ export function createHttpCasStateStore({root,initial}){
         }
         throw error; // EXDEV/EPERM/ENOTSUP/IO failure: fail closed
       }
+      inject('after-link');
       // Directory fsync is required where supported; Windows/NTFS crash-power
       // durability is deliberately deferred to B2c-3 platform validation.
       if(process.platform!=='win32'){
+        inject('before-directory-fsync');
         const directoryFd=openSync(dir,'r');
         try{fsyncSync(directoryFd);}finally{closeSync(directoryFd);}
+        inject('after-directory-fsync');
       }
       return Object.freeze({committed:true,revision,changed:true});
     }finally{
