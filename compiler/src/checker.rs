@@ -97,6 +97,8 @@ pub enum TypedExprKind {
     TextScalars(Box<TypedExpr>),
     TextWords(Box<TypedExpr>),
     Histogram(Box<TypedExpr>),
+    FileRead(Box<TypedExpr>),
+    CsvTyped {schema:Type,value:Box<TypedExpr>},
     Index { sequence:Box<TypedExpr>,index:Box<TypedExpr> },
     Length(Box<TypedExpr>),
     Sum(Box<TypedExpr>),
@@ -398,6 +400,26 @@ impl Checker {
                 }
                 (TypedExprKind::JsonWrite{value:Box::new(checked),schema:resolved},Type::String)
             }
+            ExprKind::FileRead(value)=>{
+                if !self.allow_print {
+                    return Err(Diagnostic::new("EFFECT","⧄ requires an explicitly permitted file-read capability; pure package operations cannot read files".into(),expr.span));
+                }
+                let input=self.expression(value)?;
+                self.unify(&Type::String,&input.ty,value.span,"⧄ requires String file name")?;
+                (TypedExprKind::FileRead(Box::new(input)),Type::String)
+            }
+            ExprKind::CsvTyped{schema,value}=>{
+                let ty=Type::from_name(schema,expr.span)?;
+                let Type::Record(ref fields)=ty else {
+                    return Err(Diagnostic::new("TYPE","⧇ requires an exact structural CSV record schema".into(),expr.span));
+                };
+                if fields.is_empty()||fields.len()>64||!fields.iter().all(|(_,v)|matches!(v,Type::String|Type::Number|Type::Bool)) {
+                    return Err(Diagnostic::new("TYPE","⧇ supports 1..64 String/Number/Bool record fields only".into(),expr.span));
+                }
+                let input=self.expression(value)?;
+                self.unify(&Type::String,&input.ty,value.span,"⧇ CSV input must be String")?;
+                (TypedExprKind::CsvTyped{schema:ty.clone(),value:Box::new(input)},Type::Sequence(Box::new(ty)))
+            }
             ExprKind::TextScalars(value)|ExprKind::TextWords(value)=>{
                 let checked=self.expression(value)?;
                 self.unify(&Type::String,&checked.ty,value.span,"Unicode text operation requires String")?;
@@ -695,7 +717,8 @@ impl Checker {
             TypedExprKind::Record(fields)=>{for (_,value) in fields{self.finalize_expr(value)?;}},
             TypedExprKind::Field{record,..}=>self.finalize_expr(record)?,
             TypedExprKind::JsonRead{value,..}|TypedExprKind::JsonWrite{value,..}=>self.finalize_expr(value)?,
-            TypedExprKind::TextScalars(value)|TypedExprKind::TextWords(value)|TypedExprKind::Histogram(value)=>self.finalize_expr(value)?,
+            TypedExprKind::TextScalars(value)|TypedExprKind::TextWords(value)|TypedExprKind::Histogram(value)|TypedExprKind::FileRead(value)=>self.finalize_expr(value)?,
+            TypedExprKind::CsvTyped{value,..}=>self.finalize_expr(value)?,
             TypedExprKind::RecordUpdate{record,value,..}=>{self.finalize_expr(record)?;self.finalize_expr(value)?;},
             TypedExprKind::Index{sequence,index}=>{self.finalize_expr(sequence)?;self.finalize_expr(index)?;},
             TypedExprKind::Length(value)=>self.finalize_expr(value)?,

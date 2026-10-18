@@ -237,6 +237,8 @@ impl Parser {
                 self.index+=1;
                 ExprKind::JsonWrite(Box::new(self.expression(8)?))
             }
+            TokenKind::FileRead=>{self.index+=1;ExprKind::FileRead(Box::new(self.expression(8)?))}
+            TokenKind::CsvTyped=>{self.index+=1;let schema=self.type_name()?;ExprKind::CsvTyped{schema,value:Box::new(self.expression(8)?)}}
             TokenKind::TextScalars=>{self.index+=1;ExprKind::TextScalars(Box::new(self.expression(8)?))}
             TokenKind::TextWords=>{self.index+=1;ExprKind::TextWords(Box::new(self.expression(8)?))}
             TokenKind::Histogram=>{self.index+=1;ExprKind::Histogram(Box::new(self.expression(8)?))}

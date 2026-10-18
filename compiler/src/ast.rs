@@ -51,6 +51,8 @@ pub enum ExprKind {
     RecordUpdate { record: Box<Expr>, name: String, value: Box<Expr> },
     JsonRead { schema: String, value: Box<Expr> },
     JsonWrite(Box<Expr>),
+    FileRead(Box<Expr>),
+    CsvTyped { schema: String, value: Box<Expr> },
     TextScalars(Box<Expr>),
     TextWords(Box<Expr>),
     Histogram(Box<Expr>),
