@@ -1,6 +1,6 @@
 # M19.12 B2c — Crash recovery and cross-process transactional state (design gate)
 
-**Status: design, NOT implemented.** Do not change Canonical20 11/20 or the original `workloads.json` SHA `46653ef90ffb3e420fba4ddfbfac3c4cfd57f3b3`. The global ≥70% authored-code median remains unproven. This design is stacked on B2b and must be rebased cleanly against merged `main` before implementation or review.
+**Status: B2c-1/B2c-2 implemented on draft PR #49; B2c-3 verification in progress, NOT yet merged.** Do not change Canonical20 11/20 or the original `workloads.json` SHA `46653ef90ffb3e420fba4ddfbfac3c4cfd57f3b3`. The global ≥70% authored-code median remains unproven. This design is stacked on B2b and must be rebased cleanly against merged `main` before implementation or review.
 
 ## Existing generic H-Code contract, retained
 
@@ -54,3 +54,11 @@ Fault injection must be explicitly gated to test builds or trusted host configur
 - **B2c-3:** exhaustive fault-injection and exact-head Windows/Linux CI + CodeQL; only after green review may B2c be merged.
 
 **Not yet included:** full user-authored CRUD API (B3), fair competitive TypeScript baseline, full immutable 20-task source-locked proof or 12/20 promotion (B4). Do not represent the research persistence store as a security sandbox or crash-durable database without these gates.
+
+## B2c-3 security and fault-injection checkpoint
+
+- Two real OS processes and Rust-compiled H-Code HTTP requests are CI-gated under CAS mode. Old single-process persistence remains the default.
+- Added narrowly gated *host-injected* pre-fsync, pre-link, post-link and directory-sync failure hooks; HTTP clients and H-Code programs cannot control them. A failure before atomic hard-link publication must leave the revision unchanged. A failure after publication is an **ambiguous commit**: the client must retry with the same stable request ID to retrieve its durable receipt and cannot assume no mutation happened.
+- Source-level Rust compiler purity analysis rejects `print`, assignment, indirect/unknown calls and recursively reachable effectful helper functions in state reducers. The JavaScript reference interpreter now executes callbacks in a guarded pure context; compiled runtime denies printing while CAS re-evaluates.
+- New CI suites: `benchmark20:state12b2c3-fault` (real files) plus Rust's `m19_cas_purity`, alongside B1/B2a/B2b/B2c1/B2c2 regressions and canonical20 readiness.
+- **Unresolved until proven on exact head:** full Linux+Windows CI, fuzz/TOCTOU hardening, crash at *specific host publishing phases* (including truly terminated publisher processes), power-loss/NTFS durability semantics, and broader indirect effect aliasing. Do not present these bounded experimental CAS revisions as a production-grade DB or count task12 verified. Full canonical12 B3/B4 still outstanding.
