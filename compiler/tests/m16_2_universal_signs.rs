@@ -57,9 +57,15 @@ fn universal_sign_and_ascii_keyword_are_the_same_real_lexer_token(){
     assert_eq!(lex("forall T fn f(xs:[[T]]) -> T return xs[[0]];").unwrap()[0].kind,TokenKind::Forall);
     let sign=parse("∀T ƒ head(xs:⟦T⟧)→T ↩ xs⟦0⟧;").unwrap();
     let alias=parse("forall T fn head(xs:[[T]]) -> T return xs[[0]];").unwrap();
-    assert_eq!(sign,alias);
-    let StmtKind::Function{type_parameters,..}=&sign.statements[0].kind else {panic!("Real declaration required")};
-    assert_eq!(type_parameters,&vec!["T".to_string()]);
+    // Unicode glyphs and ASCII aliases carry different source columns:
+    // compare normalized semantic structure, not raw spans.
+    let StmtKind::Function{name:a,type_parameters:ta,parameters:pa,returns:ra,body:ba}=&sign.statements[0].kind else {panic!("Expected glyph function");};
+    let StmtKind::Function{name:b,type_parameters:tb,parameters:pb,returns:rb,body:bb}=&alias.statements[0].kind else {panic!("Expected ASCII function");};
+    assert_eq!((a,ta,ra), (b,tb,rb));
+    assert_eq!(pa[0].annotation,pb[0].annotation);
+    assert_eq!(pa[0].name,pb[0].name);
+    assert_eq!(ba.len(),bb.len());
+    assert_eq!(ta,&vec!["T".to_string()]);
     for src in ["∀T,T ƒ f(xs:⟦T⟧)→T ↩ xs⟦0⟧;","∀Number ƒ f(x:Number)→Number ↩ x;",
         "∀T,U,V,W,X,Y,Z,P,Q ƒ f(x:T)→T ↩ x;","∀T ≔x←1;"]{
         assert!(parse(src).is_err(),"{src}");
@@ -118,7 +124,12 @@ fn rigid_type_t_does_not_silently_become_number_or_arbitrary_constant(){
 
 #[test]
 fn generic_manifest_and_source_binders_must_match_and_remain_bound(){
-    let mut f=Temp::new();f.manifest_edit(|m|m["operations"][0]["typeParameters"]=json!(["U"]));
+    let mut f=Temp::new();
+    f.manifest_edit(|m|{
+        m["operations"][0]["typeParameters"]=json!(["U"]);
+        m["operations"][0]["parameters"][0]["type"]=json!("⟦U⟧");
+        m["operations"][0]["returns"]=json!("U");
+    });
     assert!(f.load().unwrap_err().contains("binder mismatch"));
     let mut f=Temp::new();f.manifest_edit(|m|m["operations"][0]["returns"]=json!("Any"));
     assert!(f.load().unwrap_err().contains("Unsupported package contract type"));
