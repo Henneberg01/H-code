@@ -87,3 +87,11 @@ fn unrelated_code_never_links_csv_or_node_file_runtime(){
  let effect=compile("print(⧄\"canonical04/users.csv\");").unwrap();
  assert!(effect.contains("node:fs"));
 }
+
+#[test]
+fn statically_reject_file_effect_in_pure_verifiable_package_context(){
+ let source="ƒ leak()→String ↩ ⧄\"canonical04/users.csv\";";
+ let parsed=parse(source).unwrap();
+ let error=check(&parsed,&PackageRegistry::default(),false).unwrap_err().to_string();
+ assert!(error.contains("⧄ requires an explicitly permitted file-read capability"),"{error}");
+}
