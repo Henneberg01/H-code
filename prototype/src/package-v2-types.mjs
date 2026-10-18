@@ -10,11 +10,12 @@ const callable=(params,result)=>({kind:'function',params,result});
 const isFn=t=>t&&typeof t==='object'&&t.kind==='function';
 const typeName=t=>isFn(t)?'('+t.params.map(typeName).join(',')+')→'+typeName(t.result):t;
 
-export function contractType(name,format=2,depth=0){
+export function contractType(name,format=2,depth=0,binders=[]){
   if(typeof name!=='string'||name.length>256||depth>16)error('Contract type too deep or long');
   if(scalar.has(name))return name;
-  if(format===2&&isSeq(name)){
-    contractType(element(name),format,depth+1);
+  if(format===3&&binders.includes(name))return name;
+  if(format>=2&&isSeq(name)){
+    contractType(element(name),format,depth+1,binders);
     return name;
   }
   error('Unsupported or unbound contract type '+name);
@@ -153,7 +154,7 @@ function infer(node,env,expected=null){
   if(expected)out=merge(expected,out,'Expected expression type');
   return out;
 }
-function validateBlock(block,env,ret,functions){
+function validateBlock(block,env,ret,functions,format=2,binders=[]){
   if(!block||block.kind!=='Block'||!Array.isArray(block.body))error('Invalid H-Code block');
   const current=new Map(env);
   let returned=false;
@@ -162,7 +163,7 @@ function validateBlock(block,env,ret,functions){
     switch(stmt.kind){
       case 'Let':{
         if(current.has(stmt.name)||functions.has(stmt.name))error('Duplicate or shadowed local '+stmt.name);
-        const annotation=stmt.annotation?contractType(stmt.annotation):null;
+        const annotation=stmt.annotation?contractType(stmt.annotation,format,0,binders):null;
         const actual=infer(stmt.value,current,annotation);
         const t=annotation?merge(annotation,actual,'Local declaration'):actual;
         if(!known(t))error('Unresolved local type '+stmt.name);
@@ -180,13 +181,13 @@ function validateBlock(block,env,ret,functions){
       }
       case 'If':{
         requireType(infer(stmt.condition,current),'Bool','if condition must be Bool');
-        const yes=validateBlock(stmt.then,current,ret,functions);
-        const no=stmt.otherwise?validateBlock(stmt.otherwise,current,ret,functions):false;
+        const yes=validateBlock(stmt.then,current,ret,functions,format,binders);
+        const no=stmt.otherwise?validateBlock(stmt.otherwise,current,ret,functions,format,binders):false;
         returned=yes&&no;break;
       }
       case 'While':{
         requireType(infer(stmt.condition,current),'Bool','while condition must be Bool');
-        validateBlock(stmt.body,current,ret,functions);break;
+        validateBlock(stmt.body,current,ret,functions,format,binders);break;
       }
       case 'ExpressionStatement':
         infer(stmt.value,current);break;
@@ -195,7 +196,7 @@ function validateBlock(block,env,ret,functions){
   }
   return returned;
 }
-export function validatePurePackageV2(ast,manifest){
+function validatePurePackage(ast,manifest,format){
   if(!ast||ast.kind!=='Program'||!Array.isArray(ast.body)||ast.body.length===0||ast.body.length>128)
     error('Package source requires 1..128 pure functions');
   const defs=new Map(),functions=new Map();
@@ -204,20 +205,29 @@ export function validatePurePackageV2(ast,manifest){
     if(defs.has(stmt.name)||stmt.name==='print')error('Duplicate or reserved function '+stmt.name);
     if(typeof stmt.returnType!=='string'||!Array.isArray(stmt.params)||stmt.params.length>32)
       error('Every package function needs explicit return and parameter types');
+    const binders=stmt.typeParameters??[];
+    if(format===2&&binders.length)error('∀ requires format 3');
+    if(binders.length>8||new Set(binders).size!==binders.length)error('Duplicate or excessive ∀ binder');
+    for(const name of binders){
+      if(!/^[A-Z][A-Za-z0-9_]*$/.test(name)||name.length>32||scalar.has(name))
+        error('Invalid ∀ binder '+name);
+    }
     const params=[];
     for(const param of stmt.params){
       if(typeof param.type!=='string'||params.some(x=>x.name===param.name))
         error('Every parameter needs a distinct explicit type');
-      params.push({name:param.name,type:contractType(param.type)});
+      params.push({name:param.name,type:contractType(param.type,format,0,binders)});
     }
-    const result=contractType(stmt.returnType);
-    defs.set(stmt.name,{stmt,params,result});
+    const result=contractType(stmt.returnType,format,0,binders);
+    defs.set(stmt.name,{stmt,params,result,binders});
     functions.set(stmt.name,callable(params.map(x=>x.type),result));
   }
   for(const op of manifest.operations){
     const declaration=defs.get(op.implementation);
     if(!declaration)error('Missing exported H-Code implementation '+op.implementation);
     if(declaration.params.length!==op.parameters.length)error('Manifest/source arity mismatch');
+    if(JSON.stringify(declaration.binders)!==JSON.stringify(op.typeParameters??[]))
+      error('Manifest/source ∀ binder mismatch');
     for(let i=0;i<declaration.params.length;i++){
       const param=declaration.params[i],declared=op.parameters[i];
       if(param.name!==declared.name||param.type!==declared.type)
@@ -231,9 +241,12 @@ export function validatePurePackageV2(ast,manifest){
       if(env.has(param.name))error('Parameter shadows library function '+param.name);
       env.set(param.name,param.type);
     }
-    const hasReturn=validateBlock(declaration.stmt.body,env,declaration.result,functions);
+    const hasReturn=validateBlock(declaration.stmt.body,env,declaration.result,functions,format,declaration.binders);
     if(!hasReturn&&declaration.result!=='Unit')
       error('Pure function '+name+' does not return on every path');
   }
   return true;
 }
+
+export function validatePurePackageV2(ast,manifest){return validatePurePackage(ast,manifest,2);}
+export function validatePurePackageV3(ast,manifest){return validatePurePackage(ast,manifest,3);}
