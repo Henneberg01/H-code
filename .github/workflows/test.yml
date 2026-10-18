@@ -51,6 +51,9 @@ jobs:
         if: ${{ success() || failure() }}
       - run: npm run compact:ts-parity
         if: ${{ success() || failure() }}
+      - name: Verify M12 frozen records vs idiomatic TypeScript
+        run: npm run m12:measure
+        if: ${{ success() || failure() }}
       - run: npm run m13:measure
         if: ${{ success() || failure() }}
       - run: npm run m14:measure
