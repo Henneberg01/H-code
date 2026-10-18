@@ -1,0 +1,18 @@
+type Person={name:string;score:number};
+const nums:number[]=[-3,0,7,11];
+console.log(nums.reduce((sum,n)=>sum+n,0));
+console.log(JSON.stringify(nums.map(n=>n*2)));
+console.log(JSON.stringify(nums.filter(n=>n>0)));
+const labels:string[]=["a","bb","ccc"];
+console.log(JSON.stringify(labels.map(s=>s+"!")));
+console.log(JSON.stringify(labels.filter(s=>s!=="bb")));
+const flags:boolean[]=[true,false,true];
+console.log(JSON.stringify(flags.filter(v=>v)));
+const people:Person[]=[{name:"A",score:5},{name:"B",score:0}];
+console.log(JSON.stringify(people.filter(p=>p.score>0)));
+console.log(JSON.stringify(people.map(p=>p.name)));
+const nested:number[][]=[[1,2],[3]];
+console.log(JSON.stringify(nested.map(xs=>xs.length)));
+const empty:number[]=[];
+console.log(empty.reduce((sum,n)=>sum+n,0));
+console.log(JSON.stringify(empty.map(n=>n*2)));
