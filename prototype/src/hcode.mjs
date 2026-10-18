@@ -320,6 +320,13 @@ export function linkProgram(ast, registry=new Map()) {
     if(n.kind==='Literal')return typeof n.value==='number'?'Number':typeof n.value==='string'?'String':'Bool';
     if(n.kind==='Unary' && n.operator==='-' && literalType(n.value)==='Number')return 'Number';
     if(n.kind==='OperationRef')return null;
+    if(n.kind==='Sequence'){
+      if(!n.items.length)return null; // empty sequence type is inferred from the call
+      const types=n.items.map(literalType);
+      if(types.some(x=>x===null))return null;
+      if(new Set(types).size!==1)throw new HCodeError('Sequence elements must have matching types');
+      return '⟦'+types[0]+'⟧';
+    }
     if(n.kind==='Call'&&n.callee.kind==='OperationRef')return byID.get(n.callee.id)?.returns??null;
     return null;
   };
@@ -373,7 +380,7 @@ class ReturnSignal{constructor(value){this.value=value;}}
 const runtimeType=value=>value===null?'Unit':typeof value==='number'?'Number':typeof value==='string'?'String':typeof value==='boolean'?'Bool':'unsupported';
 
 export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=16384,registry=new Map()}={}){
-  const root=new Scope(),operations=new Map(),loadedLibraries=new Set();let steps=0;
+  const root=new Scope(),operations=new Map(),operationSpecs=new Map(),loadedLibraries=new Set();let steps=0;
   const step=()=>{if(++steps>maxSteps)throw Error('Execution step limit exceeded');};
   root.define('print',(...args)=>{stdout(args.map(x=>x===null?'none':String(x)).join(' '));return null;});
   const truth=v=>{if(typeof v!=='boolean')throw Error('Condition must be Boolean');return v;};
@@ -381,11 +388,12 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
     if(!type)return;
     if(type.startsWith('⟦')&&type.endsWith('⟧')){
       if(!Array.isArray(value))throw Error(context==='return'?'return expects '+type+', got '+runtimeType(value):'Annotated type mismatch: expected '+type);
+      if(value.length>maxSequenceItems)throw Error('Sequence allocation limit exceeded');
       for(const element of value)requireType(element,type.slice(1,-1),context);
       return;
     }
     const actual=value===null?'Unit':typeof value==='number'?'Number':typeof value==='string'?'String':typeof value==='boolean'?'Bool':'Unknown';
-    if(actual!==type)throw Error(context==='return'?'return expects '+type+', got '+actual:'Annotated type mismatch: expected '+type+', got '+actual);
+    if(actual!==type||(type==='Number'&&!Number.isFinite(value)))throw Error(context==='return'?'return expects '+type+', got '+actual:'Annotated type mismatch: expected '+type+', got '+actual);
   };
   const unifySequenceTypes=(left,right)=>{
     if(left==='?')return right;
@@ -541,7 +549,9 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
       }
       case 'Call':{
         const fun=expr(node.callee,scope);if(typeof fun!=='function')throw Error('Value is not callable');
-        const args=node.args.map(arg=>expr(arg,scope));return fun(...args);
+        const signature=node.callee.kind==='OperationRef'?operationSpecs.get(node.callee.id):null;
+        const args=node.args.map((arg,i)=>expr(arg,scope,signature?.parameters[i]?.type??null));
+        return fun(...args);
       }
       default:throw Error(`Unsupported AST expression ${node.kind}`);
     }
