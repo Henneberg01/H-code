@@ -1,0 +1,2 @@
+∀T ⥇ ƒ head(xs:⟦T⟧)→T ↩ xs⟦0⟧;
+∀T ⥈ ƒ repeat(xs:⟦T⟧)→⟦T⟧ ↩ xs⧺xs;
