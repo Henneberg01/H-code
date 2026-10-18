@@ -5,6 +5,7 @@ on:
     branches:
       - feat/m16-2-universal-sign-types
       - feat/m16-3-glyph-package-generator
+      - feat/m19-canonical20-m163-integration
   push:
     branches:
       - feat/m14-typed-lambda-glyph
