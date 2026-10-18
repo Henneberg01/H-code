@@ -27,7 +27,22 @@ impl Temp {
         let path=std::env::temp_dir().join(format!("hcode-m16-2-{}-{n}",std::process::id()));
         fs::create_dir_all(path.join("packages/poly.signs")).unwrap();
         for name in ["manifest.json","lib.hc"]{
-            fs::copy(root().join("packages/poly.signs").join(name),path.join("packages/poly.signs").join(name)).unwrap();
+            let from=root().join("packages/poly.signs").join(name);
+            let to=path.join("packages/poly.signs").join(name);
+            // Windows can briefly hold these files open during concurrent
+            // tests/AV scanning. Retry only OS sharing violations, do not
+            // swallow other errors or change any bytes being verified.
+            let mut attempt=0u8;
+            loop{
+                match fs::copy(&from,&to){
+                    Ok(_) => break,
+                    Err(e) if e.raw_os_error()==Some(32) && attempt<12 =>{
+                        attempt+=1;
+                        std::thread::sleep(std::time::Duration::from_millis(50));
+                    }
+                    Err(e)=>panic!("Cannot copy immutable M16.2 fixture {}: {e}",from.display())
+                }
+            }
         }
         let lock=serde_json::from_slice(&fs::read(root().join("hcode.m16.2.lock.json")).unwrap()).unwrap();
         Self{path,lock}

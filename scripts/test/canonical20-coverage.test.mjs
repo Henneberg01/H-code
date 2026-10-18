@@ -70,10 +70,13 @@ test('registry cannot claim an unsupported case is fully verified without compil
   } finally { target.status=previous; }
 });
 
+// This starts the real six-task cross-runtime Rust/JS/TS proof again in a new process.
+// On Windows, independent child runtimes exceed 30s; extending the timeout does
+// not skip a single test or loosen the original 20-task strict rejection.
 test('the strict twenty-workload CI gate intentionally fails until all 20 pass',{skip:!canRunTs},()=>{
   const root=fileURLToPath(new URL('../../',import.meta.url));
   const child=spawnSync(process.execPath,['scripts/canonical20-coverage.mjs','--require-complete'],{
-    cwd:root,encoding:'utf8',timeout:30_000,windowsHide:true
+    cwd:root,encoding:'utf8',timeout:180_000,windowsHide:true
   });
   assert.ifError(child.error);
   assert.equal(child.status,2);
