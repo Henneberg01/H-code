@@ -29,7 +29,8 @@
     "benchmark20:verify02": "node scripts/canonical20-verify-02.mjs",
     "benchmark20:verify10": "node scripts/canonical20-verify-10.mjs",
     "benchmark20:verify03": "node scripts/canonical20-verify-03.mjs",
-    "benchmark20:verify04": "node scripts/canonical20-verify-04.mjs"
+    "benchmark20:verify04": "node scripts/canonical20-verify-04.mjs",
+    "benchmark20:csv-idiomatic": "node --experimental-strip-types scripts/canonical20-csv-idiomatic.mjs"
   },
   "engines": {
     "node": ">=20"
