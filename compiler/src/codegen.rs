@@ -16,6 +16,12 @@ impl Emitter {
      let values=items.iter().map(|x|self.expr(x)).collect::<Vec<_>>().join(", ");
      format!("__hc_seq([{values}])")
     }
+   TypedExprKind::Record(fields)=>{
+     let pairs=fields.iter().map(|(key,value)|format!("[{},{}]",q(key),self.expr(value)))
+         .collect::<Vec<_>>().join(",");
+     format!("__hc_record([{pairs}])")
+   }
+   TypedExprKind::Field{record,name:field}=>format!("__hc_field({}, {})",self.expr(record),q(field)),
     TypedExprKind::Index{sequence,index}=>format!("__hc_index({}, {})",self.expr(sequence),self.expr(index)),
     TypedExprKind::Length(value)=>format!("__hc_len({})",self.expr(value)),
     TypedExprKind::Sum(value)=>format!("__hc_sum({})",self.expr(value)),
@@ -107,6 +113,8 @@ pub fn emit(program:&TypedProgram,registry:&PackageRegistry)->Result<String,Stri
  output.push_str("const __hc_mod = (a,b) => { if (b === 0) throw Error('Division by zero'); return a%b; };\n");
  output.push_str("const __hc_compose = (outer,inner) => { if (typeof outer !== 'function' || typeof inner !== 'function') throw Error('Composition expects unary functions'); return (x) => { __hc_tick(); return outer(inner(x)); }; };\n");
  output.push_str("const __hc_seq = (xs) => { __hc_tick(); if (!Array.isArray(xs)) throw Error('Expected sequence'); if (xs.length > 16384) throw Error('Sequence allocation limit exceeded'); return xs; };\n");
+ output.push_str("const __hc_record = (pairs) => { __hc_tick(); if (pairs.length > 64) throw Error('Record field limit exceeded'); const record = Object.create(null); for (const [key,value] of pairs) { __hc_tick(); if (Object.hasOwn(record,key)) throw Error('Duplicate record field'); record[key] = value; } return Object.freeze(record); };\n");
+ output.push_str("const __hc_field = (record,key) => { __hc_tick(); if (record === null || typeof record !== 'object' || Array.isArray(record) || Object.getPrototypeOf(record) !== null || !Object.hasOwn(record,key)) throw Error('Unknown record field '+key); return record[key]; };\n");
  output.push_str("const __hc_index = (xs,i) => { __hc_tick(); __hc_seq(xs); if (!Number.isInteger(i) || i<0 || i>=xs.length) throw Error('Sequence index out of bounds or not an integer'); return xs[i]; };\n");
  output.push_str("const __hc_len = (xs) => { __hc_tick(); return __hc_seq(xs).length; };\n");
  output.push_str("const __hc_concat = (a,b) => { __hc_tick(); __hc_seq(a); __hc_seq(b); if (a.length+b.length>16384) throw Error('Sequence allocation limit exceeded'); return __hc_seq([...a,...b]); };\n");
