@@ -130,6 +130,19 @@ test('wrong handler type and nested effect rejected by Rust, JS interpreter reje
     }finally{rmSync(dir,{recursive:true,force:true});}
   }
 });
+test('⤊ top-level-only effect is rejected inside a H-Code function',()=>{
+  const nested=original.replace('⤊reply','ƒ bad()→Unit { ⤊reply }\nbad()');
+  const dir=mkdtempSync(join(tmpdir(),'hcode-server-nested-'));
+  try{
+    const path=join(dir,'invalid.hc');
+    writeFileSync(path,nested);
+    const result=spawnSync('cargo',['run','--quiet','--manifest-path','compiler/Cargo.toml',
+      '--','check',path],{cwd:root,encoding:'utf8',windowsHide:true,timeout:180000});
+    assert.notEqual(result.status,0);
+    assert.match(result.stderr,/EFFECT|only available in effectful top-level/);
+    assert.throws(()=>execute(nested,{httpServe:()=>{}}),/effect denied/);
+  }finally{rmSync(dir,{recursive:true,force:true});}
+});
 test('real inbound HTTP rejects invalid UTF-8 and oversized bodies without invoking H-Code',async()=>{
   const b=build(original);let app;
   try{
