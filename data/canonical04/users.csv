@@ -1,0 +1,5 @@
+name,active,age,note
+"Ada, Lovelace",true,36,"Math & notes"
+"Turing ""Alan""",false,41,"Quote ""nested"""
+東京,true,22,"Line one
+Line two"
