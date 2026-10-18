@@ -154,6 +154,13 @@ impl Parser {
             }
             TokenKind::SeqLength=>{self.index+=1;ExprKind::Length(Box::new(self.expression(8)?))}
             TokenKind::Sum=>{self.index+=1;ExprKind::Sum(Box::new(self.expression(8)?))}
+            TokenKind::Lambda=>{
+                self.index+=1;
+                let (parameter,_)=self.ident()?;
+                self.expect(&TokenKind::Colon)?;
+                let body=self.expression(0)?;
+                ExprKind::Lambda{parameter,body:Box::new(body)}
+            }
             TokenKind::SeqOpen=>{
                 self.index+=1;
                 let mut items=Vec::new();

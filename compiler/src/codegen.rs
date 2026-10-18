@@ -19,6 +19,7 @@ impl Emitter {
     TypedExprKind::Index{sequence,index}=>format!("__hc_index({}, {})",self.expr(sequence),self.expr(index)),
     TypedExprKind::Length(value)=>format!("__hc_len({})",self.expr(value)),
     TypedExprKind::Sum(value)=>format!("__hc_sum({})",self.expr(value)),
+    TypedExprKind::Lambda{parameter,body}=>format!("(({}) => ({}))",name(parameter),self.expr(body)),
     TypedExprKind::Bool(b)=>b.to_string(),TypedExprKind::Identifier(s)=>if matches!(e.ty,Type::BuiltinPrint) {"__hc_print".into()}else{name(s)},
    TypedExprKind::OperationRef{id}=>format!("__hc_operations[{}]",q(id)),
    TypedExprKind::Unary{op,operand}=>format!("({}{})",match op{UnaryOp::Not=>"!",UnaryOp::Negate=>"-"},self.expr(operand)),

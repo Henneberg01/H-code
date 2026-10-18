@@ -48,6 +48,7 @@ pub enum ExprKind {
     Index { sequence: Box<Expr>, index: Box<Expr> },
     Length(Box<Expr>),
     Sum(Box<Expr>),
+    Lambda { parameter: String, body: Box<Expr> },
     Identifier(String),
     Operation { alias: Option<String>, name_or_glyph: String, is_glyph: bool },
     Unary { op: UnaryOp, operand: Box<Expr> },

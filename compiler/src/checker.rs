@@ -57,6 +57,7 @@ pub enum TypedExprKind {
     Index { sequence:Box<TypedExpr>,index:Box<TypedExpr> },
     Length(Box<TypedExpr>),
     Sum(Box<TypedExpr>),
+    Lambda { parameter:String, body:Box<TypedExpr> },
 }
 
 #[derive(Clone)]
@@ -320,6 +321,16 @@ impl Checker {
                 self.unify(&seq.ty,&Type::Sequence(Box::new(elem)),value.span,"⌗ requires sequence")?;
                 (TypedExprKind::Length(Box::new(seq)),Type::Number)
             }
+            ExprKind::Lambda{parameter,body}=>{
+                let arg=self.fresh();
+                self.push();
+                self.declare(parameter,arg.clone(),false,expr.span)?;
+                let inferred=self.expression(body);
+                self.pop();
+                let checked=inferred?;
+                let ty=Type::Function(vec![arg],Box::new(checked.ty.clone()));
+                (TypedExprKind::Lambda{parameter:parameter.clone(),body:Box::new(checked)},ty)
+            }
             ExprKind::Number(raw)=>(TypedExprKind::Number(raw.clone()),Type::Number),
             ExprKind::String(raw)=>(TypedExprKind::String(raw.clone()),Type::String),
             ExprKind::Bool(value)=>(TypedExprKind::Bool(*value),Type::Bool),
@@ -476,6 +487,7 @@ impl Checker {
             TypedExprKind::Index{sequence,index}=>{self.finalize_expr(sequence)?;self.finalize_expr(index)?;},
             TypedExprKind::Length(value)=>self.finalize_expr(value)?,
             TypedExprKind::Sum(value)=>self.finalize_expr(value)?,
+            TypedExprKind::Lambda{body,..}=>self.finalize_expr(body)?,
             TypedExprKind::Unary{operand,..}=>self.finalize_expr(operand)?,
             TypedExprKind::Binary{left,right,..}=>{self.finalize_expr(left)?;self.finalize_expr(right)?;},
             TypedExprKind::Choice{condition,when_true,when_false}=>{
