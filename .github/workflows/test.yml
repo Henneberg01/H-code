@@ -9,6 +9,7 @@ on:
       - feat/m12-symbolic-records-post-m19
       - feat/m12-typed-json-records
       - feat/m19-canonical05-json-transformation-proof
+      - feat/m19-canonical02-fibonacci-proof
   push:
     branches:
       - feat/m14-typed-lambda-glyph
@@ -65,6 +66,9 @@ jobs:
       - run: npm run m14:measure
         if: ${{ success() || failure() }}
       - run: npm run m15:measure
+        if: ${{ success() || failure() }}
+      - name: Verify complete canonical workload 10 typed sum/map/filter generality
+        run: npm run benchmark20:verify10
         if: ${{ success() || failure() }}
       - name: Verify complete original canonical workload 02 with real Rust recursion and TypeScript
         run: npm run benchmark20:verify02
