@@ -82,11 +82,11 @@ The new M15 variants live in `compact/benchmarks/m15/` and preserve the complete
 
 ## M19: fixed twenty-workload preregistration
 
-The twenty workloads listed above are registered in `compact/canonical20/workloads.json` without exclusions, renames, or substitutions. Run `npm run benchmark20:status` for compiler-validated task-05 proof and source-frozen M10 and M14 partial evidence. **On stacked PR #29, subject to green exact-head CI, 5/20 are functionally/compiler verified, 0 have only partial evidence, and 15 remain unsupported**. Task 02 requires a separate source-locked proof in addition to Task 05. The SHA-frozen 20-workload registry itself is unchanged. The original three-example M14 median **68.46%** is retained as historical M14 evidence, never presented as the global twenty-workload score. The strict gate `npm run benchmark20:strict` intentionally fails until the full twenty are compiler-validated. Package authoring source is part of the authored code metric. See `compact/canonical20/README.md` and `docs/M16-3-GLYPH-PACKAGES.md`.
+The twenty workloads listed above are registered in `compact/canonical20/workloads.json` without exclusions, renames, or substitutions. Run `npm run benchmark20:status` for compiler-validated task-05 proof and source-frozen M10 and M14 partial evidence. **On `main` after reviewed/merged PRs #30 and #31, 5/20 are functionally/compiler verified, 0 have partial-only evidence, and 15 remain unsupported**. Task 02 requires a separate source-locked proof in addition to Task 05. The SHA-frozen 20-workload registry itself is unchanged. The original three-example M14 median **68.46%** is retained as historical M14 evidence, never presented as the global twenty-workload score. The strict gate `npm run benchmark20:strict` intentionally fails until the full twenty are compiler-validated. Package authoring source is part of the authored code metric. See `compact/canonical20/README.md` and `docs/M16-3-GLYPH-PACKAGES.md`.
 
 ## First full preregistered task proof — 2026-10-18 (draft PR #25)
 
-Workload `05-json-transformation` (`deserialize structured input, transform nested typed fields, serialize valid JSON`) is now checked by `npm run benchmark20:verify05`. The source/fixture SHA-frozen proof executes real Rust-generated JS, the independent H-Code reference and the idiomatic TypeScript runtime guard on 3 fixed positive, 12 generalized positive and 11 invalid cases. The baseline implements proper runtime schema checks rather than just `JSON.parse() as Type`. Output parity and fail-closed malformed input are mandatory. **594 vs 2005 developer-authored Unicode codepoints = 70.37% fewer on *this one canonical workload***; UTF-8 is **651 vs 2007 bytes = 67.56% fewer**; **6560 generated JS bytes** are recorded separately. The 70% goal is NOT met for the overall 20; global median stays null until all pass. PR #25 is stacked on #24 and not merged to `main`. See `compact/canonical20/PROOF-05.md`.
+Workload `05-json-transformation` (`deserialize structured input, transform nested typed fields, serialize valid JSON`) is now checked by `npm run benchmark20:verify05`. The source/fixture SHA-frozen proof executes real Rust-generated JS, the independent H-Code reference and the idiomatic TypeScript runtime guard on 3 fixed positive, 12 generalized positive and 11 invalid cases. The baseline implements proper runtime schema checks rather than just `JSON.parse() as Type`. Output parity and fail-closed malformed input are mandatory. **594 vs 2005 developer-authored Unicode codepoints = 70.37% fewer on *this one canonical workload***; UTF-8 is **651 vs 2007 bytes = 67.56% fewer**; **6560 generated JS bytes** are recorded separately. The 70% goal is NOT met for the overall 20; global median stays null until all pass. The former stacked PR #25 was integrated into `main` via consolidated PR #30. See `compact/canonical20/PROOF-05.md`.
 
 ## Second original task proof — Fibonacci recursion (draft PR #26)
 
@@ -94,7 +94,7 @@ Original task **02-fibonacci-recursion** is now checked by `npm run benchmark20:
 
 This original file is **96 H-Code Unicode codepoints vs 94 TS, a 2.13% regression** (H-Code UTF-8 105 bytes versus TS 94 bytes). It is counted as such. The separate SHA-locked `02-fibonacci-glyph-first.hc` candidate uses native compact constructs `↩ ≤ ?` and has **64 Unicode codepoints (31.91% fewer than the same TS baseline)**, but is measured **separately** and never silently swapped with the historical input. Candidate runtime parity is a required CI gate. See `compact/canonical20/PROOF-02.md`.
 
-The target remains ≥70% median with all 20 fully compiler-verified, with Unicode points, UTF-8 bytes, runtime size and deps reported individually. **No global 70% conclusion** is possible with only two verified tasks. Existing M14 median 68.46% over its original three other tasks is unchanged.
+The target remains ≥70% median with all 20 fully compiler-verified, with Unicode points, UTF-8 bytes, runtime size and deps reported individually. **No global 70% conclusion** is possible with only five verified tasks. Existing M14 median 68.46% over its original three other tasks is unchanged.
 
 ## Third fixed task with compiler proof — generic collection transforms (draft PR #27)
 
@@ -110,10 +110,27 @@ A source-SHA-frozen complete `.hc` source with **10 fixed cases**, plus **28 gen
 
 **One complete canonical task 03:** **437** developer-written H-Code Unicode codepoints vs **1,541** TypeScript (**71.64% reduction**); **499 vs 1,592 UTF-8 bytes (**68.66% reduction**)**; **8,970 bytes compiled JavaScript** (separate, not source authoring). Package dependencies not measured, compiler wall-clock time not benchmarked, and Node TS `--experimental-strip-types` execution is not a full standalone `tsc` typecheck. Historical M14 median **68.46%** for three narrow previous tasks is unchanged.
 
-Full SHA manifest and restrictions: `compact/canonical20/PROOF-03.md`. `npm run benchmark20:verify03` performs the actual complete proof; `npm run benchmark20:status` derives **4/20 full, 0 partial, 16 unsupported** only if this and previous proofs succeed. The original Git-blob-frozen 20 task register remains untouched. No global 70% median exists yet.
+Full SHA manifest and restrictions: `compact/canonical20/PROOF-03.md`. `npm run benchmark20:verify03` performs the actual complete proof; `npm run benchmark20:status` now derives **5/20 full, 0 partial, 15 unsupported** across the later integration, only if all full proofs succeed. The original Git-blob-frozen 20 task register remains untouched. No global 70% median exists yet.
 
 ## M19.04 — fifth canonical workload: typed CSV and opt-in file I/O
 
 The original SHA-locked workload `04-csv-validation` retains its unchanged quoted CSV, malformed rows, and typed-column acceptance. Native `⧄` file access is opt-in and denied within pure packages; native `⧇` decodes CSV to statically typed records. Proof requires four valid, six malformed, forty generated datasets and five invalid H-Code typecheck sources executed across Rust-generated Node JS, independent H-Code JS, and a standalone TypeScript oracle. The original registry remains SHA-frozen. See `compact/canonical20/PROOF-04.md` and run `npm run benchmark20:verify04`.
 
-**Benchmark fairness:** A stand-alone 3,936-character TypeScript parser is a correctness oracle, not necessarily idiomatic TS source with a maintained CSV dependency. Developer-authored library imports, adapters and package bytes need a version-locked fair baseline; don't infer 70% global success from this raw oracle ratio. The historical M14 68.46% three-case median remains intact. Overall 20-case median is undefined while 15 are unsupported.
+**Benchmark fairness:** A stand-alone 3,936-character TypeScript parser is a correctness oracle, not necessarily idiomatic TS source with a maintained CSV dependency. A separate, genuine dependency-pinned TypeScript library comparator has now been added in PR #32; it replaces the *source-compression baseline*, not this independent handwritten correctness oracle. Do not infer 70% global success from one task. The historical M14 68.46% three-case median remains intact. Overall 20-case median is undefined while 15 are unsupported.
+
+## Library-backed fairer task 04 source comparison (draft PR #32)
+
+The new comparator imports **csv-parse v7.0.2** (real quoted CSV parsing) and **Zod v4.6.5** (runtime schema validation) rather than comparing H-Code to a handwritten TypeScript parser. Two standalone TS authoring files include all necessary imports, strict field conversion, source/filename safety checks and four original CLI calls; neither generated test scaffolding nor dependency source is hidden in authored source. Exact library package versions and SHA-512 SRI are locked in an isolated package-lock file, and both NPM trees are installed and weighed separately.
+
+| Source and dependency metric | Original H-Code | Idiomatic library-backed TypeScript |
+|---|---:|---:|
+| Authored Unicode codepoints | **258** | **3,362** |
+| Authored UTF-8 bytes | **273** | **3,362** |
+| Authored source reduction | **92.33% fewer codepoints** | baseline |
+| Authored source reduction in bytes | **91.88% fewer UTF-8 bytes** | baseline |
+| Installed csv-parse 7.0.2 (Linux snapshot) | bundled as language runtime, separate | 1,606,924 bytes |
+| Installed Zod 4.6.5 (Linux snapshot) | bundled language typechecker, separate | 6,140,311 bytes |
+
+Run `npm ci --prefix compact/canonical20/baselines/04-idiomatic-typescript --ignore-scripts` and `npm run benchmark20:csv-idiomatic` on Node 22. Both Windows/Linux CI configurations require four frozen valid files, six invalid files, 40 deterministic additional datasets, unsafe path/permission checks, package-integrity and authored-source SHA locks. The original `.hc` and `.ts` correctness-oracle source files and frozen 20-task registry are **unmodified**.
+
+These numbers describe **task 04 only**, not the 20-task median. Installer tree bytes include distributed type declarations and files; compressed library tarball bytes, TypeScript strict `tsc` verification, compiler timing, native toolchain footprint and comparative runtime performance are not measured. One high per-task ratio cannot compensate for 15 unsupported tasks.
