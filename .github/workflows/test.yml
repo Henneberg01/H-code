@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - feat/m16-2-universal-sign-types
+      - feat/m16-3-glyph-package-generator
   push:
     branches:
       - feat/m14-typed-lambda-glyph
@@ -54,6 +55,12 @@ jobs:
       - run: npm run m14:measure
         if: ${{ success() || failure() }}
       - run: npm run m15:measure
+        if: ${{ success() || failure() }}
+      - name: Canonical twenty source-locked readiness check
+        run: npm run benchmark20:status
+        if: ${{ success() || failure() }}
+      - name: Canonical twenty anti-cherrypick tests
+        run: npm run benchmark20:test
         if: ${{ success() || failure() }}
       - run: npm run release:check
         if: ${{ success() || failure() }}
