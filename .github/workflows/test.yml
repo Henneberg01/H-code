@@ -142,6 +142,9 @@ jobs:
       - name: M19.12 B2c-2 CAS reducer retries and idempotent replay
         run: npm run benchmark20:state12b2c2
         if: ${{ success() || failure() }}
+      - name: M19.12 B2c-2 Rust-compiled H-Code real HTTP crash and dual-process acceptance
+        run: npm run benchmark20:state12b2c2-http
+        if: ${{ success() || failure() }}
       - name: Canonical twenty source-locked readiness check
         run: npm run benchmark20:status
         if: ${{ success() || failure() }}
