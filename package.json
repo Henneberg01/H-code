@@ -53,7 +53,8 @@
     "benchmark20:b3b-crud-source": "node --test scripts/m19-http-b3b-crud-source.test.mjs",
     "benchmark20:verify12-hcode": "node --test scripts/canonical20-verify-12-hcode.test.mjs",
     "benchmark20:verify12-js": "node --test scripts/canonical20-verify-12-js-reference.test.mjs",
-    "benchmark20:verify12-three": "node --test scripts/canonical20-verify-12-three-engines.test.mjs"
+    "benchmark20:verify12-three": "node --test scripts/canonical20-verify-12-three-engines.test.mjs",
+    "benchmark20:measure12": "node --test scripts/canonical20-measure-12.test.mjs"
   },
   "engines": {
     "node": ">=20"
