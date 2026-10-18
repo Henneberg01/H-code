@@ -1,0 +1,4 @@
+name,quantity,active
+Flise,15,true
+"Møbel, blå",2,false
+"A ""quoted"" product",0,true
