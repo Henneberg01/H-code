@@ -52,7 +52,7 @@ fn resolve_inner(program:&mut Program,entry:&Path,registry:&mut PackageRegistry,
     for item in &typed.statements {
      if let TypedStmtKind::Function{name,parameters,returns,..}=&item.kind {
       if exports.contains(name) {
-       operations.push(OperationSig{id:format!("{id}::{name}"),name:name.clone(),glyph:String::new(),parameters:parameters.iter().map(|(_,t)|t.clone()).collect(),returns:returns.clone(),implementation:name.clone()});
+       operations.push(OperationSig{id:format!("{id}::{name}"),name:name.clone(),glyph:String::new(),parameters:parameters.iter().map(|(_,t)|t.clone()).collect(),returns:returns.clone(),implementation:name.clone(),type_parameters:Vec::new()});
       }
      }
     }
