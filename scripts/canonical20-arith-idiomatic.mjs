@@ -16,6 +16,7 @@ const fixed={
  hc:['compact/canonical20/programs/01-calculator-cli.hc','3acfbc0be6f7902db7aee5dd46ecf0a8eb07a5a6'],
  originalTS:['compact/canonical20/programs/01-calculator-cli.ts','6bb1ef9a47b77fa9429b560f66faf0e8ced64ca6'],
  pkg:[folder+'/package.json','1f18d3c72aa7f5c30b0aaa7fdebe941f814729ef'],
+ npmLock:[folder+'/package-lock.json','cf3d71a3eb58ffb60ae4d525624219a0598166ad'],
  ts:[folder+'/program.ts','175320b2f535acdbf4ced0b6dfe928b0351f627c']
 };
 const blob=b=>createHash('sha1').update('blob '+b.length+'\0').update(b).digest('hex');
@@ -76,12 +77,11 @@ export function verifyIdiomaticCalculator(){
    throw Error('Unchanged original task 01 acceptance and source required');
  const pkg=JSON.parse(src.pkg.content);
  if(pkg.dependencies?.['@expr-eval/js']!=='3.7.0')throw Error('Maintained math library version changed');
- const lockPath=join(root,folder,'package-lock.json');
- const lockBytes=readFileSync(lockPath);
- const lock=JSON.parse(lockBytes);
+ const lock=JSON.parse(src.npmLock.content);
  if(lock.lockfileVersion!==3||lock.packages[''].dependencies['@expr-eval/js']!=='3.7.0'||
     lock.packages['node_modules/@expr-eval/js']?.version!=='3.7.0'||
-    !/^sha512-[A-Za-z0-9+/=]+$/.test(lock.packages['node_modules/@expr-eval/js'].integrity)||
+    lock.packages['node_modules/@expr-eval/js'].integrity!==
+      'sha512-bt6N4klnRt6sfhVSI1TyM5fO0l9xIV5ofXpuk2a/GlpgyHZkkUiUSYNMf3FURABCWPbehlHWzvqX35teSgA1TA=='||
     !lock.packages['node_modules/@expr-eval/js'].resolved.startsWith('https://registry.npmjs.org/'))
    throw Error('NPM package-lock lacks exact version, registry and tarball SHA512');
  const installed=JSON.parse(readFileSync(join(root,folder,'node_modules/@expr-eval/js/package.json'),'utf8'));
@@ -116,7 +116,7 @@ export function verifyIdiomaticCalculator(){
   unicodeCodepointReductionPct:pct(src.hc.codepoints,src.ts.codepoints),
   utf8ByteReductionPct:pct(src.hc.bytes,src.ts.bytes),
   standaloneHandwrittenTSOracleIsNotBaseline:true,
-  packageManifestBytes:src.pkg.bytes,packageLockBytes:lockBytes.length,
+  packageManifestBytes:src.pkg.bytes,packageLockBytes:src.npmLock.bytes,
   libraryFootprintSeparateFromAuthoredSource:true,
   standaloneTscStrictCheckMeasured:false,compilerPerformanceMeasured:false,
   runtimePerformanceMeasured:false,globalTwentyMedian:null,global70PercentProven:false
