@@ -58,6 +58,8 @@ impl Emitter {
     TypedExprKind::Histogram(value)=>format!("__hc_hist({})",self.expr(value)),
     TypedExprKind::FileRead(value)=>format!("__hc_csv_read_file({})",self.expr(value)),
     TypedExprKind::CsvTyped{schema,value}=>format!("__hc_csv_typed({}, {})",self.expr(value),csv_schema(schema)),
+    TypedExprKind::StdinText=>"__hc_stdin()".into(),
+    TypedExprKind::ArithEval(value)=>format!("__hc_arith({})",self.expr(value)),
     TypedExprKind::Lambda{parameter,body}=>format!("(({}) => ({}))",name(parameter),self.expr(body)),
     TypedExprKind::Section{op,right}=>{
      // Exactly one evaluation of the captured right operand at section creation.
@@ -150,14 +152,14 @@ fn expr_uses_json(e:&TypedExpr)->bool {
   TypedExprKind::Index{sequence,index}=>expr_uses_json(sequence)||expr_uses_json(index),
   TypedExprKind::Length(x)|TypedExprKind::Sum(x)|
   TypedExprKind::TextScalars(x)|TypedExprKind::TextWords(x)|TypedExprKind::Histogram(x)|TypedExprKind::FileRead(x)=>expr_uses_json(x),
-  TypedExprKind::CsvTyped{value,..}=>expr_uses_json(value),
+  TypedExprKind::CsvTyped{value,..}|TypedExprKind::ArithEval(value)=>expr_uses_json(value),
   TypedExprKind::Lambda{body,..}|TypedExprKind::Section{right:body,..}|TypedExprKind::Unary{operand:body,..}=>expr_uses_json(body),
   TypedExprKind::Binary{left,right,..}=>expr_uses_json(left)||expr_uses_json(right),
   TypedExprKind::Choice{condition,when_true,when_false}=>
    expr_uses_json(condition)||expr_uses_json(when_true)||expr_uses_json(when_false),
   TypedExprKind::Call{callee,arguments}=>expr_uses_json(callee)||arguments.iter().any(expr_uses_json),
   TypedExprKind::Number(_)|TypedExprKind::String(_)|TypedExprKind::Bool(_)|
-  TypedExprKind::Identifier(_)|TypedExprKind::OperationRef{..}=>false
+  TypedExprKind::Identifier(_)|TypedExprKind::OperationRef{..}|TypedExprKind::StdinText=>false
  }
 }
 fn stmt_uses_json(s:&TypedStmt)->bool {
@@ -176,7 +178,7 @@ fn stmt_uses_json(s:&TypedStmt)->bool {
 fn expr_uses_text(e:&TypedExpr)->bool {
  match &e.kind {
   TypedExprKind::TextScalars(..)|TypedExprKind::TextWords(..)|TypedExprKind::Histogram(..)=>true,
-  TypedExprKind::FileRead(value)|TypedExprKind::CsvTyped{value,..}=>expr_uses_text(value),
+  TypedExprKind::FileRead(value)|TypedExprKind::CsvTyped{value,..}|TypedExprKind::ArithEval(value)=>expr_uses_text(value),
   TypedExprKind::JsonRead{value,..}|TypedExprKind::JsonWrite{value,..}=>expr_uses_text(value),
   TypedExprKind::Record(fields)=>fields.iter().any(|(_,v)|expr_uses_text(v)),
   TypedExprKind::Field{record,..}=>expr_uses_text(record),
@@ -191,7 +193,7 @@ fn expr_uses_text(e:&TypedExpr)->bool {
     expr_uses_text(condition)||expr_uses_text(when_true)||expr_uses_text(when_false),
   TypedExprKind::Call{callee,arguments}=>expr_uses_text(callee)||arguments.iter().any(expr_uses_text),
   TypedExprKind::Number(_)|TypedExprKind::String(_)|TypedExprKind::Bool(_)|
-  TypedExprKind::Identifier(_)|TypedExprKind::OperationRef{..}=>false
+  TypedExprKind::Identifier(_)|TypedExprKind::OperationRef{..}|TypedExprKind::StdinText=>false
  }
 }
 fn stmt_uses_text(s:&TypedStmt)->bool {
@@ -210,6 +212,7 @@ fn expr_uses_csv(e:&TypedExpr)->bool {
   match &e.kind {
    TypedExprKind::FileRead(v)=>expr_uses_csv(v),
    TypedExprKind::CsvTyped{..}=>true,
+   TypedExprKind::ArithEval(value)=>expr_uses_csv(value),
    TypedExprKind::JsonRead{value,..}|TypedExprKind::JsonWrite{value,..}|
    TypedExprKind::TextScalars(value)|TypedExprKind::TextWords(value)|
    TypedExprKind::Histogram(value)|TypedExprKind::Length(value)|
@@ -240,7 +243,7 @@ fn stmt_uses_csv(s:&TypedStmt)->bool {
 fn expr_uses_file(e:&TypedExpr)->bool {
   match &e.kind {
    TypedExprKind::FileRead(..)=>true,
-   TypedExprKind::CsvTyped{value,..}=>expr_uses_file(value),
+   TypedExprKind::CsvTyped{value,..}|TypedExprKind::ArithEval(value)=>expr_uses_file(value),
    TypedExprKind::JsonRead{value,..}|TypedExprKind::JsonWrite{value,..}|
    TypedExprKind::TextScalars(value)|TypedExprKind::TextWords(value)|
    TypedExprKind::Histogram(value)|TypedExprKind::Length(value)|
@@ -268,6 +271,39 @@ fn stmt_uses_file(s:&TypedStmt)->bool {
     then_body.iter().any(stmt_uses_file)||else_body.as_ref().is_some_and(|x|x.iter().any(stmt_uses_file))
  }
 }
+
+fn expr_cli_flags(e:&TypedExpr)->u8 {
+  match &e.kind {
+    TypedExprKind::StdinText=>1,
+    TypedExprKind::ArithEval(v)=>2|expr_cli_flags(v),
+    TypedExprKind::FileRead(v)|TypedExprKind::JsonRead{value:v,..}|
+    TypedExprKind::JsonWrite{value:v,..}|TypedExprKind::CsvTyped{value:v,..}|
+    TypedExprKind::TextScalars(v)|TypedExprKind::TextWords(v)|TypedExprKind::Histogram(v)|
+    TypedExprKind::Length(v)|TypedExprKind::Sum(v)|TypedExprKind::Unary{operand:v,..}|
+    TypedExprKind::Lambda{body:v,..}|TypedExprKind::Section{right:v,..}=>expr_cli_flags(v),
+    TypedExprKind::Record(fields)=>fields.iter().fold(0u8,|bits,(_,v)|bits|expr_cli_flags(v)),
+    TypedExprKind::Field{record,..}=>expr_cli_flags(record),
+    TypedExprKind::RecordUpdate{record,value,..}=>expr_cli_flags(record)|expr_cli_flags(value),
+    TypedExprKind::Sequence(items)=>items.iter().fold(0u8,|bits,v|bits|expr_cli_flags(v)),
+    TypedExprKind::Index{sequence,index}=>expr_cli_flags(sequence)|expr_cli_flags(index),
+    TypedExprKind::Binary{left,right,..}=>expr_cli_flags(left)|expr_cli_flags(right),
+    TypedExprKind::Choice{condition,when_true,when_false}=>expr_cli_flags(condition)|expr_cli_flags(when_true)|expr_cli_flags(when_false),
+    TypedExprKind::Call{callee,arguments}=>expr_cli_flags(callee)|arguments.iter().fold(0u8,|bits,v|bits|expr_cli_flags(v)),
+    _=>0
+  }
+}
+fn stmt_cli_flags(s:&TypedStmt)->u8 {
+  match &s.kind {
+    TypedStmtKind::Use{..}|TypedStmtKind::Import{..}=>0,
+    TypedStmtKind::Export{declaration}=>stmt_cli_flags(declaration),
+    TypedStmtKind::Let{value,..}|TypedStmtKind::Assign{value,..}|
+    TypedStmtKind::Return(value)|TypedStmtKind::Expression(value)=>expr_cli_flags(value),
+    TypedStmtKind::Function{body,..}|TypedStmtKind::While{body,..}=>body.iter().fold(0u8,|bits,v|bits|stmt_cli_flags(v)),
+    TypedStmtKind::If{condition,then_body,else_body}=>expr_cli_flags(condition)|
+      then_body.iter().fold(0u8,|bits,v|bits|stmt_cli_flags(v))|
+      else_body.as_ref().map_or(0,|body|body.iter().fold(0u8,|bits,v|bits|stmt_cli_flags(v)))
+  }
+}
 pub fn emit(program:&TypedProgram,registry:&PackageRegistry)->Result<String,String>{
  let mut imported=BTreeMap::<String,()>::new();
  for stmt in &program.statements { if let TypedStmtKind::Use{package,..}=&stmt.kind {imported.insert(package.clone(),());}}
@@ -293,7 +329,40 @@ pub fn emit(program:&TypedProgram,registry:&PackageRegistry)->Result<String,Stri
  let requires_file=program.statements.iter().any(stmt_uses_file) ||
   imported.keys().any(|id|registry.packages.get(id)
     .is_some_and(|pkg|pkg.typed_source.statements.iter().any(stmt_uses_file)));
+ let mut cli_flags=program.statements.iter().fold(0u8,|bits,s|bits|stmt_cli_flags(s));
+ for id in imported.keys(){
+   if let Some(pkg)=registry.packages.get(id){
+     cli_flags|=pkg.typed_source.statements.iter().fold(0u8,|bits,s|bits|stmt_cli_flags(s));
+   }
+ }
  let mut output=String::from("// Generated by H-Code M3. ESM, no eval or source interpolation.\n'use strict';\n");
+ if cli_flags&1!=0 {
+   output.push_str("import {readSync as __hc_read_fd0} from 'node:fs';\n");
+   output.push_str(r#"
+let __hc_stdin_used=false;
+const __hc_stdin=()=>{
+  __hc_tick();
+  if(__hc_stdin_used)throw Error('stdin already consumed');
+  __hc_stdin_used=true;
+  const b=Buffer.allocUnsafe(4096),chunks=[];
+  let size=0;
+  while(true){
+    const n=__hc_read_fd0(0,b,0,b.length,null);
+    if(n===0)break;
+    size+=n;
+    if(size>65536)throw Error('Arithmetic input exceeds 64 KiB');
+    chunks.push(Buffer.from(b.subarray(0,n)));
+  }
+  try{return new TextDecoder('utf-8',{fatal:true}).decode(Buffer.concat(chunks));}
+  catch{throw Error('Invalid UTF-8');}
+};
+"#);
+ }
+ if cli_flags&2!=0 {
+   output.push_str(include_str!("arith_prelude.js"));
+   output.push_str("process.on('uncaughtException',error=>{ const m=error instanceof Error?error.message:String(error); process.stderr.write('HCODE_ERROR: '+m+'\\n');process.exitCode=2; });\n");
+ }
+
  output.push_str("let __hc_fuel = 100000; let __hc_depth=0; const __hc_tick = () => { if (--__hc_fuel < 0) throw Error('H-Code instruction budget exceeded'); };\n");
  output.push_str("const __hc_print = (...xs) => { console.log(xs.map(x => x === null ? 'none' : String(x)).join(' ')); return null; };\n");
  output.push_str("const __hc_div = (a,b) => { if (b === 0) throw Error('Division by zero'); return a/b; };\n");
