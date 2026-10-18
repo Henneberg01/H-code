@@ -1,6 +1,9 @@
-name: H-Code conformance (M14 verification)
+name: H-Code compiler and package conformance (M16.3)
 on:
   workflow_dispatch:
+  pull_request:
+    branches:
+      - feat/m16-2-universal-sign-types
   push:
     branches:
       - feat/m14-typed-lambda-glyph
@@ -12,7 +15,11 @@ permissions:
   contents: read
 jobs:
   conformance:
-    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
