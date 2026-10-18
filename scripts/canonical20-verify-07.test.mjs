@@ -192,7 +192,7 @@ test('real compiler rejects 64KiB output overflow and symlink target without clo
  const all=contract(),built=compile(all.hc);
  const d=workdir('data.csv',all.products.bytes);
  try{
-  const large=Array.from({length:8500},(_,i)=>'"Unicode 🧩 '+i+'",1,true').join('\n');
+  const large=Array.from({length:5000},(_,i)=>'"Unicode 🧩 '+i+'",1,true').join('\n');
   // More than 64KiB output is valid CSV, but exceeds the writer's output cap.
   writeFileSync(join(d.dir,'big.csv'),'name,quantity,active\n'+large+'\n');
   const overflow=await nodeRun([built.dest],d.tmp,'canonical07/big.csv',d.out);
