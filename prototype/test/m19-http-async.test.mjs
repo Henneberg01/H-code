@@ -53,3 +53,13 @@ test('effect request count is bounded even when source loops indefinitely',async
   await assert.rejects(executeAsync(code,{maxHttpRequests:3,httpGet:async()=>({status:200,ok:true,body:'ok',retryAfter:0})}),
     /effect budget exceeded/);
 });
+
+test('async reference rejects effects inside sync functions and lambdas',async()=>{
+  for(const code of [
+    'ƒ f(u:String)→Number ↩ (⤋u)·status;print(f("https://example.invalid"));',
+    '≔f←λ u:(⤋u)·status;print(f("https://example.invalid"));'
+  ]){
+    await assert.rejects(executeAsync(code,{httpGet:async()=>({status:200,ok:true,body:'x',retryAfter:0})}),
+      /HTTP effect denied in verified pure package or sync closure/);
+  }
+});

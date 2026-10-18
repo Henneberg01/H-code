@@ -477,7 +477,7 @@ class ReturnSignal{constructor(value){this.value=value;}}
 const runtimeType=value=>value===null?'Unit':typeof value==='number'?'Number':typeof value==='string'?'String':typeof value==='boolean'?'Bool':'unsupported';
 
 export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=16384,registry=new Map(),readFile=null,readStdin=null,httpEffects=null}={}){
-  const root=new Scope(),operations=new Map(),operationSpecs=new Map(),loadedLibraries=new Set();let steps=0,stdinConsumed=false,httpIndex=0,pureDepth=0;
+  const root=new Scope(),operations=new Map(),operationSpecs=new Map(),loadedLibraries=new Set();let steps=0,stdinConsumed=false,httpIndex=0,pureDepth=0,functionDepth=0;
   const step=()=>{if(++steps>maxSteps)throw Error('Execution step limit exceeded');};
   root.define('print',(...args)=>{stdout(args.map(x=>x===null?'none':String(x)).join(' '));return null;});
   const truth=v=>{if(typeof v!=='boolean')throw Error('Condition must be Boolean');return v;};
@@ -694,7 +694,7 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
       }
       case 'ArithEval':return safeArithmetic(expr(node.value,scope));
       case 'HttpGet':{
-        if(pureDepth>0)throw Error('⤋ HTTP effect denied in verified pure package');
+        if(pureDepth>0||functionDepth>0)throw Error('⤋ HTTP effect denied in verified pure package or sync closure');
         if(!Array.isArray(httpEffects))
           throw Error('⤋ requires asynchronous H-Code interpreter; synchronous execution cannot perform HTTP');
         const url=expr(node.value,scope);
@@ -833,7 +833,8 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
           if(args.length!==1)throw Error('λ expects exactly one argument');
           const closureScope=new Scope(scope);
           closureScope.define(node.parameter,args[0]);
-          return expr(node.body,closureScope);
+          functionDepth++;
+          try{return expr(node.body,closureScope);}finally{functionDepth--;}
         };
       case 'OperationRef':{
         const fn=operations.get(node.id);
@@ -933,6 +934,8 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
       case 'Return':throw new ReturnSignal(expr(node.value,scope,scope.returnType));
       case 'Function':{
         const fn=(...args)=>{
+          functionDepth++;
+          try{
           step();
           if(args.length!==node.params.length)throw Error(`${node.name} expects ${node.params.length} arguments`);
           // A polymorphic source function is never executed as unchecked Any.
@@ -950,6 +953,7 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
           }
           try{for(const statement of node.body.body)stmt(statement,inner);}catch(e){if(e instanceof ReturnSignal){requireType(e.value,inner.returnType,'return');return e.value;}throw e;}
           return null;
+          }finally{functionDepth--;}
         };
         scope.define(node.name,fn);break;
       }
