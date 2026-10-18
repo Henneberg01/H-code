@@ -23,7 +23,8 @@
     "benchmark20:status": "node scripts/canonical20-coverage.mjs",
     "benchmark20:test": "node --test scripts/test/canonical20-coverage.test.mjs",
     "benchmark20:strict": "node scripts/canonical20-coverage.mjs --require-complete",
-    "m12:measure": "node scripts/m12-records-compare.mjs"
+    "m12:measure": "node scripts/m12-records-compare.mjs",
+    "m12:json-measure": "node scripts/m12-typed-json-compare.mjs"
   },
   "engines": {
     "node": ">=20"
