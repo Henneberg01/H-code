@@ -135,6 +135,51 @@ async function verifyEngine(engine,jsPath){
     assert.equal(server.received.length,fixture.cases.reduce((n,x)=>n+x.expected.trace.length,0));
   }finally{await server.close();}
 }
+// Unseen deterministic variants prevent hardcoding the six preregistered responses.
+async function verifyUnseen(jsPath){
+  const cases=[
+    {id:'g201',responses:[{status:201,body:'created'}]},
+    {id:'g204',responses:[{status:204,body:''}]},
+    {id:'g299',responses:[{status:299,body:'München 東京'}]},
+    {id:'g504',responses:[{status:504,body:'timeout'},{status:200,body:'yes'}]},
+    {id:'g500x2',responses:[{status:500,body:'a'},{status:500,body:'b'},{status:200,body:'c'}]},
+    {id:'g503429',responses:[{status:503,body:'d'},{status:429,body:'e',retryAfterSeconds:0},{status:200,body:'f'}]},
+    {id:'g429after',responses:[{status:429,body:'slow',retryAfterSeconds:10},{status:200,body:'fine'}]},
+    {id:'g418',responses:[{status:418,body:'teapot'}]},
+    {id:'g403',responses:[{status:403,body:'forbidden'}]},
+    {id:'g408',responses:[{status:408,body:'not retryable'}]},
+    {id:'g599',responses:[{status:599,body:'other failure'}]},
+    {id:'g4mix',responses:[{status:502,body:'a'},{status:503,body:'b'},{status:500,body:'c'},{status:200,body:'finally'}]}
+  ];
+  const oracle=await startHttpFixture(cases);
+  const expected=new Map();
+  try{
+    for(const c of cases){
+      expected.set(c.id,await fetchWithRetries(oracle.urlFor(c.id),{
+        maxAttempts:fixture.maxAttempts,baseDelayMs:fixture.baseDelayMs,
+        maxBackoffMs:fixture.maxBackoffMs,timeoutMs:fixture.timeoutMs,
+        sleep:async()=>{}
+      }));
+      assert.equal(oracle.hitsFor(c.id),expected.get(c.id).trace.length,c.id+' oracle');
+    }
+  }finally{await oracle.close();}
+  for(const engine of ['rust-compiled','js-independent']){
+    const server=await startHttpFixture(cases);
+    try{
+      for(const c of cases){
+        const url=server.urlFor(c.id),slept=[];
+        const got=canonicalize(engine==='rust-compiled'?
+          await runCompiled(jsPath,url):await runReference(url,slept));
+        assert.deepEqual(got,expected.get(c.id),engine+' unseen '+c.id);
+        assert.equal(server.hitsFor(c.id),expected.get(c.id).trace.length,engine+' unseen request count '+c.id);
+        if(engine==='js-independent')assert.deepEqual(slept,
+          expected.get(c.id).trace.filter(x=>x.waitMs>0).map(x=>x.waitMs),engine+' unseen scheduler '+c.id);
+      }
+    }finally{await server.close();}
+  }
+  return cases.length;
+}
+
 async function verifyNetworkError(){
   const url='http://127.0.0.1:1/unreachable';
   const sleeps=[],lines=[];
@@ -163,11 +208,12 @@ export async function verifyCanonical06(){
     compile(out);
     for(const engine of ['rust-compiled','js-independent','ts-independent'])
       await verifyEngine(engine,out);
+    const variants=await verifyUnseen(out);
     await verifyNetworkError();
     const h=read(hcPath),ts=read(tsPath),output=readFileSync(out);
     return {
-      id:'06-http-retries',verified:true,positiveCases:fixture.cases.length,
-      negativeCases:1,
+      id:'06-http-retries',kind:'full-compiler-evidence',verified:true,positiveCases:fixture.cases.length,
+      generatedVariantsVerified:variants,negativeCases:1,
       hcodeCodePoints:points(program),typescriptCodePoints:points(ts.toString('utf8')),
       hcodeUtf8Bytes:h.length,typescriptUtf8Bytes:ts.length,
       codepointReductionPct:reduction(points(program),points(ts.toString('utf8'))),
