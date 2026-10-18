@@ -187,6 +187,7 @@ fn stmt_uses_json(s:&TypedStmt)->bool {
 fn expr_uses_markdown(e:&TypedExpr)->bool {
  match &e.kind {
   TypedExprKind::Markdown(_)=>true,
+  TypedExprKind::HttpServe(value)=>expr_uses_markdown(value),
   TypedExprKind::FileWrite{filename,content}=>expr_uses_markdown(filename)||expr_uses_markdown(content),
   TypedExprKind::JsonRead{value,..}|TypedExprKind::JsonWrite{value,..}=>expr_uses_markdown(value),
   TypedExprKind::Record(fields)=>fields.iter().any(|(_,v)|expr_uses_markdown(v)),
