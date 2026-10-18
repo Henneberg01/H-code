@@ -231,3 +231,24 @@ test('four malformed typed/effectful write programs are rejected by Rust and JS 
   }
  }finally{rmSync(temp,{recursive:true,force:true});}
 });
+
+test('write then suspend: independent interpreter replays without a second published file',async()=>{
+ const dir=mkdtempSync(join(tmpdir(),'hcode07-replay-'));
+ try{
+  const cap=createFileWriteCapability({root:dir});
+  let attempts=0,delay=0,read=0;const stdout=[];
+  const stats=await executeAsync('≔n←⧅("once.txt","hello");⌛0;print(n);',{
+    fileWrite:(name,content)=>{attempts++;return cap.write(name,content)},
+    sleepMs:async()=>{delay++;},readFile:()=>{read++;throw Error('Should not read');},
+    stdout:x=>stdout.push(x)
+  });
+  assert.equal(attempts,1);
+  assert.equal(delay,1);
+  assert.equal(read,0);
+  assert.equal(stats.fileWrites,1);
+  assert.equal(stats.totalFileBytes,5);
+  assert.deepEqual(stdout,['5']);
+  assert.deepEqual(readdirSync(dir),['once.txt']);
+  assert.deepEqual(readFileSync(join(dir,'once.txt')),Buffer.from('hello'));
+ }finally{rmSync(dir,{recursive:true,force:true});}
+});
