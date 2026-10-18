@@ -22,6 +22,15 @@ fn json_schema(ty:&Type)->String {
   _=>unreachable!("JSON schemas must have passed structural typechecking")
  }
 }
+// The field set is compiled from the exact typed Rust schema, never user JS text.
+fn csv_schema(ty:&Type)->String {
+  let Type::Record(fields)=ty else {unreachable!("⧇ requires typed record")};
+  let fields=fields.iter().map(|(name,ty)|{
+    let scalar=match ty {Type::Number=>"Number",Type::String=>"String",Type::Bool=>"Bool",_=>unreachable!("CSV scalar")};
+    format!("[{},{}]",q(name),q(scalar))
+  }).collect::<Vec<_>>().join(",");
+  format!("[{fields}]")
+}
 struct Emitter { depth:usize }
 impl Emitter {
  fn ind(&self)->String {"  ".repeat(self.depth)}
@@ -47,6 +56,8 @@ impl Emitter {
     TypedExprKind::TextScalars(value)=>format!("__hc_text_scalars({})",self.expr(value)),
     TypedExprKind::TextWords(value)=>format!("__hc_text_words({})",self.expr(value)),
     TypedExprKind::Histogram(value)=>format!("__hc_hist({})",self.expr(value)),
+    TypedExprKind::FileRead(value)=>format!("__hc_csv_read_file({})",self.expr(value)),
+    TypedExprKind::CsvTyped{schema,value}=>format!("__hc_csv_typed({}, {})",self.expr(value),csv_schema(schema)),
     TypedExprKind::Lambda{parameter,body}=>format!("(({}) => ({}))",name(parameter),self.expr(body)),
     TypedExprKind::Section{op,right}=>{
      // Exactly one evaluation of the captured right operand at section creation.
@@ -138,7 +149,8 @@ fn expr_uses_json(e:&TypedExpr)->bool {
   TypedExprKind::Sequence(items)=>items.iter().any(expr_uses_json),
   TypedExprKind::Index{sequence,index}=>expr_uses_json(sequence)||expr_uses_json(index),
   TypedExprKind::Length(x)|TypedExprKind::Sum(x)|
-  TypedExprKind::TextScalars(x)|TypedExprKind::TextWords(x)|TypedExprKind::Histogram(x)=>expr_uses_json(x),
+  TypedExprKind::TextScalars(x)|TypedExprKind::TextWords(x)|TypedExprKind::Histogram(x)|TypedExprKind::FileRead(x)=>expr_uses_json(x),
+  TypedExprKind::CsvTyped{value,..}=>expr_uses_json(value),
   TypedExprKind::Lambda{body,..}|TypedExprKind::Section{right:body,..}|TypedExprKind::Unary{operand:body,..}=>expr_uses_json(body),
   TypedExprKind::Binary{left,right,..}=>expr_uses_json(left)||expr_uses_json(right),
   TypedExprKind::Choice{condition,when_true,when_false}=>
@@ -164,6 +176,7 @@ fn stmt_uses_json(s:&TypedStmt)->bool {
 fn expr_uses_text(e:&TypedExpr)->bool {
  match &e.kind {
   TypedExprKind::TextScalars(..)|TypedExprKind::TextWords(..)|TypedExprKind::Histogram(..)=>true,
+  TypedExprKind::FileRead(value)|TypedExprKind::CsvTyped{value,..}=>expr_uses_text(value),
   TypedExprKind::JsonRead{value,..}|TypedExprKind::JsonWrite{value,..}=>expr_uses_text(value),
   TypedExprKind::Record(fields)=>fields.iter().any(|(_,v)|expr_uses_text(v)),
   TypedExprKind::Field{record,..}=>expr_uses_text(record),
@@ -192,6 +205,69 @@ fn stmt_uses_text(s:&TypedStmt)->bool {
     then_body.iter().any(stmt_uses_text)||else_body.as_ref().is_some_and(|b|b.iter().any(stmt_uses_text))
  }
 }
+
+fn expr_uses_csv(e:&TypedExpr)->bool {
+  match &e.kind {
+   TypedExprKind::FileRead(v)=>expr_uses_csv(v),
+   TypedExprKind::CsvTyped{..}=>true,
+   TypedExprKind::JsonRead{value,..}|TypedExprKind::JsonWrite{value,..}|
+   TypedExprKind::TextScalars(value)|TypedExprKind::TextWords(value)|
+   TypedExprKind::Histogram(value)|TypedExprKind::Length(value)|
+   TypedExprKind::Sum(value)|TypedExprKind::Unary{operand:value,..}|
+   TypedExprKind::Lambda{body:value,..}|TypedExprKind::Section{right:value,..}=>expr_uses_csv(value),
+   TypedExprKind::Record(fields)=>fields.iter().any(|(_,v)|expr_uses_csv(v)),
+   TypedExprKind::Field{record,..}=>expr_uses_csv(record),
+   TypedExprKind::RecordUpdate{record,value,..}=>expr_uses_csv(record)||expr_uses_csv(value),
+   TypedExprKind::Sequence(items)=>items.iter().any(expr_uses_csv),
+   TypedExprKind::Index{sequence,index}=>expr_uses_csv(sequence)||expr_uses_csv(index),
+   TypedExprKind::Binary{left,right,..}=>expr_uses_csv(left)||expr_uses_csv(right),
+   TypedExprKind::Choice{condition,when_true,when_false}=>expr_uses_csv(condition)||expr_uses_csv(when_true)||expr_uses_csv(when_false),
+   TypedExprKind::Call{callee,arguments}=>expr_uses_csv(callee)||arguments.iter().any(expr_uses_csv),
+   _=>false
+  }
+}
+fn stmt_uses_csv(s:&TypedStmt)->bool {
+ match &s.kind {
+  TypedStmtKind::Use{..}|TypedStmtKind::Import{..}=>false,
+  TypedStmtKind::Export{declaration}=>stmt_uses_csv(declaration),
+  TypedStmtKind::Let{value,..}|TypedStmtKind::Assign{value,..}|
+  TypedStmtKind::Return(value)|TypedStmtKind::Expression(value)=>expr_uses_csv(value),
+  TypedStmtKind::Function{body,..}|TypedStmtKind::While{body,..}=>body.iter().any(stmt_uses_csv),
+  TypedStmtKind::If{condition,then_body,else_body}=>expr_uses_csv(condition)||
+    then_body.iter().any(stmt_uses_csv)||else_body.as_ref().is_some_and(|x|x.iter().any(stmt_uses_csv))
+ }
+}
+fn expr_uses_file(e:&TypedExpr)->bool {
+  match &e.kind {
+   TypedExprKind::FileRead(..)=>true,
+   TypedExprKind::CsvTyped{value,..}=>expr_uses_file(value),
+   TypedExprKind::JsonRead{value,..}|TypedExprKind::JsonWrite{value,..}|
+   TypedExprKind::TextScalars(value)|TypedExprKind::TextWords(value)|
+   TypedExprKind::Histogram(value)|TypedExprKind::Length(value)|
+   TypedExprKind::Sum(value)|TypedExprKind::Unary{operand:value,..}|
+   TypedExprKind::Lambda{body:value,..}|TypedExprKind::Section{right:value,..}=>expr_uses_file(value),
+   TypedExprKind::Record(fields)=>fields.iter().any(|(_,v)|expr_uses_file(v)),
+   TypedExprKind::Field{record,..}=>expr_uses_file(record),
+   TypedExprKind::RecordUpdate{record,value,..}=>expr_uses_file(record)||expr_uses_file(value),
+   TypedExprKind::Sequence(items)=>items.iter().any(expr_uses_file),
+   TypedExprKind::Index{sequence,index}=>expr_uses_file(sequence)||expr_uses_file(index),
+   TypedExprKind::Binary{left,right,..}=>expr_uses_file(left)||expr_uses_file(right),
+   TypedExprKind::Choice{condition,when_true,when_false}=>expr_uses_file(condition)||expr_uses_file(when_true)||expr_uses_file(when_false),
+   TypedExprKind::Call{callee,arguments}=>expr_uses_file(callee)||arguments.iter().any(expr_uses_file),
+   _=>false
+  }
+}
+fn stmt_uses_file(s:&TypedStmt)->bool {
+ match &s.kind {
+  TypedStmtKind::Use{..}|TypedStmtKind::Import{..}=>false,
+  TypedStmtKind::Export{declaration}=>stmt_uses_file(declaration),
+  TypedStmtKind::Let{value,..}|TypedStmtKind::Assign{value,..}|
+  TypedStmtKind::Return(value)|TypedStmtKind::Expression(value)=>expr_uses_file(value),
+  TypedStmtKind::Function{body,..}|TypedStmtKind::While{body,..}=>body.iter().any(stmt_uses_file),
+  TypedStmtKind::If{condition,then_body,else_body}=>expr_uses_file(condition)||
+    then_body.iter().any(stmt_uses_file)||else_body.as_ref().is_some_and(|x|x.iter().any(stmt_uses_file))
+ }
+}
 pub fn emit(program:&TypedProgram,registry:&PackageRegistry)->Result<String,String>{
  let mut imported=BTreeMap::<String,()>::new();
  for stmt in &program.statements { if let TypedStmtKind::Use{package,..}=&stmt.kind {imported.insert(package.clone(),());}}
@@ -211,6 +287,12 @@ pub fn emit(program:&TypedProgram,registry:&PackageRegistry)->Result<String,Stri
  let requires_text=program.statements.iter().any(stmt_uses_text) ||
   imported.keys().any(|id|registry.packages.get(id)
     .is_some_and(|pkg|pkg.typed_source.statements.iter().any(stmt_uses_text)));
+ let requires_csv=program.statements.iter().any(stmt_uses_csv) ||
+  imported.keys().any(|id|registry.packages.get(id)
+    .is_some_and(|pkg|pkg.typed_source.statements.iter().any(stmt_uses_csv)));
+ let requires_file=program.statements.iter().any(stmt_uses_file) ||
+  imported.keys().any(|id|registry.packages.get(id)
+    .is_some_and(|pkg|pkg.typed_source.statements.iter().any(stmt_uses_file)));
  let mut output=String::from("// Generated by H-Code M3. ESM, no eval or source interpolation.\n'use strict';\n");
  output.push_str("let __hc_fuel = 100000; let __hc_depth=0; const __hc_tick = () => { if (--__hc_fuel < 0) throw Error('H-Code instruction budget exceeded'); };\n");
  output.push_str("const __hc_print = (...xs) => { console.log(xs.map(x => x === null ? 'none' : String(x)).join(' ')); return null; };\n");
@@ -346,6 +428,8 @@ const __hc_hist = input => {
 };
 "#);
   }
+  if requires_csv {output.push_str(include_str!("csv_parser_prelude.js"));}
+  if requires_file {output.push_str(include_str!("file_read_prelude.js"));}
   output.push_str("const __hc_operations = Object.create(null);\n");
  for (pkg,_) in imported {
   let def=registry.packages.get(&pkg).ok_or_else(||format!("Unverified package {pkg}"))?;
