@@ -44,7 +44,14 @@ const __hc_http_serve = (handler,onClose=null) => {
       const request=__hc_record([
         ['body',body],['method',req.method],['path',req.url]
       ]);
-      const result=handler(request);
+      const metadata={
+        requestId:String(req.headers['x-hcode-request-id']??''),
+        contentType:String(req.headers['content-type']??''),
+        isCancelled:()=>res.destroyed
+      };
+      // B1 handlers ignore the optional host metadata; B2 uses it to journal
+      // request-scoped idempotency without widening the H-Code Request shape.
+      const result=handler(request,metadata);
       // B1 intentionally restricts handlers to typed synchronous/pure functions;
       // async operations and durable state are separate B2/B3 capabilities.
       if(result && typeof result.then==='function')

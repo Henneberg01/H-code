@@ -10,7 +10,21 @@ const __hc_http_serve_state=(handler,initial)=>{
     throw Error('⤊ persistent state capability denied: HCODE_HTTP_STATE_ROOT required');
   const store=createHttpStateStore({root,initial});
   try {
-    return __hc_http_serve(request=>{
+    return __hc_http_serve((request,metadata)=>{
+      const requestId=metadata.requestId;
+      if(requestId&&!__hc_state_receipt_id.test(requestId))
+        return __hc_record([['body','invalid_request_id'],['status',400]]);
+      const digest=requestId?__hc_state_request_digest(
+        request.method,request.path,request.body,metadata.contentType):null;
+      const previous=requestId?store.receiptFor(requestId):null;
+      if(previous){
+        if(previous.digest!==digest)
+          return __hc_record([['body','idempotency_conflict'],['status',409]]);
+        return __hc_record([['body',previous.body],['status',previous.status]]);
+      }
+      // Do not silently evict receipts and thereby resurrect old effects.
+      if(requestId&&!['GET','HEAD','OPTIONS'].includes(request.method)&&store.receiptSlots()===0)
+        return __hc_record([['body','idempotency_journal_full'],['status',507]]);
       __hc_tick();
       const old=store.read();
       // Node synchronous functions are serialized on the event loop. This
@@ -27,7 +41,14 @@ const __hc_http_serve_state=(handler,initial)=>{
         throw TypeError('⤊ stateful handler returned invalid body/status/state');
       // Do not return HTTP success until the committed state has been
       // atomically published. Invalid records cannot mutate durable data.
-      if(result.state!==old)store.commit(result.state);
+      const changed=result.state!==old;
+      if(changed&&['GET','HEAD','OPTIONS'].includes(request.method))
+        return __hc_record([['body','unsafe_state_transition'],['status',405]]);
+      if(metadata.isCancelled())
+        throw Error('⤊ state transaction canceled before commit');
+      const receipt=requestId&&!['GET','HEAD','OPTIONS'].includes(request.method)?
+        {id:requestId,digest,status:result.status,body:result.body}:null;
+      if(changed||receipt)store.commit(result.state,receipt);
       return __hc_record([['body',result.body],['status',result.status]]);
     },()=>store.close());
   }catch(error){store.close();throw error;}
