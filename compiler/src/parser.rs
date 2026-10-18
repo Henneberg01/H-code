@@ -233,6 +233,18 @@ impl Parser {
             }
             TokenKind::LeftParen=>{
                 self.index+=1;
+                let section=match self.peek().kind {
+                    TokenKind::Plus|TokenKind::Star|TokenKind::Slash|TokenKind::Percent|
+                    TokenKind::Less|TokenKind::Greater|TokenKind::LessEqual|TokenKind::GreaterEqual|
+                    TokenKind::Equal|TokenKind::NotEqual=>self.binary_operator(),
+                    _=>None
+                };
+                if let Some(op)=section {
+                    self.index+=1;
+                    let right=self.expression(0)?;
+                    self.expect(&TokenKind::RightParen)?;
+                    return Ok((Expr{kind:ExprKind::Section{op,right:Box::new(right)},span:token.span},Vec::new()));
+                }
                 let expression=self.expression(0)?;
                 self.expect(&TokenKind::RightParen)?;
                 return Ok((expression,Vec::new()));

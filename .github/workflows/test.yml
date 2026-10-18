@@ -15,11 +15,12 @@ jobs:
         with:
           node-version: '22'
       - uses: dtolnay/rust-toolchain@stable
+      # Compile Rust early: JavaScript failures must not conceal compiler failures.
+      - run: cargo test --manifest-path compiler/Cargo.toml
       - run: npm test
       - run: npm run studio:test
       - run: npm run phase1:test
       - run: npm run compact:test
-      - run: cargo test --manifest-path compiler/Cargo.toml
       - run: npm run compact:ts-parity
       - run: npm run m13:measure
       - run: npm run m14:measure

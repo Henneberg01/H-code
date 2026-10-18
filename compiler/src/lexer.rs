@@ -170,6 +170,7 @@ pub fn lex(source: &str) -> Result<Vec<Token>, Diagnostic> {
             _=>None,
         };
         if let Some(kind)=single { advance(&mut pos,&mut line,&mut column); result.push(Token{kind,span});continue; }
+        if c=='|' { return Err(err("Unexpected character '|'; use ▷ or |>".into(),span)); }
         if is_symbol(c) { advance(&mut pos,&mut line,&mut column); result.push(Token{kind:TokenKind::Glyph(c),span});continue; }
         return Err(err(format!("Unexpected character {c:?}"), span));
     }

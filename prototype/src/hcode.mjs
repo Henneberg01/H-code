@@ -85,6 +85,8 @@ export function tokenize(source) {
     const two=c+(peek(1)??'');
     if(TWO.has(two)){advance();advance();emit(two,two,ln,col);continue;}
     if(ONE.has(c)){advance();emit(c,c,ln,col);continue;}
+    // Reject a split ASCII pipe instead of interpreting it as a package glyph.
+    if(c==='|')throw new HCodeError('Unexpected character "|"; use ▷ or |>',ln,col);
     if(SYMBOL_CHARACTER.test(c)){
       advance();emit('glyph',c,ln,col);continue;
     }
@@ -162,6 +164,15 @@ class Parser {
       const glyph=this.expect('glyph');
       callee={kind:'GlyphOperation',glyph:glyph.value,line:glyph.line,column:glyph.column};
     } else if(this.accept('(')){
+      // M14 permits a parenthesized first-class operator section as a pipeline target.
+      const sections=new Set(['*','/','%','+','<','>','<=','>=','==','!=']);
+      if(sections.has(this.peek().type)){
+        const operator=this.peek().type;
+        this.i++;
+        const right=this.expr();
+        this.expect(')');
+        return {callee:{kind:'Section',operator,right},args:[]};
+      }
       callee=this.expr();
       this.expect(')');
       return {callee,args:[]};
@@ -350,15 +361,15 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
   const step=()=>{if(++steps>maxSteps)throw Error('Execution step limit exceeded');};
   root.define('print',(...args)=>{stdout(args.map(x=>x===null?'none':String(x)).join(' '));return null;});
   const truth=v=>{if(typeof v!=='boolean')throw Error('Condition must be Boolean');return v;};
-  const requireType=(value,type)=>{
+  const requireType=(value,type,context='annotation')=>{
     if(!type)return;
     if(type.startsWith('⟦')&&type.endsWith('⟧')){
-      if(!Array.isArray(value))throw Error('Annotated type mismatch: expected '+type);
-      for(const element of value)requireType(element,type.slice(1,-1));
+      if(!Array.isArray(value))throw Error(context==='return'?'return expects '+type+', got '+runtimeType(value):'Annotated type mismatch: expected '+type);
+      for(const element of value)requireType(element,type.slice(1,-1),context);
       return;
     }
     const actual=value===null?'Unit':typeof value==='number'?'Number':typeof value==='string'?'String':typeof value==='boolean'?'Bool':'Unknown';
-    if(actual!==type)throw Error('Annotated type mismatch: expected '+type+', got '+actual);
+    if(actual!==type)throw Error(context==='return'?'return expects '+type+', got '+actual:'Annotated type mismatch: expected '+type+', got '+actual);
   };
   const unifySequenceTypes=(left,right)=>{
     if(left==='?')return right;
@@ -549,7 +560,7 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
             requireType(args[j],node.params[j].type);
             inner.define(node.params[j].name,args[j],node.params[j].type);
           }
-          try{for(const statement of node.body.body)stmt(statement,inner);}catch(e){if(e instanceof ReturnSignal){requireType(e.value,node.returnType);return e.value;}throw e;}
+          try{for(const statement of node.body.body)stmt(statement,inner);}catch(e){if(e instanceof ReturnSignal){requireType(e.value,node.returnType,'return');return e.value;}throw e;}
           return null;
         };
         scope.define(node.name,fn);break;

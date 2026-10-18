@@ -47,7 +47,6 @@ test('pipeline has low precedence and evaluates the input only once',()=>{
 test('pipeline rejects ambiguous right hand expressions and bad targets',()=>{
   const bad=[
     'print(1 ▷ 2);',
-    'print(1 ▷ (double));',
     'print(1 ▷ double + 1);',
     'print(1 ▷ double and true);',
     'print(1 |>);',
@@ -55,6 +54,10 @@ test('pipeline rejects ambiguous right hand expressions and bad targets',()=>{
   ];
   for(const source of bad)assert.throws(()=>parse(source),{name:'HCodeError'},source);
   assert.throws(()=>parse('print(1 ▷ f + 2);'),/Parenthesize pipeline/);
+  // First-class grouped functions and sign sections are now valid pipeline targets.
+  assert.equal(out('ƒ double(x) ↩ x*2; print(21 ▷ (double));'),'42');
+  assert.equal(out('print(21 ▷ (*2));'),'42');
+  assert.throws(()=>out('print(21 ▷ (2));'),/not callable/);
 });
 
 test('callability, package arity, and unknown operations are not silently accepted',()=>{
