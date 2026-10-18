@@ -59,12 +59,12 @@ fn build_is_deterministic_sha_locked_and_idempotent(){
 #[test]
 fn invalid_glyph_or_type_does_not_write_outputs(){
  let bad=[
-   "∀T ∑ ƒ head(xs:⟦T⟧)→T ↩ xs⟦0⟧;\n",
-   "∀T ⥇ ƒ head(xs:⟦T⟧)→T ↩ 42;\n",
-   "∀T ⥇ ƒ head(xs:⟦T⟧)→T ↩ xs⟦0⟧;\n∀T ⥇ ƒ other(xs:⟦T⟧)→T ↩ xs⟦0⟧;\n",
-   "∀T ⥇ ƒ head(xs:⟦U⟧)→U ↩ xs⟦0⟧;\n",
-   "∀T ⥇ ƒ unused(xs:⟦Number⟧)→Number ↩ xs⟦0⟧;\n",
-   "∀T ⥇ ƒ head(xs:⟦T⟧)→T ↩ print(xs⟦0⟧);\n"
+   "∀T ∑(xs:⟦T⟧)→T ↩ xs⟦0⟧;\n",
+   "∀T ⥇(xs:⟦T⟧)→T ↩ 42;\n",
+   "∀T ⥇(xs:⟦T⟧)→T ↩ xs⟦0⟧;\n∀T ⥇(xs:⟦T⟧)→T ↩ xs⟦0⟧;\n",
+   "∀T ⥇(xs:⟦U⟧)→U ↩ xs⟦0⟧;\n",
+   "∀T ⥇(xs:⟦Number⟧)→Number ↩ xs⟦0⟧;\n",
+   "∀T ⥇(xs:⟦T⟧)→T ↩ print(xs⟦0⟧);\n"
  ];
  for code in bad{
   let w=Workspace::new();
@@ -93,10 +93,36 @@ fn invalid_update_does_not_damage_previously_valid_lock(){
  let paths=[w.0.join("packages/poly.auto/lib.hc"),
      w.0.join("packages/poly.auto/manifest.json"),w.lock()];
  let old=paths.iter().map(|p|fs::read(p).unwrap()).collect::<Vec<_>>();
- fs::write(w.source(),"∀T ⥇ ƒ unused(xs:⟦Number⟧)→Number ↩ xs⟦0⟧;\n").unwrap();
+ fs::write(w.source(),"∀T ⥇(xs:⟦Number⟧)→Number ↩ xs⟦0⟧;\n").unwrap();
  let bad=w.run(&[]);
  assert!(!bad.status.success(),"invalid package should not regenerate files");
  let unchanged=paths.iter().map(|p|fs::read(p).unwrap()).collect::<Vec<_>>();
  assert_eq!(old,unchanged);
  assert!(load_lockfile(&w.lock()).is_ok());
+}
+
+#[test]
+fn direct_glyph_can_declare_monomorphic_source_without_redundant_name(){
+ let w=Workspace::new();
+ fs::write(w.source(),"⥇(xs:⟦Number⟧)→Number ↩ xs⟦0⟧;\n").unwrap();
+ let result=w.run(&[]);
+ assert!(result.status.success(),"{}",output(&result));
+ let manifest:Value=serde_json::from_slice(&fs::read(w.0.join("packages/poly.auto/manifest.json")).unwrap()).unwrap();
+ assert_eq!(manifest["operations"][0]["glyph"],"⥇");
+ assert_eq!(manifest["operations"][0]["typeParameters"],serde_json::json!([]));
+ assert!(load_lockfile(&w.lock()).is_ok());
+}
+
+#[test]
+fn direct_glyphs_on_one_line_generate_distinct_private_symbols(){
+ let w=Workspace::new();
+ fs::write(w.source(),"∀T ⥇(xs:⟦T⟧)→T ↩ xs⟦0⟧;∀T ⥈(xs:⟦T⟧)→⟦T⟧ ↩ xs⧺xs;\n").unwrap();
+ let result=w.run(&[]);
+ assert!(result.status.success(),"{}",output(&result));
+ let generated=fs::read_to_string(w.0.join("packages/poly.auto/lib.hc")).unwrap();
+ assert!(generated.contains("ƒ g1("));
+ assert!(generated.contains("ƒ g2("));
+ let registry=load_lockfile(&w.lock()).unwrap();
+ let p=registry.packages.get("poly.auto@1.0.0").unwrap();
+ assert_eq!(p.operations.len(),2);
 }
