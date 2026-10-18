@@ -48,6 +48,9 @@ function compile(){
   rmSync(dir,{recursive:true,force:true});
   throw Error('Native H-Code source compiler failed: '+(result.error?.message??result.stderr));
  }
+ const emitted=readFileSync(output);
+ console.log('CANONICAL12_GENERATED_JS_BYTES='+emitted.length);
+ console.log('CANONICAL12_GENERATED_JS_SHA256='+createHash('sha256').update(emitted).digest('hex'));
  build={dir,output};return build;
 }
 after(()=>{if(build)rmSync(build.dir,{recursive:true,force:true});});

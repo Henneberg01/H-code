@@ -16,9 +16,9 @@ test('all 20 canonical tasks remain registered in source order, including unsupp
 test('source-locked reference-only examples cannot be misrepresented as global 70% proof',{skip:!canRunTs},()=>{
   const r=readiness();
   assert.equal(r.preregisteredTasks,20);
-  assert.equal(r.verifiedFullWorkloads,11);
+  assert.equal(r.verifiedFullWorkloads,12);
   assert.equal(r.partialReferenceEvidence,0);
-  assert.equal(r.unsupported,9);
+  assert.equal(r.unsupported,8);
   assert.equal(r.complete,false);
   assert.equal(r.globalMedianCodepointReduction,null);
   assert.equal(r.objectiveAchieved,false);
@@ -42,8 +42,10 @@ test('source-locked reference-only examples cannot be misrepresented as global 7
   assert.equal(r.historicalM14IsGlobalMetric,false);
   assert.equal(r.immutableRegistryGitBlobSha,PREREGISTERED_GIT_BLOB_SHA);
   assert.equal(r.capabilityDemandIsNotCompilerCoverage,true);
-  assert.deepEqual(r.requestedByUnverifiedTasks.slice(0,3).map(x=>[x.capability,x.workloads]),
-    [['multi-file-project',3],['dom',2],['http-server',2]]);
+  assert.deepEqual(r.requestedByUnverifiedTasks.slice(0,2).map(x=>[x.capability,x.workloads]),
+    [['multi-file-project',3],['dom',2]]);
+  assert.equal(r.requestedByUnverifiedTasks
+    .find(x=>x.capability==='http-server')?.workloads,1);
   assert.equal(r.evidenceByFullTask['04-csv-validation'].kind,'full-compiler-evidence');
   assert.equal(r.evidenceByFullTask['04-csv-validation'].fixedFilesVerified,4);
   assert.equal(r.evidenceByFullTask['04-csv-validation'].generatedCSVFilesAndExpectedOutputsVerified,40);
@@ -84,6 +86,13 @@ test('source-locked reference-only examples cannot be misrepresented as global 7
   assert.equal(r.evidenceByFullTask['11-markdown-processing'].pureGenericMarkdownLexingIntrinsic,true);
   assert.equal(r.evidenceByFullTask['11-markdown-processing'].hcodeUnicodeCodepoints,19);
   assert.equal(r.evidenceByFullTask['11-markdown-processing'].comparisonIsCorrectnessOracleNotCompetitiveBaseline,true);
+  assert.equal(r.evidenceByFullTask['12-crud-api'].kind,'full-compiler-evidence');
+  assert.equal(r.evidenceByFullTask['12-crud-api'].originalFrozenCRUDFixturesVerified,6);
+  assert.equal(r.evidenceByFullTask['12-crud-api'].compiledHCodeVsJSReferenceVsTypeScript,true);
+  assert.equal(r.evidenceByFullTask['12-crud-api'].persistentStateAndReplayVerified,true);
+  assert.equal(r.evidenceByFullTask['12-crud-api'].comparisonIsCorrectnessOracleNotCompetitiveBaseline,true);
+  assert.equal(r.evidenceByFullTask['12-crud-api'].hcodeUnicodeCodepoints,3098);
+  assert.ok(r.evidenceByFullTask['12-crud-api'].compiledJavascriptUtf8Bytes>0);
   assert.ok(r.evidenceByFullTask['11-markdown-processing'].compiledJavascriptUtf8Bytes>0);
   assert.ok(r.evidenceByFullTask['09-expiring-cache'].compiledJavascriptUtf8Bytes>0);
   assert.equal(r.evidenceByFullTask['08-concurrent-requests'].compilerAndInterpreterInvalidSourceCasesRejected,4);
@@ -107,7 +116,7 @@ test('registry cannot claim an unsupported case is fully verified without compil
   } finally { target.status=previous; }
 });
 
-// This starts all eleven verified cross-runtime Rust/JS/TS proofs again in a new process.
+// This starts all twelve verified cross-runtime Rust/JS/TS proofs again in a new process.
 // On Windows, independent child runtimes exceed 30s; extending the timeout does
 // not skip a single test or loosen the original 20-task strict rejection.
 test('the strict twenty-workload CI gate intentionally fails until all 20 pass',{skip:!canRunTs},()=>{
@@ -120,8 +129,8 @@ test('the strict twenty-workload CI gate intentionally fails until all 20 pass',
   assert.match(child.stderr,/all 20 must be compiler-verified/);
   const report=JSON.parse(child.stdout);
   assert.equal(report.preregisteredTasks,20);
-  assert.equal(report.verifiedFullWorkloads,11);
-  assert.equal(report.unsupported,9);
+  assert.equal(report.verifiedFullWorkloads,12);
+  assert.equal(report.unsupported,8);
   assert.equal(report.globalMedianCodepointReduction,null);
   assert.equal(report.objectiveAchieved,false);
 });
