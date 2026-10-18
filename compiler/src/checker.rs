@@ -93,6 +93,7 @@ pub enum TypedExprKind {
     Field { record:Box<TypedExpr>,name:String },
     RecordUpdate { record:Box<TypedExpr>,name:String,value:Box<TypedExpr> },
     JsonRead { schema:Type,value:Box<TypedExpr> },
+    JsonValid { schema:Type,value:Box<TypedExpr> },
     JsonWrite { value:Box<TypedExpr>,schema:Type },
     TextScalars(Box<TypedExpr>),
     TextWords(Box<TypedExpr>),
@@ -148,7 +149,7 @@ fn cas_pure_expression<'a>(
             }
             for arg in arguments {cas_pure_expression(arg,functions,visiting)?;}
         },
-        ExprKind::JsonRead{value,..}|ExprKind::JsonWrite(value)|
+        ExprKind::JsonRead{value,..}|ExprKind::JsonValid{value,..}|ExprKind::JsonWrite(value)|
         ExprKind::TextScalars(value)|ExprKind::TextWords(value)|
         ExprKind::Histogram(value)|ExprKind::Markdown(value)|
         ExprKind::Length(value)|ExprKind::Sum(value)|
@@ -532,6 +533,15 @@ impl Checker {
                 let input=self.expression(value)?;
                 self.unify(&Type::String,&input.ty,value.span,"⤓ expects JSON text of type String")?;
                 (TypedExprKind::JsonRead{schema:resolved.clone(),value:Box::new(input)},resolved)
+            }
+            ExprKind::JsonValid{schema,value}=>{
+                let resolved=Type::from_name(schema,expr.span)?;
+                if !Self::valid_json_type(&resolved,0) {
+                    return Err(Diagnostic::new("TYPE","⤔ requires concrete JSON-compatible schema with depth <=32".into(),expr.span));
+                }
+                let checked=self.expression(value)?;
+                self.unify(&Type::String,&checked.ty,value.span,"⤔ validates a String input")?;
+                (TypedExprKind::JsonValid{schema:resolved,value:Box::new(checked)},Type::Bool)
             }
             ExprKind::JsonWrite(value)=>{
                 let checked=self.expression(value)?;
@@ -984,7 +994,7 @@ impl Checker {
             TypedExprKind::Sequence(items)=>{for item in items {self.finalize_expr(item)?;}},
             TypedExprKind::Record(fields)=>{for (_,value) in fields{self.finalize_expr(value)?;}},
             TypedExprKind::Field{record,..}=>self.finalize_expr(record)?,
-            TypedExprKind::JsonRead{value,..}|TypedExprKind::JsonWrite{value,..}=>self.finalize_expr(value)?,
+            TypedExprKind::JsonRead{value,..}|TypedExprKind::JsonValid{value,..}|TypedExprKind::JsonWrite{value,..}=>self.finalize_expr(value)?,
             TypedExprKind::TextScalars(value)|TypedExprKind::TextWords(value)|TypedExprKind::Histogram(value)|TypedExprKind::Markdown(value)|TypedExprKind::HttpServe(value)|TypedExprKind::FileRead(value)|TypedExprKind::HttpGet(value)|TypedExprKind::Sleep(value)|TypedExprKind::ArithEval(value)=>self.finalize_expr(value)?,
             TypedExprKind::CsvTyped{value,..}=>self.finalize_expr(value)?,
             TypedExprKind::FileWrite{filename,content}=>{self.finalize_expr(filename)?;self.finalize_expr(content)?;},

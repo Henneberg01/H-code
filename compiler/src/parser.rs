@@ -232,6 +232,14 @@ impl Parser {
                 let value=self.expression(8)?;
                 ExprKind::JsonRead{schema,value:Box::new(value)}
             }
+            // ⤔<T> checks an arbitrary String against a statically checked schema.
+            // Unlike ⤓, malformed JSON or mismatched fields produce Bool false.
+            TokenKind::JsonValid=>{
+                self.index+=1;
+                let schema=self.type_name()?;
+                let value=self.expression(8)?;
+                ExprKind::JsonValid{schema,value:Box::new(value)}
+            }
             // ⤒ is a schema-safe, deterministic JSON serializer for typed data.
             TokenKind::JsonWrite=>{
                 self.index+=1;

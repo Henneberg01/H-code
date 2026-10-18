@@ -48,6 +48,7 @@ impl Emitter {
    }
    TypedExprKind::Field{record,name:field}=>format!("__hc_field({}, {})",self.expr(record),q(field)),
    TypedExprKind::JsonRead{schema,value}=>format!("__hc_json_read({}, {})",self.expr(value),json_schema(schema)),
+   TypedExprKind::JsonValid{schema,value}=>format!("__hc_json_valid({}, {})",self.expr(value),json_schema(schema)),
    TypedExprKind::JsonWrite{schema,value}=>format!("__hc_json_write({}, {})",self.expr(value),json_schema(schema)),
    TypedExprKind::RecordUpdate{record,name:field,value}=>format!("__hc_update({}, {}, {})",self.expr(record),q(field),self.expr(value)),
     TypedExprKind::Index{sequence,index}=>format!("__hc_index({}, {})",self.expr(sequence),self.expr(index)),
@@ -160,7 +161,7 @@ fn expr_uses_json(e:&TypedExpr)->bool {
   TypedExprKind::HttpServeState{handler,initial}=>expr_uses_json(handler)||expr_uses_json(initial),
   TypedExprKind::Markdown(value)|TypedExprKind::HttpServe(value)=>expr_uses_json(value),
   TypedExprKind::FileWrite{filename,content}=>expr_uses_json(filename)||expr_uses_json(content),
-  TypedExprKind::JsonRead{..}|TypedExprKind::JsonWrite{..}=>true,
+  TypedExprKind::JsonRead{..}|TypedExprKind::JsonValid{..}|TypedExprKind::JsonWrite{..}=>true,
   TypedExprKind::Record(fields)=>fields.iter().any(|(_,v)|expr_uses_json(v)),
   TypedExprKind::Field{record,..}=>expr_uses_json(record),
   TypedExprKind::RecordUpdate{record,value,..}=>expr_uses_json(record)||expr_uses_json(value),
@@ -197,7 +198,7 @@ fn expr_uses_markdown(e:&TypedExpr)->bool {
   TypedExprKind::Markdown(_)=>true,
   TypedExprKind::HttpServe(value)=>expr_uses_markdown(value),
   TypedExprKind::FileWrite{filename,content}=>expr_uses_markdown(filename)||expr_uses_markdown(content),
-  TypedExprKind::JsonRead{value,..}|TypedExprKind::JsonWrite{value,..}=>expr_uses_markdown(value),
+  TypedExprKind::JsonRead{value,..}|TypedExprKind::JsonValid{value,..}|TypedExprKind::JsonWrite{value,..}=>expr_uses_markdown(value),
   TypedExprKind::Record(fields)=>fields.iter().any(|(_,v)|expr_uses_markdown(v)),
   TypedExprKind::Field{record,..}=>expr_uses_markdown(record),
   TypedExprKind::RecordUpdate{record,value,..}=>expr_uses_markdown(record)||expr_uses_markdown(value),
@@ -233,7 +234,7 @@ fn expr_uses_http_serve(e:&TypedExpr)->bool {
   TypedExprKind::HttpServe(_)|TypedExprKind::HttpServeState{..}=>true,
   TypedExprKind::Markdown(value)=>expr_uses_http_serve(value),
   TypedExprKind::FileWrite{filename,content}=>expr_uses_http_serve(filename)||expr_uses_http_serve(content),
-  TypedExprKind::JsonRead{value,..}|TypedExprKind::JsonWrite{value,..}=>expr_uses_http_serve(value),
+  TypedExprKind::JsonRead{value,..}|TypedExprKind::JsonValid{value,..}|TypedExprKind::JsonWrite{value,..}=>expr_uses_http_serve(value),
   TypedExprKind::Record(fields)=>fields.iter().any(|(_,v)|expr_uses_http_serve(v)),
   TypedExprKind::Field{record,..}=>expr_uses_http_serve(record),
   TypedExprKind::RecordUpdate{record,value,..}=>expr_uses_http_serve(record)||expr_uses_http_serve(value),
@@ -270,7 +271,7 @@ fn expr_uses_http_state(e:&TypedExpr)->bool {
   TypedExprKind::HttpServe(value)=>expr_uses_http_state(value),
   TypedExprKind::Markdown(value)=>expr_uses_http_state(value),
   TypedExprKind::FileWrite{filename,content}=>expr_uses_http_state(filename)||expr_uses_http_state(content),
-  TypedExprKind::JsonRead{value,..}|TypedExprKind::JsonWrite{value,..}=>expr_uses_http_state(value),
+  TypedExprKind::JsonRead{value,..}|TypedExprKind::JsonValid{value,..}|TypedExprKind::JsonWrite{value,..}=>expr_uses_http_state(value),
   TypedExprKind::Record(fields)=>fields.iter().any(|(_,v)|expr_uses_http_state(v)),
   TypedExprKind::Field{record,..}=>expr_uses_http_state(record),
   TypedExprKind::RecordUpdate{record,value,..}=>expr_uses_http_state(record)||expr_uses_http_state(value),
@@ -308,7 +309,7 @@ fn expr_uses_text(e:&TypedExpr)->bool {
   TypedExprKind::FileWrite{filename,content}=>expr_uses_text(filename)||expr_uses_text(content),
   TypedExprKind::TextScalars(..)|TypedExprKind::TextWords(..)|TypedExprKind::Histogram(..)=>true,
   TypedExprKind::FileRead(value)|TypedExprKind::HttpGet(value)|TypedExprKind::Sleep(value)|TypedExprKind::CsvTyped{value,..}|TypedExprKind::ArithEval(value)=>expr_uses_text(value),
-  TypedExprKind::JsonRead{value,..}|TypedExprKind::JsonWrite{value,..}=>expr_uses_text(value),
+  TypedExprKind::JsonRead{value,..}|TypedExprKind::JsonValid{value,..}|TypedExprKind::JsonWrite{value,..}=>expr_uses_text(value),
   TypedExprKind::Record(fields)=>fields.iter().any(|(_,v)|expr_uses_text(v)),
   TypedExprKind::Field{record,..}=>expr_uses_text(record),
   TypedExprKind::RecordUpdate{record,value,..}=>expr_uses_text(record)||expr_uses_text(value),
@@ -345,7 +346,7 @@ fn expr_uses_csv(e:&TypedExpr)->bool {
    TypedExprKind::FileRead(v)|TypedExprKind::HttpGet(v)|TypedExprKind::Sleep(v)=>expr_uses_csv(v),
    TypedExprKind::CsvTyped{..}=>true,
    TypedExprKind::ArithEval(value)=>expr_uses_csv(value),
-   TypedExprKind::JsonRead{value,..}|TypedExprKind::JsonWrite{value,..}|
+   TypedExprKind::JsonRead{value,..}|TypedExprKind::JsonValid{value,..}|TypedExprKind::JsonWrite{value,..}|
    TypedExprKind::TextScalars(value)|TypedExprKind::TextWords(value)|
    TypedExprKind::Histogram(value)|TypedExprKind::Length(value)|
    TypedExprKind::Sum(value)|TypedExprKind::Unary{operand:value,..}|
@@ -379,7 +380,7 @@ fn expr_uses_file(e:&TypedExpr)->bool {
   TypedExprKind::FileWrite{filename,content}=>expr_uses_file(filename)||expr_uses_file(content),
    TypedExprKind::FileRead(..)=>true,
    TypedExprKind::CsvTyped{value,..}|TypedExprKind::ArithEval(value)|TypedExprKind::HttpGet(value)|TypedExprKind::Sleep(value)=>expr_uses_file(value),
-   TypedExprKind::JsonRead{value,..}|TypedExprKind::JsonWrite{value,..}|
+   TypedExprKind::JsonRead{value,..}|TypedExprKind::JsonValid{value,..}|TypedExprKind::JsonWrite{value,..}|
    TypedExprKind::TextScalars(value)|TypedExprKind::TextWords(value)|
    TypedExprKind::Histogram(value)|TypedExprKind::Length(value)|
    TypedExprKind::Sum(value)|TypedExprKind::Unary{operand:value,..}|
@@ -414,7 +415,7 @@ fn expr_uses_http(e:&TypedExpr)->bool {
   TypedExprKind::Markdown(value)|TypedExprKind::HttpServe(value)=>expr_uses_http(value),
   TypedExprKind::FileWrite{filename,content}=>expr_uses_http(filename)||expr_uses_http(content),
   TypedExprKind::HttpGet(_)=>true,
-  TypedExprKind::JsonRead{value,..}|TypedExprKind::JsonWrite{value,..}|
+  TypedExprKind::JsonRead{value,..}|TypedExprKind::JsonValid{value,..}|TypedExprKind::JsonWrite{value,..}|
   TypedExprKind::Sleep(value)|TypedExprKind::FileRead(value)|TypedExprKind::CsvTyped{value,..}|
   TypedExprKind::ArithEval(value)|TypedExprKind::TextScalars(value)|
   TypedExprKind::TextWords(value)|TypedExprKind::Histogram(value)|
@@ -450,7 +451,7 @@ fn expr_uses_sleep(e:&TypedExpr)->bool {
   TypedExprKind::Markdown(value)|TypedExprKind::HttpServe(value)=>expr_uses_sleep(value),
   TypedExprKind::FileWrite{filename,content}=>expr_uses_sleep(filename)||expr_uses_sleep(content),
   TypedExprKind::Sleep(_)=>true,
-  TypedExprKind::JsonRead{value,..}|TypedExprKind::JsonWrite{value,..}|
+  TypedExprKind::JsonRead{value,..}|TypedExprKind::JsonValid{value,..}|TypedExprKind::JsonWrite{value,..}|
   TypedExprKind::HttpGet(value)|TypedExprKind::FileRead(value)|TypedExprKind::CsvTyped{value,..}|
   TypedExprKind::ArithEval(value)|TypedExprKind::TextScalars(value)|
   TypedExprKind::TextWords(value)|TypedExprKind::Histogram(value)|
@@ -485,7 +486,7 @@ fn expr_uses_file_write(e:&TypedExpr)->bool {
   TypedExprKind::HttpServeState{handler,initial}=>expr_uses_file_write(handler)||expr_uses_file_write(initial),
   TypedExprKind::Markdown(value)|TypedExprKind::HttpServe(value)=>expr_uses_file_write(value),
   TypedExprKind::FileWrite{..}=>true,
-  TypedExprKind::JsonRead{value,..}|TypedExprKind::JsonWrite{value,..}|
+  TypedExprKind::JsonRead{value,..}|TypedExprKind::JsonValid{value,..}|TypedExprKind::JsonWrite{value,..}|
   TypedExprKind::Sleep(value)|TypedExprKind::FileRead(value)|TypedExprKind::CsvTyped{value,..}|
   TypedExprKind::ArithEval(value)|TypedExprKind::TextScalars(value)|
   TypedExprKind::TextWords(value)|TypedExprKind::Histogram(value)|
@@ -522,7 +523,7 @@ fn expr_cli_flags(e:&TypedExpr)->u8 {
     TypedExprKind::FileWrite{filename,content}=>expr_cli_flags(filename)|expr_cli_flags(content),
     TypedExprKind::StdinText=>1,
     TypedExprKind::ArithEval(v)=>2|expr_cli_flags(v),
-    TypedExprKind::FileRead(v)|TypedExprKind::HttpGet(v)|TypedExprKind::Sleep(v)|TypedExprKind::JsonRead{value:v,..}|
+    TypedExprKind::FileRead(v)|TypedExprKind::HttpGet(v)|TypedExprKind::Sleep(v)|TypedExprKind::JsonRead{value:v,..}|TypedExprKind::JsonValid{value:v,..}|
     TypedExprKind::JsonWrite{value:v,..}|TypedExprKind::CsvTyped{value:v,..}|
     TypedExprKind::TextScalars(v)|TypedExprKind::TextWords(v)|TypedExprKind::Histogram(v)|
     TypedExprKind::Length(v)|TypedExprKind::Sum(v)|TypedExprKind::Unary{operand:v,..}|
@@ -641,7 +642,7 @@ const __hc_json_bytes = text => new TextEncoder().encode(text).length;
 const __hc_json_guard = (data,schema,depth=0) => {
   __hc_tick(); if(depth>32)throw Error('JSON nesting depth exceeded');
   if(schema==='n'){ if(typeof data!=='number'||!Number.isFinite(data))throw Error('JSON Number type mismatch'); return data; }
-  if(schema==='s'){ if(typeof data!=='string')throw Error('JSON String type mismatch'); return data; }
+  if(schema==='s'){ if(typeof data!=='string'||!data.isWellFormed())throw Error('JSON String type mismatch'); return data; }
   if(schema==='b'){ if(typeof data!=='boolean')throw Error('JSON Bool type mismatch'); return data; }
   if(Array.isArray(schema)&&schema[0]==='a'){
     if(!Array.isArray(data))throw Error('JSON Sequence type mismatch');
@@ -668,6 +669,17 @@ const __hc_json_read = (text,schema) => {
   if(__hc_json_bytes(text)>__hc_json_limit)throw Error('JSON input size exceeded');
   let input;try{ input=JSON.parse(text); }catch{ throw Error('Invalid JSON text'); }
   return __hc_json_guard(input,schema);
+};
+// Pure, typed JSON shape validation for request paths with recoverable errors.
+// Resource-limit exhaustion remains a fatal program error, not a validation miss.
+const __hc_json_valid = (text,schema) => {
+  __hc_tick();
+  if(typeof text!=='string')throw TypeError('⤔ requires String');
+  if(__hc_json_bytes(text)>__hc_json_limit||!text.isWellFormed())return false;
+  let value;
+  try{value=JSON.parse(text);}catch{return false;}
+  try{__hc_json_guard(value,schema);return true;}
+  catch(error){if(error?.message==='H-Code step limit exceeded')throw error;return false;}
 };
 const __hc_json_write = (data,schema) => {
   __hc_tick();const checked=__hc_json_guard(data,schema);

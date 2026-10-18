@@ -11,13 +11,13 @@ export const CORE_GLYPHS = Object.freeze({
   '\u22a2': 'if', '\u22a3': 'else', '\u27f3': 'while', '\u21d2': '=>',
   '\u2237': '::', '\u25b7': '|>', '\u2218': '<<', '\u25c7': '?', '\u27e6': '[[', '\u27e7': ']]',
   '\u2983':'record-open', '\u2984':'record-close', '\u00b7':'field', '\u229e':'record-update',
-  '\u2913':'json-read', '\u2912':'json-write',
+  '\u2913':'json-read', '\u2914':'json-valid', '\u2912':'json-write',
   '\u2af6':'text-scalars', '\u27df':'text-words', '\u29c9':'histogram', '\u224b':'markdown-tokens',
   '\u29c4':'file-read', '\u29c5':'file-write', '\u290b':'http-get', '\u290a':'http-serve', '\u231b':'sleep-ms', '\u29c7':'csv-typed',
   '\u2328':'stdin-text', '\u2a5a':'arith-eval', '\u2317': '#', '\u29fa': '++', '\u2211': '@+', '\u2315': '@?', '\u21e2': '@>', '\u03bb': 'lambda', '\u2200': 'forall'
 });
 export const RESERVED_USER_GLYPHS = new Set(['\u2205', '\u2200', '\u2208', ...Object.keys(CORE_GLYPHS)]);
-const RESERVED = new Set(['fn','let','return','true','false','if','else','while','and','or','not','use','as','lambda','forall','json_in','json_out','text_scalars','text_words','text_hist','markdown_tokens','file_read','file_write','http_get','http_serve','sleep_ms','csv_typed','stdin_text','arith_eval']);
+const RESERVED = new Set(['fn','let','return','true','false','if','else','while','and','or','not','use','as','lambda','forall','json_in','json_valid','json_out','text_scalars','text_words','text_hist','markdown_tokens','file_read','file_write','http_get','http_serve','sleep_ms','csv_typed','stdin_text','arith_eval']);
 const TWO = new Set(['==','!=','<=','>=','->','::','|>','<<','[[',']]','++','@+','@?','@>','=>','<+']);
 const ONE = new Set(['+','-','*','/','%','<','>','=','(',')','{','}',',',';',':','?','#','.']);
 const ILLEGAL = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]|\p{Default_Ignorable_Code_Point}/u;
@@ -102,7 +102,7 @@ export function tokenize(source) {
     }
     if(letter(c)){
       let word='';while(alnum(peek()))word+=advance();
-      emit(word==='json_in'?'json-read':word==='json_out'?'json-write':word==='text_scalars'?'text-scalars':word==='text_words'?'text-words':word==='text_hist'?'histogram':word==='markdown_tokens'?'markdown-tokens':word==='file_read'?'file-read':word==='file_write'?'file-write':word==='http_get'?'http-get':word==='http_serve'?'http-serve':word==='sleep_ms'?'sleep-ms':word==='csv_typed'?'csv-typed':word==='stdin_text'?'stdin-text':word==='arith_eval'?'arith-eval':(RESERVED.has(word)?word:'ident'),word,ln,col);continue;
+      emit(word==='json_in'?'json-read':word==='json_valid'?'json-valid':word==='json_out'?'json-write':word==='text_scalars'?'text-scalars':word==='text_words'?'text-words':word==='text_hist'?'histogram':word==='markdown_tokens'?'markdown-tokens':word==='file_read'?'file-read':word==='file_write'?'file-write':word==='http_get'?'http-get':word==='http_serve'?'http-serve':word==='sleep_ms'?'sleep-ms':word==='csv_typed'?'csv-typed':word==='stdin_text'?'stdin-text':word==='arith_eval'?'arith-eval':(RESERVED.has(word)?word:'ident'),word,ln,col);continue;
     }
     if(Object.hasOwn(CORE_GLYPHS,c)){
       advance();const alias=CORE_GLYPHS[c];emit(alias,alias,ln,col);continue;
@@ -296,6 +296,10 @@ class Parser {
       const schema=this.typeName();
       left={kind:'JsonRead',schema,value:this.expr(8)};
     }
+    else if(this.accept('json-valid')){
+      const schema=this.typeName();
+      left={kind:'JsonValid',schema,value:this.expr(8)};
+    }
     else if(this.accept('json-write'))left={kind:'JsonWrite',value:this.expr(8)};
     else if(this.at('number'))left={kind:'Literal',value:this.expect('number').value};
     else if(this.at('string'))left={kind:'Literal',value:this.expect('string').value};
@@ -452,7 +456,7 @@ export function linkProgram(ast, registry=new Map()) {
     if(node.kind==='Sequence')return {...node,items:node.items.map(expression)};
     if(node.kind==='Record')return {...node,fields:node.fields.map(f=>({name:f.name,value:expression(f.value)}))};
     if(node.kind==='Field')return {...node,record:expression(node.record)};
-    if(node.kind==='JsonRead'||node.kind==='JsonWrite'||node.kind==='TextScalars'||node.kind==='TextWords'||node.kind==='Histogram'||node.kind==='Markdown'||node.kind==='FileRead'||node.kind==='HttpGet'||node.kind==='HttpServe'||node.kind==='Sleep'||node.kind==='CsvTyped'||node.kind==='ArithEval')return {...node,value:expression(node.value)};
+    if(node.kind==='JsonRead'||node.kind==='JsonValid'||node.kind==='JsonWrite'||node.kind==='TextScalars'||node.kind==='TextWords'||node.kind==='Histogram'||node.kind==='Markdown'||node.kind==='FileRead'||node.kind==='HttpGet'||node.kind==='HttpServe'||node.kind==='Sleep'||node.kind==='CsvTyped'||node.kind==='ArithEval')return {...node,value:expression(node.value)};
     if(node.kind==='FileWrite')return {...node,filename:expression(node.filename),content:expression(node.content)};
     if(node.kind==='HttpServeState')return {...node,handler:expression(node.handler),initial:expression(node.initial)};
     if(node.kind==='RecordUpdate')return {...node,record:expression(node.record),value:expression(node.value)};
@@ -595,7 +599,7 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
   const jsonReadCheck=(value,schema,depth=0)=>{
     step();if(depth>JSON_MAX_DEPTH)throw Error('JSON nesting depth exceeded');
     if(schema==='Number'){if(typeof value!=='number'||!Number.isFinite(value))throw Error('JSON Number type mismatch');return value;}
-    if(schema==='String'){if(typeof value!=='string')throw Error('JSON String type mismatch');return value;}
+    if(schema==='String'){if(typeof value!=='string'||!value.isWellFormed())throw Error('JSON String type mismatch');return value;}
     if(schema==='Bool'){if(typeof value!=='boolean')throw Error('JSON Bool type mismatch');return value;}
     if(schema.startsWith('⟦')&&schema.endsWith('⟧')){
       if(!Array.isArray(value))throw Error('JSON Sequence type mismatch');
@@ -840,6 +844,19 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
         if(jsonBytes(text)>JSON_MAX_BYTES)throw Error('JSON input size exceeded');
         let value;try{value=JSON.parse(text);}catch{throw Error('Invalid JSON text');}
         return jsonReadCheck(value,node.schema);
+      }
+      case 'JsonValid':{
+        verifyJsonSchema(node.schema);
+        const text=expr(node.value,scope);
+        if(typeof text!=='string')throw TypeError('⤔ requires String');
+        if(jsonBytes(text)>JSON_MAX_BYTES||!text.isWellFormed())return false;
+        let parsed;
+        try{parsed=JSON.parse(text);}catch{return false;}
+        try{jsonReadCheck(parsed,node.schema);return true;}
+        catch(error){
+          if(error?.message==='Execution step limit exceeded')throw error;
+          return false;
+        }
       }
       case 'JsonWrite':{
         const value=jsonWriteCheck(expr(node.value,scope));

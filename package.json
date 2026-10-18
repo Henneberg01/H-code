@@ -48,7 +48,12 @@
     "benchmark20:state12b2c2": "node --test scripts/m19-http-state-b2c2.test.mjs",
     "benchmark20:state12b2c2-http": "node --test scripts/m19-http-state-b2c-red.test.mjs",
     "benchmark20:state12b2c3-fault": "node --test scripts/m19-http-state-b2c3-fault.test.mjs",
-    "benchmark20:b3a-envelope": "node --test scripts/m19-http-b3a-envelope.test.mjs"
+    "benchmark20:b3a-envelope": "node --test scripts/m19-http-b3a-envelope.test.mjs",
+    "benchmark20:b3b-json-valid": "node --test scripts/m19-http-b3b-json-valid.test.mjs",
+    "benchmark20:b3b-crud-source": "node --test scripts/m19-http-b3b-crud-source.test.mjs",
+    "benchmark20:verify12-hcode": "node --test scripts/canonical20-verify-12-hcode.test.mjs",
+    "benchmark20:verify12-js": "node --test scripts/canonical20-verify-12-js-reference.test.mjs",
+    "benchmark20:verify12-three": "node --test scripts/canonical20-verify-12-three-engines.test.mjs"
   },
   "engines": {
     "node": ">=20"

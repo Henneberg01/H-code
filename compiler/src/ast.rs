@@ -50,6 +50,7 @@ pub enum ExprKind {
     Field { record: Box<Expr>, name: String },
     RecordUpdate { record: Box<Expr>, name: String, value: Box<Expr> },
     JsonRead { schema: String, value: Box<Expr> },
+    JsonValid { schema: String, value: Box<Expr> },
     JsonWrite(Box<Expr>),
     FileRead(Box<Expr>),
     // M19.07: two typed operands; not a CSV->JSON application macro.

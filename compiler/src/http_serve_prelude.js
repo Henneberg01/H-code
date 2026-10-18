@@ -68,8 +68,13 @@ const __hc_http_serve = (handler,onClose=null) => {
          result.contentType.length>128 ||
          !/^[a-z][a-z0-9._+-]*\/[a-z0-9._+-]+(?:; charset=utf-8)?$/.test(result.contentType))))
         throw TypeError('⤊ handler returned invalid typed response');
-      res.writeHead(result.status,{'content-type':hasContentType?result.contentType:'text/plain; charset=utf-8','cache-control':'no-store'});
-      res.end(result.status===204||result.status===304?'':result.body);
+      // A 204/304 has no representation body, so it must not advertise a MIME
+      // type. Other responses retain the statically validated HTTP MIME.
+      const bodyless=result.status===204||result.status===304;
+      const headers=bodyless?{'cache-control':'no-store'}:
+        {'content-type':hasContentType?result.contentType:'text/plain; charset=utf-8','cache-control':'no-store'};
+      res.writeHead(result.status,headers);
+      res.end(bodyless?'':result.body);
     }catch{
       fail(res,500,'handler_error');
     }finally{inFlight--;}
