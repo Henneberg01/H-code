@@ -1,4 +1,4 @@
-# H-Code M9 — private beta staging
+# H-Code M9 — source merged, release readiness still limited
 
 **Project:** H-Code, an independent symbolic programming language (not a FastSell feature).
 
@@ -8,6 +8,6 @@
 
 **Technical scope:** M1 JS reference interpreter, M2 Rust frontend, M3 JS backend, M4 modules, M5 sample apps, M6 local Studio, M7 structured AI proposals, M8 elementary runtime/HTTP safeguards. See the milestone documents for detailed limitations.
 
-**M9 completion:** source and legal documentation prepared; tests and GitHub beta branch must be verified against the actual branch. This candidate is **not public**, **not merged**, and **not a production security assurance**.
+**GitHub state (checked 2026-10-17):** PR #2 was merged into `main` and the `Henneberg01/H-code` repository is **public**. The older statement that the project is private/unmerged is obsolete. A merged, publicly visible source repository is **not** equivalent to a published GitHub Release or a production security assurance. No tagged GitHub Release was found at that check. See `docs/PHASE1_STATUS.md` for additional post-M9 language validation.
 
-**Still required before a public beta:** independent source/license/security review, real-provider credential test by owner, UI testing, and explicit publication decision. Avoid automatic paid GitHub Actions runs.
+**Still required before a production or promoted beta distribution:** independent source/license/security review, real-provider credential test by owner, UI testing and an explicit release/tag decision. Existing public repository visibility is acknowledged rather than changed here. Avoid automatic paid GitHub Actions runs.

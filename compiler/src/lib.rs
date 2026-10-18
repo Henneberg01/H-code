@@ -6,6 +6,7 @@ pub mod lexer;
 pub mod packages;
 pub mod modules;
 pub mod parser;
+pub mod packgen;
 
 use lexer::Span;
 use std::fmt;

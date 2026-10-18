@@ -1,0 +1,25 @@
+{
+  "format": 1,
+  "pairs": [
+    {
+      "id": "functions",
+      "output": "42\n",
+      "lock": false
+    },
+    {
+      "id": "booleans",
+      "output": "7\n",
+      "lock": false
+    },
+    {
+      "id": "recursion",
+      "output": "120\n",
+      "lock": false
+    },
+    {
+      "id": "package",
+      "output": "42\n",
+      "lock": true
+    }
+  ]
+}

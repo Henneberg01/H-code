@@ -1,0 +1,12 @@
+{
+  "lockVersion": 1,
+  "packages": [
+    {
+      "name": "poly.signs",
+      "version": "1.0.0",
+      "manifest": "packages/poly.signs/manifest.json",
+      "manifestSha256": "ef5c9bf0b828b405e0dad9d4cd5f77026d709194019de683a796a1868c51502f",
+      "sourceSha256": "a00f8de32ac9e04e104810e22cb968ece3e6d2d627d8e3b3d87f3f049a296967"
+    }
+  ]
+}

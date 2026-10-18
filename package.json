@@ -11,7 +11,27 @@
     "studio": "node studio/server.mjs",
     "studio:test": "node --test studio/test/*.test.mjs",
     "bench": "node studio/benchmark.mjs",
-    "release:check": "node scripts/release-check.mjs"
+    "release:check": "node scripts/release-check.mjs",
+    "phase1:measure": "node scripts/phase1-metrics.mjs",
+    "phase1:test": "node --test scripts/test/*.test.mjs",
+    "compact:measure": "node scripts/compact-metrics.mjs",
+    "compact:test": "node --test scripts/test/compact-*.test.mjs",
+    "compact:ts-parity": "node scripts/compact-ts-parity.mjs",
+    "m13:measure": "node scripts/m13-compare.mjs",
+    "m14:measure": "node scripts/m14-compare.mjs",
+    "m15:measure": "node scripts/m15-compare.mjs",
+    "benchmark20:status": "node scripts/canonical20-coverage.mjs",
+    "benchmark20:test": "node --test scripts/test/canonical20-coverage.test.mjs",
+    "benchmark20:strict": "node scripts/canonical20-coverage.mjs --require-complete",
+    "m12:measure": "node scripts/m12-records-compare.mjs",
+    "m12:json-measure": "node scripts/m12-typed-json-compare.mjs",
+    "benchmark20:verify05": "node scripts/canonical20-verify-05.mjs",
+    "benchmark20:verify02": "node scripts/canonical20-verify-02.mjs",
+    "benchmark20:verify10": "node scripts/canonical20-verify-10.mjs",
+    "benchmark20:verify03": "node scripts/canonical20-verify-03.mjs",
+    "benchmark20:verify04": "node scripts/canonical20-verify-04.mjs"
   },
-  "engines": { "node": ">=20" }
+  "engines": {
+    "node": ">=20"
+  }
 }

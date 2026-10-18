@@ -1,0 +1,69 @@
+{
+  "version": 1,
+  "id": "M14-SAME-M11-M13-TASKS-2026-10-18-v1",
+  "originalDataset": "M11-SEQ-SUM-MAP-FILTER-2026-10-18-v1",
+  "predecessorDataset": "M13-SAME-M11-TASKS-2026-10-18-v1",
+  "description": "Exact same three tasks and unmodified idiomatic TypeScript, M11/M13/M14 sign code preserved with SHA-pinned sources",
+  "cases": [
+    {
+      "id": "sum-typed-sequence",
+      "expected": "10\n",
+      "m11": {
+        "path": "compact/benchmarks/m11/sum-typed-sequence.hc",
+        "sha": "23824383ce47a287e1ff83fb21a6ec05e4749e4c"
+      },
+      "m13": {
+        "path": "compact/benchmarks/m13/sum-typed-sequence.hc",
+        "sha": "4407ad4043c29f10fbeafbbd60070ee2ae6daabc"
+      },
+      "typescript": {
+        "path": "compact/benchmarks/m11/sum-typed-sequence.ts",
+        "sha": "b0c5696caf64ed15211ef380026129f7ac3bd51b"
+      },
+      "m14": {
+        "path": "compact/benchmarks/m14/sum-typed-sequence.hc",
+        "sha": "4407ad4043c29f10fbeafbbd60070ee2ae6daabc"
+      }
+    },
+    {
+      "id": "map-typed-sequence",
+      "expected": "20\n22\n",
+      "m11": {
+        "path": "compact/benchmarks/m11/map-typed-sequence.hc",
+        "sha": "467a0b18544b1721683d68421cf870d03a5451dc"
+      },
+      "m13": {
+        "path": "compact/benchmarks/m13/map-typed-sequence.hc",
+        "sha": "da5a3e90268f53217e84483ba1f811352fda7111"
+      },
+      "typescript": {
+        "path": "compact/benchmarks/m11/map-typed-sequence.ts",
+        "sha": "aa2382e406b8e96ae5a80d2b500bb33aa09c0e6d"
+      },
+      "m14": {
+        "path": "compact/benchmarks/m14/map-typed-sequence.hc",
+        "sha": "5d0ee1cf3f5bcb702f260a7c9824a3dcf2245c80"
+      }
+    },
+    {
+      "id": "filter-typed-sequence",
+      "expected": "2\n2\n3\n",
+      "m11": {
+        "path": "compact/benchmarks/m11/filter-typed-sequence.hc",
+        "sha": "e26c0d6a6e2bdda05091113040168e3f98947b11"
+      },
+      "m13": {
+        "path": "compact/benchmarks/m13/filter-typed-sequence.hc",
+        "sha": "8bf23da122c2e7ce1db0107d3607cce5aa7a3506"
+      },
+      "typescript": {
+        "path": "compact/benchmarks/m11/filter-typed-sequence.ts",
+        "sha": "45b9ad1726aeb3eda2f65046233c5b65813b6a89"
+      },
+      "m14": {
+        "path": "compact/benchmarks/m14/filter-typed-sequence.hc",
+        "sha": "8c0f3a165fece721c3fb66dba3b3aee1d7367e85"
+      }
+    }
+  ]
+}

@@ -13,9 +13,9 @@ pub struct Token { pub kind: TokenKind, pub span: Span }
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum TokenKind {
-    Fn, Let, Return, If, Else, While, Use, Import, Export, As, True, False, And, Or, Not,
+    Fn, Let, Return, If, Else, While, Then, Forall, Use, Import, Export, As, True, False, And, Or, Not,
     Identifier(String), Number(String), String(String), Glyph(char),
-    LeftParen, RightParen, LeftBrace, RightBrace, Comma, Semicolon, Colon, DoubleColon,
+    LeftParen, RightParen, LeftBrace, RightBrace, RecOpen, RecClose, Field, RecordUpdate, JsonRead, JsonWrite, TextScalars, TextWords, Histogram, FileRead, CsvTyped, Comma, Semicolon, Colon, DoubleColon, Pipe, Compose, Choice, Lambda, SeqOpen, SeqClose, SeqLength, SeqConcat, Sum, Filter, Map,
     Assign, Arrow, Plus, Minus, Star, Slash, Percent,
     Equal, NotEqual, Less, Greater, LessEqual, GreaterEqual, Eof,
 }
@@ -122,25 +122,47 @@ pub fn lex(source: &str) -> Result<Vec<Token>, Diagnostic> {
                 "if"=>TokenKind::If,"else"=>TokenKind::Else,"while"=>TokenKind::While,
                 "use"=>TokenKind::Use,"import"=>TokenKind::Import,"export"=>TokenKind::Export,"as"=>TokenKind::As,
                 "true"=>TokenKind::True,"false"=>TokenKind::False,"and"=>TokenKind::And,
-                "or"=>TokenKind::Or,"not"=>TokenKind::Not,
+                "or"=>TokenKind::Or,"not"=>TokenKind::Not,"lambda"=>TokenKind::Lambda,"forall"=>TokenKind::Forall,
+                "json_in"=>TokenKind::JsonRead,"json_out"=>TokenKind::JsonWrite,
+                "file_read"=>TokenKind::FileRead,"csv_typed"=>TokenKind::CsvTyped,
+                "text_scalars"=>TokenKind::TextScalars,"text_words"=>TokenKind::TextWords,
+                "text_hist"=>TokenKind::Histogram,
                 _=>TokenKind::Identifier(word)
             };
             result.push(Token{kind,span});continue;
         }
         let core = match c {
             'ƒ'=>Some(TokenKind::Fn),'≔'=>Some(TokenKind::Let),'↩'=>Some(TokenKind::Return),
+            '⊢'=>Some(TokenKind::If),'⊣'=>Some(TokenKind::Else),'⟳'=>Some(TokenKind::While),'⇒'=>Some(TokenKind::Then),
             '→'=>Some(TokenKind::Arrow),'←'=>Some(TokenKind::Assign),
             '⊤'=>Some(TokenKind::True),'⊥'=>Some(TokenKind::False),
             '∧'=>Some(TokenKind::And),'∨'=>Some(TokenKind::Or),'¬'=>Some(TokenKind::Not),
             '≡'=>Some(TokenKind::Equal),'≠'=>Some(TokenKind::NotEqual),
             '≤'=>Some(TokenKind::LessEqual),'≥'=>Some(TokenKind::GreaterEqual),
-            '∷'=>Some(TokenKind::DoubleColon),
+            '∷'=>Some(TokenKind::DoubleColon),'▷'=>Some(TokenKind::Pipe),'∘'=>Some(TokenKind::Compose),'◇'=>Some(TokenKind::Choice),
+            '⟦'=>Some(TokenKind::SeqOpen),'⟧'=>Some(TokenKind::SeqClose),
+            '⦃'=>Some(TokenKind::RecOpen),'⦄'=>Some(TokenKind::RecClose),'·'=>Some(TokenKind::Field),'⊞'=>Some(TokenKind::RecordUpdate),
+            '⤓'=>Some(TokenKind::JsonRead),'⤒'=>Some(TokenKind::JsonWrite),
+            '⫶'=>Some(TokenKind::TextScalars),'⟟'=>Some(TokenKind::TextWords),'⧉'=>Some(TokenKind::Histogram),
+            '⧄'=>Some(TokenKind::FileRead),'⧇'=>Some(TokenKind::CsvTyped),
+            '⌗'=>Some(TokenKind::SeqLength),'⧺'=>Some(TokenKind::SeqConcat),
+            '∑'=>Some(TokenKind::Sum),'⌕'=>Some(TokenKind::Filter),'⇢'=>Some(TokenKind::Map),'λ'=>Some(TokenKind::Lambda),'∀'=>Some(TokenKind::Forall),
             _=>None,
         };
         if let Some(kind)=core { advance(&mut pos,&mut line,&mut column); result.push(Token{kind,span}); continue; }
         let pair = match (c,next) {
             ('-',Some('>'))=>Some(TokenKind::Arrow),
+            ('=',Some('>'))=>Some(TokenKind::Then),
             (':',Some(':'))=>Some(TokenKind::DoubleColon),
+            ('|',Some('>'))=>Some(TokenKind::Pipe),
+            ('<',Some('<'))=>Some(TokenKind::Compose),
+            ('<',Some('+'))=>Some(TokenKind::RecordUpdate),
+            ('[',Some('['))=>Some(TokenKind::SeqOpen),
+            (']',Some(']'))=>Some(TokenKind::SeqClose),
+            ('+',Some('+'))=>Some(TokenKind::SeqConcat),
+            ('@',Some('+'))=>Some(TokenKind::Sum),
+            ('@',Some('?'))=>Some(TokenKind::Filter),
+            ('@',Some('>'))=>Some(TokenKind::Map),
             ('=',Some('='))=>Some(TokenKind::Equal),
             ('!',Some('='))=>Some(TokenKind::NotEqual),
             ('<',Some('='))=>Some(TokenKind::LessEqual),
@@ -150,8 +172,8 @@ pub fn lex(source: &str) -> Result<Vec<Token>, Diagnostic> {
         if let Some(kind)=pair { advance(&mut pos,&mut line,&mut column); advance(&mut pos,&mut line,&mut column); result.push(Token{kind,span});continue; }
         let single = match c {
             '('=>Some(TokenKind::LeftParen),')'=>Some(TokenKind::RightParen),
-            '{'=>Some(TokenKind::LeftBrace),'}'=>Some(TokenKind::RightBrace),
-            ','=>Some(TokenKind::Comma),';'=>Some(TokenKind::Semicolon),
+            '{'=>Some(TokenKind::LeftBrace),'}'=>Some(TokenKind::RightBrace),'.'=>Some(TokenKind::Field),
+            ','=>Some(TokenKind::Comma),';'=>Some(TokenKind::Semicolon),'?'=>Some(TokenKind::Choice),'#'=>Some(TokenKind::SeqLength),
             ':'=>Some(TokenKind::Colon),'='=>Some(TokenKind::Assign),
             '+'=>Some(TokenKind::Plus),'-'=>Some(TokenKind::Minus),
             '*'=>Some(TokenKind::Star),'/'=>Some(TokenKind::Slash),
@@ -159,6 +181,7 @@ pub fn lex(source: &str) -> Result<Vec<Token>, Diagnostic> {
             _=>None,
         };
         if let Some(kind)=single { advance(&mut pos,&mut line,&mut column); result.push(Token{kind,span});continue; }
+        if c=='|' { return Err(err("Unexpected character '|'; use ▷ or |>".into(),span)); }
         if is_symbol(c) { advance(&mut pos,&mut line,&mut column); result.push(Token{kind:TokenKind::Glyph(c),span});continue; }
         return Err(err(format!("Unexpected character {c:?}"), span));
     }

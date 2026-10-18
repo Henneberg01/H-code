@@ -17,9 +17,9 @@ pub enum StmtKind {
     Use { package: String, alias: String },
     Import { source: String, alias: String },
     Export { declaration: Box<Stmt> },
-    Let { name: String, value: Expr },
+    Let { name: String, annotation: Option<String>, value: Expr },
     Assign { name: String, value: Expr },
-    Function { name: String, parameters: Vec<Parameter>, returns: Option<String>, body: Vec<Stmt> },
+    Function { name: String, type_parameters: Vec<String>, parameters: Vec<Parameter>, returns: Option<String>, body: Vec<Stmt> },
     Return(Expr),
     If { condition: Expr, then_body: Vec<Stmt>, else_body: Option<Vec<Stmt>> },
     While { condition: Expr, body: Vec<Stmt> },
@@ -44,10 +44,28 @@ pub enum ExprKind {
     Number(String),
     String(String),
     Bool(bool),
+    Sequence(Vec<Expr>),
+    // M12: record literals are real typed values, not opaque JS templates.
+    Record(Vec<(String,Expr)>),
+    Field { record: Box<Expr>, name: String },
+    RecordUpdate { record: Box<Expr>, name: String, value: Box<Expr> },
+    JsonRead { schema: String, value: Box<Expr> },
+    JsonWrite(Box<Expr>),
+    FileRead(Box<Expr>),
+    CsvTyped { schema: String, value: Box<Expr> },
+    TextScalars(Box<Expr>),
+    TextWords(Box<Expr>),
+    Histogram(Box<Expr>),
+    Index { sequence: Box<Expr>, index: Box<Expr> },
+    Length(Box<Expr>),
+    Sum(Box<Expr>),
+    Lambda { parameter: String, body: Box<Expr> },
+    Section { op: BinaryOp, right: Box<Expr> },
     Identifier(String),
     Operation { alias: Option<String>, name_or_glyph: String, is_glyph: bool },
     Unary { op: UnaryOp, operand: Box<Expr> },
     Binary { op: BinaryOp, left: Box<Expr>, right: Box<Expr> },
+    Choice { condition: Box<Expr>, when_true: Box<Expr>, when_false: Box<Expr> },
     Call { callee: Box<Expr>, arguments: Vec<Expr> },
 }
 
@@ -56,7 +74,7 @@ pub enum UnaryOp { Negate, Not }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum BinaryOp {
-    Add, Subtract, Multiply, Divide, Modulo, Equal, NotEqual,
+    Add, Subtract, Multiply, Divide, Modulo, Compose, Concat, Filter, Map, Equal, NotEqual,
     Less, Greater, LessEqual, GreaterEqual, And, Or,
 }
 
@@ -67,8 +85,9 @@ impl BinaryOp {
             Self::And => 2,
             Self::Equal | Self::NotEqual => 3,
             Self::Less | Self::Greater | Self::LessEqual | Self::GreaterEqual => 4,
-            Self::Add | Self::Subtract => 5,
+            Self::Add | Self::Subtract | Self::Concat | Self::Filter | Self::Map => 5,
             Self::Multiply | Self::Divide | Self::Modulo => 6,
+            Self::Compose => 7,
         }
     }
 }

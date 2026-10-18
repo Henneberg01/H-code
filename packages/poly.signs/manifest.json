@@ -1,0 +1,18 @@
+{
+  "format": 3,
+  "name": "poly.signs",
+  "version": "1.0.0",
+  "source": "lib.hc",
+  "operations": [
+    {
+      "name": "head", "glyph": "⥇", "typeParameters": ["T"],
+      "parameters": [{"name":"xs","type":"⟦T⟧"}],
+      "returns": "T", "effects": [], "implementation": "head"
+    },
+    {
+      "name": "repeat", "glyph": "⥈", "typeParameters": ["T"],
+      "parameters": [{"name":"xs","type":"⟦T⟧"}],
+      "returns": "⟦T⟧", "effects": [], "implementation": "repeat"
+    }
+  ]
+}

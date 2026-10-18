@@ -1,15 +1,22 @@
 // H-Code M1 reference interpreter and symbol linker. NOT a production compiler.
+import {specializeCall,checkSpecializedReturn,typeToString} from './package-v3-signatures.mjs';
+import {decodeTypedCSV} from './csv-pure.mjs';
 export const CORE_GLYPHS = Object.freeze({
   '\u0192': 'fn', '\u2254': 'let', '\u21a9': 'return', '\u2192': '->',
   '\u2190': '=', '\u22a4': 'true', '\u22a5': 'false',
   '\u2227': 'and', '\u2228': 'or', '\u00ac': 'not',
   '\u2261': '==', '\u2260': '!=', '\u2264': '<=', '\u2265': '>=',
-  '\u2237': '::'
+  '\u22a2': 'if', '\u22a3': 'else', '\u27f3': 'while', '\u21d2': '=>',
+  '\u2237': '::', '\u25b7': '|>', '\u2218': '<<', '\u25c7': '?', '\u27e6': '[[', '\u27e7': ']]',
+  '\u2983':'record-open', '\u2984':'record-close', '\u00b7':'field', '\u229e':'record-update',
+  '\u2913':'json-read', '\u2912':'json-write',
+  '\u2af6':'text-scalars', '\u27df':'text-words', '\u29c9':'histogram',
+  '\u29c4':'file-read', '\u29c7':'csv-typed', '\u2317': '#', '\u29fa': '++', '\u2211': '@+', '\u2315': '@?', '\u21e2': '@>', '\u03bb': 'lambda', '\u2200': 'forall'
 });
 export const RESERVED_USER_GLYPHS = new Set(['\u2205', '\u2200', '\u2208', ...Object.keys(CORE_GLYPHS)]);
-const RESERVED = new Set(['fn','let','return','true','false','if','else','while','and','or','not','use','as']);
-const TWO = new Set(['==','!=','<=','>=','->','::']);
-const ONE = new Set(['+','-','*','/','%','<','>','=','(',')','{','}',',',';',':']);
+const RESERVED = new Set(['fn','let','return','true','false','if','else','while','and','or','not','use','as','lambda','forall','json_in','json_out','text_scalars','text_words','text_hist','file_read','csv_typed']);
+const TWO = new Set(['==','!=','<=','>=','->','::','|>','<<','[[',']]','++','@+','@?','@>','=>','<+']);
+const ONE = new Set(['+','-','*','/','%','<','>','=','(',')','{','}',',',';',':','?','#','.']);
 const ILLEGAL = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]|\p{Default_Ignorable_Code_Point}/u;
 const SYMBOL_CHARACTER = /^\p{S}$/u;
 
@@ -77,14 +84,16 @@ export function tokenize(source) {
     }
     if(letter(c)){
       let word='';while(alnum(peek()))word+=advance();
-      emit(RESERVED.has(word)?word:'ident',word,ln,col);continue;
+      emit(word==='json_in'?'json-read':word==='json_out'?'json-write':word==='text_scalars'?'text-scalars':word==='text_words'?'text-words':word==='text_hist'?'histogram':word==='file_read'?'file-read':word==='csv_typed'?'csv-typed':(RESERVED.has(word)?word:'ident'),word,ln,col);continue;
     }
     if(Object.hasOwn(CORE_GLYPHS,c)){
       advance();const alias=CORE_GLYPHS[c];emit(alias,alias,ln,col);continue;
     }
     const two=c+(peek(1)??'');
-    if(TWO.has(two)){advance();advance();emit(two,two,ln,col);continue;}
-    if(ONE.has(c)){advance();emit(c,c,ln,col);continue;}
+    if(TWO.has(two)){advance();advance();emit(two==='<+'?'record-update':two,two,ln,col);continue;}
+    if(ONE.has(c)){advance();emit(c==='.'?'field':c,c,ln,col);continue;}
+    // Reject a split ASCII pipe instead of interpreting it as a package glyph.
+    if(c==='|')throw new HCodeError('Unexpected character "|"; use ▷ or |>',ln,col);
     if(SYMBOL_CHARACTER.test(c)){
       advance();emit('glyph',c,ln,col);continue;
     }
@@ -102,37 +111,180 @@ class Parser {
   expect(kind){const got=this.accept(kind);if(got)return got;const t=this.peek();throw new HCodeError(`Expected ${kind}; got ${t.type}`,t.line,t.column);}
   program(){const body=[];while(!this.at('eof'))body.push(this.stmt(true));return {kind:'Program',body};}
   block(){this.expect('{');const body=[];while(!this.at('}')){if(this.at('eof'))this.expect('}');body.push(this.stmt(false));}this.expect('}');return {kind:'Block',body};}
+  // M15: no separator needed at EOF, }, newline or a distinct statement keyword.
+  // An infix operator on the following line continues the existing expression.
+  statementEnd(){
+    if(this.accept(';'))return;
+    const next=this.peek(),previous=this.t[this.i-1];
+    const certain=new Set(['fn','let','return','if','while','use','import','export','else','forall']);
+    if(['}','eof'].includes(next.type)||certain.has(next.type)||
+       (previous&&next.line>previous.line))return;
+    throw new HCodeError('Expected ; or an unambiguous statement boundary',next.line,next.column);
+  }
+  // The ⇒ sign produces exactly one ordinary Block AST statement.
+  controlBody(){
+    if(this.accept('=>'))return {kind:'Block',body:[this.stmt(false)]};
+    return this.block();
+  }
+  typeName(){
+    if(this.accept('[[')){
+      const element=this.typeName();
+      this.expect(']]');
+      return '⟦'+element+'⟧';
+    }
+    if(this.at('record-open')||this.at('{')){
+      const closing=this.accept('record-open')?'record-close':(this.expect('{'),'}');
+      const fields=[],keys=new Set();
+      while(!this.at(closing)){
+        if(fields.length>=64)throw new HCodeError('Record type exceeds 64 fields',this.peek().line,this.peek().column);
+        const key=this.expect('ident');
+        if(keys.has(key.value))throw new HCodeError('Duplicate record field '+key.value,key.line,key.column);
+        keys.add(key.value);this.expect(':');
+        fields.push(key.value+':'+this.typeName());
+        if(!this.accept(','))break;
+      }
+      this.expect(closing);
+      return '⦃'+fields.join(',')+'⦄';
+    }
+    return this.expect('ident').value;
+  }
   stmt(topLevel=false){
+    if(this.accept('forall')){
+      if(!topLevel)throw new HCodeError('∀ declarations must be top-level');
+      const typeParameters=[];
+      do {
+        const t=this.expect('ident'),v=t.value;
+        if(!/^[A-Z][A-Za-z0-9_]*$/.test(v)||v.length>32||
+            ['Number','String','Bool','Unit'].includes(v)||
+            typeParameters.includes(v)||typeParameters.length>=8)
+          throw new HCodeError('Invalid or duplicate ∀ binder '+v,t.line,t.column);
+        typeParameters.push(v);
+      } while(this.accept(','));
+      if(!this.at('fn'))throw new HCodeError('∀ must bind a function');
+      const declaration=this.stmt(topLevel);
+      if(declaration.kind!=='Function')throw new HCodeError('∀ must bind a function');
+      return {...declaration,typeParameters};
+    }
     if(this.at('use')){
       const t=this.expect('use');
       if(!topLevel)throw new HCodeError('Package imports must be top-level',t.line,t.column);
       const spec=this.expect('string').value;
-      this.expect('as');const alias=this.expect('ident').value;this.expect(';');
+      this.expect('as');const alias=this.expect('ident').value;this.statementEnd();
       return {kind:'Use',spec,alias,line:t.line,column:t.column};
     }
-    if(this.accept('let')){const name=this.expect('ident').value;this.expect('=');const value=this.expr();this.expect(';');return {kind:'Let',name,value};}
-    if(this.accept('return')){const value=this.expr();this.expect(';');return {kind:'Return',value};}
+    if(this.accept('let')){
+      const name=this.expect('ident').value;
+      const annotation=this.accept(':')?this.typeName():null;
+      this.expect('=');const value=this.expr();this.statementEnd();
+      return annotation?{kind:'Let',name,annotation,value}:{kind:'Let',name,value};
+    }
+    if(this.accept('return')){const value=this.expr();this.statementEnd();return {kind:'Return',value};}
     if(this.accept('fn')){
       const name=this.expect('ident').value;this.expect('(');const params=[];
-      if(!this.at(')')){do{const p=this.expect('ident').value;let type=null;if(this.accept(':'))type=this.expect('ident').value;params.push({name:p,type});}while(this.accept(','));}
-      this.expect(')');let returnType=null;if(this.accept('->'))returnType=this.expect('ident').value;
-      return {kind:'Function',name,params,returnType,body:this.block()};
+      if(!this.at(')')){do{const p=this.expect('ident').value;let type=null;if(this.accept(':'))type=this.typeName();params.push({name:p,type});}while(this.accept(','));}
+      this.expect(')');let returnType=null;if(this.accept('->'))returnType=this.typeName();
+      let body;
+       if(this.at('{')) body=this.block();
+       else {
+         this.expect('return');
+         const value=this.expr();
+         this.statementEnd();
+         body={kind:'Block',body:[{kind:'Return',value}]};
+       }
+       return {kind:'Function',name,params,returnType,body};
     }
-    if(this.accept('if')){this.expect('(');const condition=this.expr();this.expect(')');const then=this.block();const otherwise=this.accept('else')?this.block():null;return {kind:'If',condition,then,otherwise};}
-    if(this.accept('while')){this.expect('(');const condition=this.expr();this.expect(')');return {kind:'While',condition,body:this.block()};}
+    if(this.accept('if')){this.expect('(');const condition=this.expr();this.expect(')');const then=this.controlBody();const otherwise=this.accept('else')?this.controlBody():null;return {kind:'If',condition,then,otherwise};}
+    if(this.accept('while')){this.expect('(');const condition=this.expr();this.expect(')');return {kind:'While',condition,body:this.controlBody()};}
     if(this.at('ident')&&this.peek(1).type==='='){
-      const name=this.expect('ident').value;this.expect('=');const value=this.expr();this.expect(';');return {kind:'Assign',name,value};
+      const name=this.expect('ident').value;this.expect('=');const value=this.expr();this.statementEnd();return {kind:'Assign',name,value};
     }
-    const value=this.expr();this.expect(';');return {kind:'ExpressionStatement',value};
+    const value=this.expr();this.statementEnd();return {kind:'ExpressionStatement',value};
+  }
+  pipeTarget(){
+    const token=this.peek();
+    let callee;
+    if(this.at('ident')){
+      const head=this.expect('ident');
+      if(this.accept('::')){
+        const member=this.peek();
+        if(!['ident','glyph'].includes(member.type))
+          throw new HCodeError('Expected operation name or glyph after ::',member.line,member.column);
+        this.i++;
+        callee={kind:'QualifiedOperation',alias:head.value,member:member.value,isGlyph:member.type==='glyph',line:head.line,column:head.column};
+      } else callee={kind:'Identifier',name:head.value};
+    } else if(this.at('glyph')){
+      const glyph=this.expect('glyph');
+      callee={kind:'GlyphOperation',glyph:glyph.value,line:glyph.line,column:glyph.column};
+    } else if(this.accept('(')){
+      // M14 permits a parenthesized first-class operator section as a pipeline target.
+      const sections=new Set(['*','/','%','+','<','>','<=','>=','==','!=']);
+      if(sections.has(this.peek().type)){
+        const operator=this.peek().type;
+        this.i++;
+        const right=this.expr();
+        this.expect(')');
+        return {callee:{kind:'Section',operator,right},args:[]};
+      }
+      callee=this.expr();
+      this.expect(')');
+      return {callee,args:[]};
+    } else {
+      throw new HCodeError('Pipeline target must be a callable name, package operation or parenthesized callable',token.line,token.column);
+    }
+    const args=[];
+    if(this.accept('(')){
+      if(!this.at(')')){do{args.push(this.expr());}while(this.accept(','));}
+      this.expect(')');
+    }
+    return {callee,args};
   }
   expr(min=0){
     let left;
     if(this.accept('not'))left={kind:'Unary',operator:'not',value:this.expr(8)};
     else if(this.accept('-'))left={kind:'Unary',operator:'-',value:this.expr(8)};
+    else if(this.accept('file-read'))left={kind:'FileRead',value:this.expr(8)};
+    else if(this.accept('csv-typed')){
+      const schema=this.typeName();
+      left={kind:'CsvTyped',schema,value:this.expr(8)};
+    }
+    else if(this.accept('text-scalars'))left={kind:'TextScalars',value:this.expr(8)};
+    else if(this.accept('text-words'))left={kind:'TextWords',value:this.expr(8)};
+    else if(this.accept('histogram'))left={kind:'Histogram',value:this.expr(8)};
+    else if(this.accept('#'))left={kind:'Length',value:this.expr(8)};
+    else if(this.accept('@+'))left={kind:'Sum',value:this.expr(8)};
+    else if(this.accept('lambda')){
+      const parameter=this.expect('ident').value;
+      this.expect(':');
+      const body=this.expr(0);
+      left={kind:'Lambda',parameter,body};
+    }
+    else if(this.accept('json-read')){
+      const schema=this.typeName();
+      left={kind:'JsonRead',schema,value:this.expr(8)};
+    }
+    else if(this.accept('json-write'))left={kind:'JsonWrite',value:this.expr(8)};
     else if(this.at('number'))left={kind:'Literal',value:this.expect('number').value};
     else if(this.at('string'))left={kind:'Literal',value:this.expect('string').value};
     else if(this.accept('true'))left={kind:'Literal',value:true};
     else if(this.accept('false'))left={kind:'Literal',value:false};
+    else if(this.accept('[[')){
+      const items=[];
+      if(!this.at(']]')){do{items.push(this.expr());}while(this.accept(','));}
+      this.expect(']]');left={kind:'Sequence',items};
+    }
+    else if(this.at('record-open')||this.at('{')){
+      const closing=this.accept('record-open')?'record-close':(this.expect('{'),'}');
+      const fields=[],keys=new Set();
+      while(!this.at(closing)){
+        if(fields.length>=64)throw new HCodeError('Record exceeds 64 fields',this.peek().line,this.peek().column);
+        const key=this.expect('ident');
+        if(keys.has(key.value))throw new HCodeError('Duplicate record field '+key.value,key.line,key.column);
+        keys.add(key.value);this.expect(':');
+        fields.push({name:key.value,value:this.expr()});
+        if(!this.accept(','))break;
+      }
+      this.expect(closing);left={kind:'Record',fields};
+    }
     else if(this.at('ident')){
       const t=this.expect('ident');
       if(this.accept('::')){
@@ -143,16 +295,57 @@ class Parser {
       } else left={kind:'Identifier',name:t.value};
     }
     else if(this.at('glyph')){const t=this.expect('glyph');left={kind:'GlyphOperation',glyph:t.value,line:t.line,column:t.column};}
-    else if(this.accept('(')){left=this.expr();this.expect(')');}
+    else if(this.accept('(')){
+      const sections=new Set(['*','/','%','+','<','>','<=','>=','==','!=']);
+      if(sections.has(this.peek().type)){
+        const operator=this.peek().type;
+        this.i++;
+        const right=this.expr();
+        this.expect(')');
+        left={kind:'Section',operator,right};
+      } else {left=this.expr();this.expect(')');}
+    }
     else {const t=this.peek();throw new HCodeError(`Expected expression, got ${t.type}`,t.line,t.column);}
     while(true){
+      if(this.at('field')&&9>=min){
+        this.expect('field');
+        const t=this.expect('ident');
+        left={kind:'Field',record:left,name:t.value};continue;
+      }
+      if(this.at('[[')&&9>=min){
+        this.expect('[[');const index=this.expr();this.expect(']]');
+        left={kind:'Index',sequence:left,index};continue;
+      }
       if(this.at('(')&&9>=min){
         this.expect('(');const args=[];
         if(!this.at(')')){do{args.push(this.expr());}while(this.accept(','));}
         this.expect(')');left={kind:'Call',callee:left,args};continue;
       }
+      if(this.at('|>')&&min===0){
+        this.expect('|>');
+        const {callee,args}=this.pipeTarget();
+        left={kind:'Call',callee,args:[left,...args]};
+        const t=this.peek();
+        if(['or','and','==','!=','<','>','<=','>=','+','-','*','/','%'].includes(t.type))
+          throw new HCodeError('Parenthesize pipeline before another operator',t.line,t.column);
+        continue;
+      }
+      if(this.at('record-update')&&min===0){
+        this.expect('record-update');
+        const key=this.expect('ident').value;
+        this.expect(':');const value=this.expr(0);
+        left={kind:'RecordUpdate',record:left,name:key,value};continue;
+      }
+      if(this.at('?')&&min===0){
+        this.expect('?');
+        const whenTrue=this.expr();
+        this.expect(':');
+        const whenFalse=this.expr();
+        left={kind:'Choice',condition:left,whenTrue,whenFalse};
+        continue;
+      }
       const op=this.peek().type;
-      const power={or:1,and:2,'==':3,'!=':3,'<':4,'>':4,'<=':4,'>=':4,'+':5,'-':5,'*':6,'/':6,'%':6}[op];
+      const power={or:1,and:2,'==':3,'!=':3,'<':4,'>':4,'<=':4,'>=':4,'+':5,'-':5,'*':6,'/':6,'%':6,'<<':7,'++':5,'@?':5,'@>':5}[op];
       if(power===undefined||power<min)break;
       this.i++;const right=this.expr(power+1);left={kind:'Binary',operator:op,left,right};
     }
@@ -200,13 +393,40 @@ export function linkProgram(ast, registry=new Map()) {
     if(n.kind==='Literal')return typeof n.value==='number'?'Number':typeof n.value==='string'?'String':'Bool';
     if(n.kind==='Unary' && n.operator==='-' && literalType(n.value)==='Number')return 'Number';
     if(n.kind==='OperationRef')return null;
-    if(n.kind==='Call'&&n.callee.kind==='OperationRef')return byID.get(n.callee.id)?.returns??null;
+    if(n.kind==='Record'){
+      const fields=n.fields.map(f=>[f.name,literalType(f.value)]);
+      if(fields.some(([,ty])=>ty===null))return null;
+      fields.sort((a,b)=>a[0].localeCompare(b[0],'en'));
+      return '⦃'+fields.map(([k,ty])=>k+':'+ty).join(',')+'⦄';
+    }
+    if(n.kind==='Sequence'){
+      if(!n.items.length)return null; // empty sequence type is inferred from the call
+      const types=n.items.map(literalType);
+      if(types.some(x=>x===null))return null;
+      if(new Set(types).size!==1)throw new HCodeError('Sequence elements must have matching types');
+      return '⟦'+types[0]+'⟧';
+    }
+    if(n.kind==='Call'&&n.callee.kind==='OperationRef'){
+      const op=byID.get(n.callee.id);
+      return op?.typeParameters?.length?null:(op?.returns??null);
+    }
     return null;
   };
   function expression(node){
     if(node.kind==='GlyphOperation'||node.kind==='QualifiedOperation')return resolveRef(node);
     if(node.kind==='Unary')return {...node,value:expression(node.value)};
+    if(node.kind==='Sequence')return {...node,items:node.items.map(expression)};
+    if(node.kind==='Record')return {...node,fields:node.fields.map(f=>({name:f.name,value:expression(f.value)}))};
+    if(node.kind==='Field')return {...node,record:expression(node.record)};
+    if(node.kind==='JsonRead'||node.kind==='JsonWrite'||node.kind==='TextScalars'||node.kind==='TextWords'||node.kind==='Histogram'||node.kind==='FileRead'||node.kind==='CsvTyped')return {...node,value:expression(node.value)};
+    if(node.kind==='RecordUpdate')return {...node,record:expression(node.record),value:expression(node.value)};
+    if(node.kind==='Index')return {...node,sequence:expression(node.sequence),index:expression(node.index)};
+    if(node.kind==='Length')return {...node,value:expression(node.value)};
+    if(node.kind==='Sum')return {...node,value:expression(node.value)};
+    if(node.kind==='Lambda')return {...node,body:expression(node.body)};
+    if(node.kind==='Section')return {...node,right:expression(node.right)};
     if(node.kind==='Binary')return {...node,left:expression(node.left),right:expression(node.right)};
+    if(node.kind==='Choice')return {...node,condition:expression(node.condition),whenTrue:expression(node.whenTrue),whenFalse:expression(node.whenFalse)};
     if(node.kind==='Call'){
       const callee=expression(node.callee),args=node.args.map(expression);
       if(callee.kind==='OperationRef'){
@@ -215,7 +435,7 @@ export function linkProgram(ast, registry=new Map()) {
         if(args.length!==contract.parameters.length)throw new HCodeError(`${callee.id} expects ${contract.parameters.length} argument(s), got ${args.length}`,line,column);
         for(let i=0;i<args.length;i++){
           const observed=literalType(args[i]),expected=contract.parameters[i].type;
-          if(observed&&observed!==expected)throw new HCodeError(`${callee.id} argument ${i+1} expects ${expected}, got ${observed}`,line,column);
+          if(observed&&!(contract.typeParameters?.length)&&observed!==expected)throw new HCodeError(`${callee.id} argument ${i+1} expects ${expected}, got ${observed}`,line,column);
         }
       }
       return {...node,callee,args};
@@ -236,8 +456,8 @@ export function linkProgram(ast, registry=new Map()) {
 }
 
 class Scope {
-  constructor(parent=null){this.parent=parent;this.values=new Map();}
-  define(name,value){if(this.values.has(name))throw Error(`Duplicate name ${name}`);this.values.set(name,value);}
+  constructor(parent=null){this.parent=parent;this.values=new Map();this.annotations=new Map();this.returnType=parent?.returnType??null;this.genericBindings=parent?.genericBindings??new Map();}
+  define(name,value,type=null){if(this.values.has(name))throw Error(`Duplicate name ${name}`);this.values.set(name,value);this.annotations.set(name,type);}
   find(name){if(this.values.has(name))return this;if(this.parent)return this.parent.find(name);throw Error(`Unknown name ${name}`);}
   get(name){return this.find(name).values.get(name);}
   assign(name,value){this.find(name).values.set(name,value);}
@@ -245,16 +465,339 @@ class Scope {
 class ReturnSignal{constructor(value){this.value=value;}}
 const runtimeType=value=>value===null?'Unit':typeof value==='number'?'Number':typeof value==='string'?'String':typeof value==='boolean'?'Bool':'unsupported';
 
-export function evaluate(ast,{stdout=()=>{},maxSteps=200000,registry=new Map()}={}){
-  const root=new Scope(),operations=new Map(),loadedLibraries=new Set();let steps=0;
+export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=16384,registry=new Map(),readFile=null}={}){
+  const root=new Scope(),operations=new Map(),operationSpecs=new Map(),loadedLibraries=new Set();let steps=0;
   const step=()=>{if(++steps>maxSteps)throw Error('Execution step limit exceeded');};
   root.define('print',(...args)=>{stdout(args.map(x=>x===null?'none':String(x)).join(' '));return null;});
   const truth=v=>{if(typeof v!=='boolean')throw Error('Condition must be Boolean');return v;};
-  function expr(node,scope){
+  // The parser emits ⦃name:Type,...⦄. Split top-level commas without
+  // losing recursively nested sequence/record types.
+  const recordAnnotationFields=type=>{
+    if(!(type.startsWith('⦃')&&type.endsWith('⦄')))throw Error('Invalid record type');
+    const body=type.slice(1,-1),parts=[];
+    let open=[],begin=0;
+    for(const [i,c] of [...body].entries()){
+      if(c==='⦃'||c==='⟦')open.push(c);
+      else if(c==='⦄'||c==='⟧'){
+        if(open.pop()!==(c==='⦄'?'⦃':'⟦'))throw Error('Invalid nested record annotation');
+      } else if(c===','&&!open.length){
+        parts.push(body.slice(begin,i));begin=i+1;
+      }
+    }
+    if(open.length)throw Error('Unclosed record annotation');
+    if(body)parts.push(body.slice(begin));
+    if(parts.length>64)throw Error('Record field limit exceeded');
+    const seen=new Set();
+    return parts.map(part=>{
+      const index=part.indexOf(':');
+      if(index<=0)throw Error('Invalid record annotation');
+      const key=part.slice(0,index),value=part.slice(index+1);
+      if(!/^[A-Za-z_][A-Za-z0-9_]*$/.test(key)||seen.has(key)||!value)throw Error('Invalid or duplicate record field');
+      seen.add(key);return [key,value];
+    });
+  };
+  const requireType=(value,type,context='annotation')=>{
+    if(!type)return;
+    if(type.startsWith('⟦')&&type.endsWith('⟧')){
+      if(!Array.isArray(value))throw Error(context==='return'?'return expects '+type+', got '+runtimeType(value):'Annotated type mismatch: expected '+type);
+      if(value.length>maxSequenceItems)throw Error('Sequence allocation limit exceeded');
+      for(const element of value)requireType(element,type.slice(1,-1),context);
+      return;
+    }
+    if(type.startsWith('⦃')&&type.endsWith('⦄')){
+      const fields=recordAnnotationFields(type);
+      const valid=value!==null&&typeof value==='object'&&!Array.isArray(value)&&Object.getPrototypeOf(value)===null;
+      if(!valid||Object.keys(value).length!==fields.length||fields.some(([key])=>!Object.hasOwn(value,key)))
+        throw Error(context==='return'?'return expects '+type+', got record mismatch':'Annotated type mismatch: expected '+type);
+      for(const [key,fieldType] of fields)requireType(value[key],fieldType,context);
+      return;
+    }
+    const actual=value===null?'Unit':typeof value==='number'?'Number':typeof value==='string'?'String':typeof value==='boolean'?'Bool':'Unknown';
+    if(actual!==type||(type==='Number'&&!Number.isFinite(value)))throw Error(context==='return'?'return expects '+type+', got '+actual:'Annotated type mismatch: expected '+type+', got '+actual);
+  };
+  const unifySequenceTypes=(left,right)=>{
+    if(left==='?')return right;
+    if(right==='?')return left;
+    if(left.startsWith('Sequence<') && right.startsWith('Sequence<')){
+      return 'Sequence<'+unifySequenceTypes(left.slice(9,-1),right.slice(9,-1))+'>';
+    }
+    if(left!==right)throw Error('Sequence elements must have matching types');
+    return left;
+  };
+  const seqElementType=v=>{
+    if(v!==null&&typeof v==='object'&&!Array.isArray(v)&&Object.getPrototypeOf(v)===null){
+      const keys=Object.keys(v).sort();
+      return 'Record<'+keys.map(key=>key+':'+seqElementType(v[key])).join(',')+'>';
+    }
+    if(Array.isArray(v)){
+      let element='?';
+      for(const item of v)element=unifySequenceTypes(element,seqElementType(item));
+      return 'Sequence<'+element+'>';
+    }
+    return typeof v;
+  };
+  const validateSequence=v=>{
+    if(!Array.isArray(v))throw Error('Expected sequence');
+    if(v.length>maxSequenceItems)throw Error('Sequence allocation limit exceeded');
+    let element='?';
+    for(const item of v)element=unifySequenceTypes(element,seqElementType(item));
+    return v;
+  };
+  const JSON_MAX_BYTES=1048576,JSON_MAX_DEPTH=32;
+  const jsonBytes=s=>new TextEncoder().encode(s).length;
+  const verifyJsonSchema=(annotation,depth=0)=>{
+    if(depth>JSON_MAX_DEPTH)throw Error('JSON schema nesting depth exceeded');
+    if(['Number','String','Bool'].includes(annotation))return;
+    if(annotation.startsWith('⟦')&&annotation.endsWith('⟧'))
+      return verifyJsonSchema(annotation.slice(1,-1),depth+1);
+    if(annotation.startsWith('⦃')&&annotation.endsWith('⦄')){
+      for(const [,ty] of recordAnnotationFields(annotation))verifyJsonSchema(ty,depth+1);
+      return;
+    }
+    throw Error('⤓ schema must be a concrete JSON-compatible type');
+  };
+  const jsonReadCheck=(value,schema,depth=0)=>{
+    step();if(depth>JSON_MAX_DEPTH)throw Error('JSON nesting depth exceeded');
+    if(schema==='Number'){if(typeof value!=='number'||!Number.isFinite(value))throw Error('JSON Number type mismatch');return value;}
+    if(schema==='String'){if(typeof value!=='string')throw Error('JSON String type mismatch');return value;}
+    if(schema==='Bool'){if(typeof value!=='boolean')throw Error('JSON Bool type mismatch');return value;}
+    if(schema.startsWith('⟦')&&schema.endsWith('⟧')){
+      if(!Array.isArray(value))throw Error('JSON Sequence type mismatch');
+      if(value.length>maxSequenceItems)throw Error('JSON Sequence length exceeded');
+      return Object.freeze(value.map(item=>jsonReadCheck(item,schema.slice(1,-1),depth+1)));
+    }
+    if(schema.startsWith('⦃')&&schema.endsWith('⦄')){
+      if(value===null||typeof value!=='object'||Array.isArray(value))throw Error('JSON Record type mismatch');
+      const proto=Object.getPrototypeOf(value);
+      if(proto!==null&&proto!==Object.prototype)throw Error('JSON Record prototype mismatch');
+      const fields=recordAnnotationFields(schema).sort((a,b)=>a[0].localeCompare(b[0],'en'));
+      if(Object.keys(value).length!==fields.length)throw Error('JSON Record shape mismatch');
+      const out=Object.create(null);
+      for(const [key,type] of fields){
+        if(!Object.hasOwn(value,key))throw Error('JSON Record missing field '+key);
+        out[key]=jsonReadCheck(value[key],type,depth+1);
+      }
+      return Object.freeze(out);
+    }
+    throw Error('Invalid internal JSON schema');
+  };
+  const jsonWriteCheck=(value,depth=0)=>{
+    step();if(depth>JSON_MAX_DEPTH)throw Error('JSON nesting depth exceeded');
+    if(typeof value==='string'||typeof value==='boolean')return value;
+    if(typeof value==='number'&&Number.isFinite(value))return value;
+    if(Array.isArray(value)){
+      if(value.length>maxSequenceItems)throw Error('JSON Sequence length exceeded');
+      validateSequence(value);
+      return Object.freeze(value.map(item=>jsonWriteCheck(item,depth+1)));
+    }
+    if(value!==null&&typeof value==='object'&&Object.getPrototypeOf(value)===null){
+      const keys=Object.keys(value).sort();
+      if(keys.length>64)throw Error('JSON Record field limit exceeded');
+      const out=Object.create(null);
+      for(const key of keys)out[key]=jsonWriteCheck(value[key],depth+1);
+      return Object.freeze(out);
+    }
+    throw Error('⤒ requires typed JSON-compatible data');
+  };
+  // H-Code's Unicode operations are reusable typed data primitives,
+  // not per-benchmark output templates. Scalar ordering is codepoint order
+  // (not locale-dependent); tokenization is explicit NFC+lowercase+Unicode.
+  const TEXT_MAX_BYTES=1048576;
+  const textCheck=value=>{
+    step();
+    if(typeof value!=='string')throw Error('Unicode text operation requires String');
+    let n=0;
+    for(const ch of value){
+      if((++n & 255)===0)step();
+      const cp=ch.codePointAt(0);
+      if(cp>=0xD800&&cp<=0xDFFF)throw Error('Unpaired UTF-16 surrogate');
+    }
+    if(jsonBytes(value)>TEXT_MAX_BYTES)throw Error('Unicode text exceeds 1 MiB UTF-8');
+    return value;
+  };
+  const unicodeCompare=(a,b)=>{
+    const x=[...a],y=[...b];
+    for(let i=0;i<Math.min(x.length,y.length);i++){
+      const diff=x[i].codePointAt(0)-y[i].codePointAt(0);
+      if(diff)return diff;
+    }
+    return x.length-y.length;
+  };
+  const textScalars=value=>{
+    const out=[];
+    for(const ch of textCheck(value)){
+      step();out.push(ch);
+      if(out.length>maxSequenceItems)throw Error('Sequence allocation limit exceeded');
+    }
+    return validateSequence(out);
+  };
+  const textWords=value=>{
+    const text=textCheck(value).normalize('NFC').toLowerCase().normalize('NFC');
+    if(jsonBytes(text)>TEXT_MAX_BYTES)throw Error('Normalized text exceeds 1 MiB UTF-8');
+    const out=[];
+    for(const match of text.matchAll(/[\p{L}\p{N}][\p{L}\p{M}\p{N}\p{Pc}]*/gu)){
+      step();out.push(match[0]);
+      if(out.length>maxSequenceItems)throw Error('Sequence allocation limit exceeded');
+    }
+    return validateSequence(out);
+  };
+  const histogram=input=>{
+    const xs=validateSequence(input),counts=new Map();
+    let kind=null,bytes=0;
+    for(const value of xs){
+      step();
+      const actual=typeof value;
+      if(actual!=='string'&&actual!=='number'&&actual!=='boolean')
+        throw Error('⧉ requires String, Number, or Bool values');
+      if(kind!==null&&actual!==kind)throw Error('⧉ requires homogeneous sequence');
+      kind=actual;
+      if(actual==='number'&&!Number.isFinite(value))throw Error('⧉ requires finite Number keys');
+      if(actual==='string'){
+        textCheck(value);
+        bytes+=jsonBytes(value);
+        if(bytes>TEXT_MAX_BYTES)throw Error('Histogram text exceeds 1 MiB UTF-8');
+      }
+      const key=value===0?0:value;
+      counts.set(key,(counts.get(key)||0)+1);
+    }
+    const comparator=kind==='string'?
+      (a,b)=>unicodeCompare(a[0],b[0]):(a,b)=>a[0]<b[0]?-1:a[0]>b[0]?1:0;
+    const result=[...counts.entries()].sort(comparator).map(([value,count])=>{
+      step();const row=Object.create(null);row.count=count;row.value=value;
+      return Object.freeze(row);
+    });
+    return validateSequence(result);
+  };
+  function expr(node,scope,expectedType=null,deferredEmpty=false){
     step();
     switch(node.kind){
+      case 'FileRead':{
+        const path=expr(node.value,scope);
+        if(typeof path!=='string')throw Error('⧄ requires String file name');
+        if(typeof readFile!=='function')throw Error('H-Code file-read capability denied');
+        const data=readFile(path);
+        if(typeof data!=='string')throw Error('Host file-read must return UTF-8 String');
+        return data;
+      }
+      case 'CsvTyped':{
+        if(!node.schema.startsWith('⦃')||!node.schema.endsWith('⦄'))
+          throw Error('⧇ requires typed record schema');
+        const schema=recordAnnotationFields(node.schema);
+        return decodeTypedCSV(expr(node.value,scope),schema);
+      }
+      case 'TextScalars':return textScalars(expr(node.value,scope));
+      case 'TextWords':return textWords(expr(node.value,scope));
+      case 'Histogram':return histogram(expr(node.value,scope));
+      case 'JsonRead':{
+        verifyJsonSchema(node.schema);
+        const text=expr(node.value,scope);
+        if(typeof text!=='string')throw Error('⤓ expects JSON String');
+        if(jsonBytes(text)>JSON_MAX_BYTES)throw Error('JSON input size exceeded');
+        let value;try{value=JSON.parse(text);}catch{throw Error('Invalid JSON text');}
+        return jsonReadCheck(value,node.schema);
+      }
+      case 'JsonWrite':{
+        const value=jsonWriteCheck(expr(node.value,scope));
+        const text=JSON.stringify(value);
+        if(jsonBytes(text)>JSON_MAX_BYTES)throw Error('JSON output size exceeded');
+        return text;
+      }
       case 'Literal':return node.value;
+      case 'Record':{
+        if(node.fields.length>64)throw Error('Record field limit exceeded');
+        const value=Object.create(null);
+        for(const field of node.fields){
+          step();
+          if(Object.hasOwn(value,field.name))throw Error('Duplicate record field '+field.name);
+          value[field.name]=expr(field.value,scope);
+        }
+        return Object.freeze(value);
+      }
+      case 'RecordUpdate':{
+        const original=expr(node.record,scope);
+        if(original===null||typeof original!=='object'||Array.isArray(original)||
+           Object.getPrototypeOf(original)!==null||!Object.hasOwn(original,node.name))
+          throw Error('Unknown record field '+node.name);
+        const updated=expr(node.value,scope);
+        if(seqElementType(original[node.name])!==seqElementType(updated))
+          throw Error('Record update field type mismatch');
+        const copy=Object.assign(Object.create(null),original);
+        copy[node.name]=updated;
+        return Object.freeze(copy);
+      }
+      case 'Field':{
+        const value=expr(node.record,scope);
+        if(value===null||typeof value!=='object'||Array.isArray(value)||Object.getPrototypeOf(value)!==null||
+            !Object.hasOwn(value,node.name))throw Error('Unknown record field '+node.name);
+        return value[node.name];
+      }
+      case 'Sequence':{
+        const typed=typeof expectedType==='string' && expectedType.startsWith('⟦') && expectedType.endsWith('⟧');
+        if(node.items.length===0){
+          if(!typed && !deferredEmpty)throw Error('Cannot infer empty sequence type; add a type annotation');
+          return validateSequence([]);
+        }
+        const inner=typed?expectedType.slice(1,-1):null;
+        const values=validateSequence(node.items.map(x=>expr(x,scope,inner,true)));
+        if(!typed&&!deferredEmpty&&seqElementType(values).includes('?')){
+          throw Error('Cannot infer empty sequence type; add a type annotation');
+        }
+        return values;
+      }
+      case 'Index':{
+        const seq=validateSequence(expr(node.sequence,scope)),i=expr(node.index,scope);
+        if(typeof i!=='number'||!Number.isInteger(i)||i<0||i>=seq.length)throw Error('Sequence index out of bounds or not an integer');
+        return seq[i];
+      }
+      case 'Length':return validateSequence(expr(node.value,scope)).length;
+      case 'Sum':{
+        const xs=validateSequence(expr(node.value,scope,'⟦Number⟧'));
+        let total=0;
+        for(const v of xs){
+          step();
+          if(typeof v!=='number')throw Error('∑ requires a numeric sequence');
+          total+=v;
+        }
+        return total;
+      }
       case 'Identifier':return scope.get(node.name);
+      case 'Section':{
+        const captured=expr(node.right,scope);
+        const op=node.operator;
+        if(['+','*','/','%','<','>','<=','>='].includes(op)){
+          if(op==='+' && typeof captured!=='number' && typeof captured!=='string')throw Error('Operator section + expects Number or String');
+          if(op!=='+' && typeof captured!=='number')throw Error('Operator section expects Numbers');
+        }
+        return (...args)=>{
+          step();
+          if(args.length!==1)throw Error('Operator section expects exactly one argument');
+          const left=args[0];
+          if(op==='==')return typeof left===typeof captured&&left===captured;
+          if(op==='!=')return !(typeof left===typeof captured&&left===captured);
+          if(op==='+' && typeof left==='string' && typeof captured==='string')return left+captured;
+          if(typeof left!=='number'||typeof captured!=='number')throw Error('Operator section expects Numbers');
+          if((op==='/'||op==='%')&&captured===0)throw Error('Division by zero');
+          switch(op){
+            case '+':return left+captured;
+            case '*':return left*captured;
+            case '/':return left/captured;
+            case '%':return left%captured;
+            case '<':return left<captured;
+            case '>':return left>captured;
+            case '<=':return left<=captured;
+            case '>=':return left>=captured;
+            default:throw Error('Unknown operator section');
+          }
+        };
+      }
+      case 'Lambda':
+        return (...args)=>{
+          step();
+          if(args.length!==1)throw Error('λ expects exactly one argument');
+          const closureScope=new Scope(scope);
+          closureScope.define(node.parameter,args[0]);
+          return expr(node.body,closureScope);
+        };
       case 'OperationRef':{
         const fn=operations.get(node.id);
         if(!fn)throw Error(`Unlinked operation ${node.id}`);
@@ -265,8 +808,40 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,registry=new Map()}=
         if(node.operator==='not')return !truth(v);
         if(typeof v!=='number')throw Error('Unary minus expects Number');return -v;
       }
+      case 'Choice':{
+        const test=truth(expr(node.condition,scope));
+        return test?expr(node.whenTrue,scope):expr(node.whenFalse,scope);
+      }
       case 'Binary':{
-        const a=expr(node.left,scope),op=node.operator;
+        const op=node.operator;
+        const a=expr(node.left,scope,null,op==='@?'||op==='@>');
+        if(op==='@?'||op==='@>'){
+          const source=validateSequence(a);
+          const fn=expr(node.right,scope);
+          if(typeof fn!=='function')throw Error(op==='@?'?'⌕ requires a unary predicate':'⇢ requires a unary transform');
+          const out=[];
+          for(const item of source){
+            step();
+            const value=fn(item);
+            if(op==='@?'){
+              if(typeof value!=='boolean')throw Error('⌕ predicate must return Bool');
+              if(value)out.push(item);
+            }else out.push(value);
+            if(out.length>maxSequenceItems)throw Error('Sequence allocation limit exceeded');
+          }
+          return validateSequence(out);
+        }
+        if(op==='++'){
+          const b=expr(node.right,scope);
+          const x=validateSequence(a),y=validateSequence(b);
+          if(x.length+y.length>maxSequenceItems)throw Error('Sequence allocation limit exceeded');
+          return validateSequence([...x,...y]);
+        }
+        if(op==='<<'){
+          const b=expr(node.right,scope);
+          if(typeof a!=='function'||typeof b!=='function')throw Error('Composition expects unary functions');
+          return x=>{step();return a(b(x));};
+        }
         if(op==='and')return truth(a)?truth(expr(node.right,scope)):false;
         if(op==='or')return truth(a)?true:truth(expr(node.right,scope));
         const b=expr(node.right,scope);
@@ -282,26 +857,61 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,registry=new Map()}=
       }
       case 'Call':{
         const fun=expr(node.callee,scope);if(typeof fun!=='function')throw Error('Value is not callable');
-        const args=node.args.map(arg=>expr(arg,scope));return fun(...args);
+        const signature=node.callee.kind==='OperationRef'?operationSpecs.get(node.callee.id):null;
+        const args=node.args.map((arg,i)=>expr(arg,scope,signature?.parameters[i]?.type??null));
+        return fun(...args);
       }
       default:throw Error(`Unsupported AST expression ${node.kind}`);
     }
   }
   function block(node,parent){const scope=new Scope(parent);for(const statement of node.body)stmt(statement,scope);}
+  const concretize=(type,bindings)=>{
+    if(!type)return type;
+    if(type.startsWith('⟦')&&type.endsWith('⟧'))return '⟦'+concretize(type.slice(1,-1),bindings)+'⟧';
+    if(type.startsWith('⦃')&&type.endsWith('⦄'))
+      return '⦃'+recordAnnotationFields(type).map(([k,ty])=>k+':'+concretize(ty,bindings)).join(',')+'⦄';
+    const resolved=bindings?.get(type);
+    return resolved?typeToString(resolved):type;
+  };
   function stmt(node,scope){
     step();
     switch(node.kind){
       case 'Use':break;
-      case 'Let':scope.define(node.name,expr(node.value,scope));break;
-      case 'Assign':scope.assign(node.name,expr(node.value,scope));break;
+      case 'Let':{
+        const annotation=concretize(node.annotation??null,scope.genericBindings);
+        const val=expr(node.value,scope,annotation);
+        requireType(val,annotation);
+        scope.define(node.name,val,annotation);
+        break;
+      }
+      case 'Assign':{
+        const binding=scope.find(node.name);
+        const type=binding.annotations.get(node.name);
+        const val=expr(node.value,scope,type);
+        requireType(val,type);
+        scope.assign(node.name,val);
+        break;
+      }
       case 'ExpressionStatement':expr(node.value,scope);break;
-      case 'Return':throw new ReturnSignal(expr(node.value,scope));
+      case 'Return':throw new ReturnSignal(expr(node.value,scope,scope.returnType));
       case 'Function':{
         const fn=(...args)=>{
           step();
           if(args.length!==node.params.length)throw Error(`${node.name} expects ${node.params.length} arguments`);
-          const inner=new Scope(scope);for(let j=0;j<args.length;j++)inner.define(node.params[j].name,args[j]);
-          try{for(const statement of node.body.body)stmt(statement,inner);}catch(e){if(e instanceof ReturnSignal)return e.value;throw e;}
+          // A polymorphic source function is never executed as unchecked Any.
+          // Instantiate its own declared ∀ signature with the actual inputs.
+          const polymorphic=node.typeParameters?.length>0;
+          const inferred=polymorphic?specializeCall({name:node.name,typeParameters:node.typeParameters,
+            parameters:node.params.map(p=>({name:p.name,type:p.type})),returns:node.returnType},args,maxSequenceItems):null;
+          const inner=new Scope(scope);
+          inner.genericBindings=inferred?.bindings??new Map();
+          inner.returnType=concretize(node.returnType,inner.genericBindings);
+          for(let j=0;j<args.length;j++){
+            const annotation=concretize(node.params[j].type,inner.genericBindings);
+            requireType(args[j],annotation);
+            inner.define(node.params[j].name,args[j],annotation);
+          }
+          try{for(const statement of node.body.body)stmt(statement,inner);}catch(e){if(e instanceof ReturnSignal){requireType(e.value,inner.returnType,'return');return e.value;}throw e;}
           return null;
         };
         scope.define(node.name,fn);break;
@@ -322,21 +932,39 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,registry=new Map()}=
     for(const operation of pkg.manifest.operations){
       const implementation=libraryScope.get(operation.implementation);
       const id=`${node.spec}::${operation.name}`;
+      operationSpecs.set(id,operation);
       operations.set(id,(...args)=>{
         step();
         if(args.length!==operation.parameters.length)throw Error(`${id} expects ${operation.parameters.length} argument(s)`);
+        const specialized=pkg.manifest.format===3?specializeCall(operation,args,maxSequenceItems):null;
         for(let j=0;j<args.length;j++){
           const actual=runtimeType(args[j]),expected=operation.parameters[j].type;
-          if(actual!==expected)throw Error(`${id}: argument ${j+1} (${operation.parameters[j].name}) expects ${expected}, got ${actual}`);
+          if(pkg.manifest.format===3){
+            // Arguments were freshly specialized against ∀T above.
+          }else if(pkg.manifest.format===2){
+            try{requireType(args[j],expected);}
+            catch(e){throw Error(`${id}: argument ${j+1} (${operation.parameters[j].name}) expects ${expected}: ${e.message}`);}
+          }else if(actual!==expected)throw Error(`${id}: argument ${j+1} (${operation.parameters[j].name}) expects ${expected}, got ${actual}`);
         }
         const result=implementation(...args);
         const actual=runtimeType(result);
-        if(actual!==operation.returns)throw Error(`${id}: return expects ${operation.returns}, got ${actual}`);
+        if(pkg.manifest.format===3){
+          checkSpecializedReturn(result,specialized,maxSequenceItems);
+        }else if(pkg.manifest.format===2){
+          try{requireType(result,operation.returns,'return');}
+          catch(e){throw Error(`${id}: return expects ${operation.returns}: ${e.message}`);}
+        }else if(actual!==operation.returns)throw Error(`${id}: return expects ${operation.returns}, got ${actual}`);
         return result;
       });
     }
   }
-  for(const statement of ast.body)stmt(statement,root);
+  for(const statement of ast.body){
+    // The application runtime must not bypass source verification by defining
+    // universal functions outside an SHA-locked pure package.
+    if(statement.kind==='Function'&&statement.typeParameters?.length)
+      throw Error('∀ declarations require a verified pure package source');
+    stmt(statement,root);
+  }
   return {steps};
 }
 export function execute(source,options={}){

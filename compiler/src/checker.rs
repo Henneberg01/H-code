@@ -8,15 +8,56 @@ use crate::{Diagnostic,ast::{Program,Stmt,StmtKind,Expr,ExprKind,UnaryOp,BinaryO
 pub enum Type {
     Number, String, Bool, Unit,
     Function(Vec<Type>,Box<Type>),
+    Sequence(Box<Type>),
+    Record(Vec<(String,Type)>), // Sorted exact structural fields, no dynamic property lookup
+    Generic(String), // Rigid ∀ binder, not a mutable inference variable
     Variable(u32),
     BuiltinPrint,
 }
 impl Type {
-    pub(crate) fn from_name(name:&str,span:Span)->Result<Type,Diagnostic>{
+    pub(crate) fn from_bound_name(name:&str,bound:&[String],span:Span)->Result<Type,Diagnostic>{
+        if let Some(inner)=name.strip_prefix('⟦').and_then(|s|s.strip_suffix('⟧')){
+            return Ok(Type::Sequence(Box::new(Self::from_bound_name(inner,bound,span)?)));
+        }
+        if let Some(inner)=name.strip_prefix('⦃').and_then(|s|s.strip_suffix('⦄')){
+            // Split commas at depth zero. Records may nest inside sequences or other records.
+            let mut fields=Vec::new();
+            if !inner.is_empty(){
+                let mut pieces=Vec::new();let mut start=0usize;let mut open=Vec::new();
+                for (offset,c) in inner.char_indices(){
+                    match c {
+                        '⦃'|'⟦'=>open.push(c),
+                        '⦄'=>if open.pop()!=Some('⦃'){return Err(Diagnostic::new("TYPE","Unbalanced record annotation".into(),span));},
+                        '⟧'=>if open.pop()!=Some('⟦'){return Err(Diagnostic::new("TYPE","Unbalanced sequence annotation".into(),span));},
+                        ',' if open.is_empty()=>{pieces.push(&inner[start..offset]);start=offset+1;},
+                        _=>{}
+                    }
+                }
+                if !open.is_empty(){return Err(Diagnostic::new("TYPE","Unclosed record annotation".into(),span));}
+                pieces.push(&inner[start..]);
+                if pieces.len()>64{return Err(Diagnostic::new("TYPE","Record exceeds 64 fields".into(),span));}
+                for piece in pieces {
+                    let (key,value)=piece.split_once(':').ok_or_else(||Diagnostic::new("TYPE","Record field requires a type".into(),span))?;
+                    let first=key.as_bytes().first().copied();
+                    if !matches!(first,Some(b'a'..=b'z'|b'A'..=b'Z'|b'_')) ||
+                       !key.bytes().all(|c|c.is_ascii_alphanumeric()||c==b'_') ||
+                       fields.iter().any(|(n,_)|n==key){
+                        return Err(Diagnostic::new("TYPE",format!("Invalid or duplicate record field {key}"),span));
+                    }
+                    fields.push((key.to_string(),Self::from_bound_name(value,bound,span)?));
+                }
+                fields.sort_by(|a,b|a.0.cmp(&b.0));
+            }
+            return Ok(Type::Record(fields));
+        }
+        if bound.iter().any(|item|item==name){return Ok(Type::Generic(name.to_string()));}
         match name {
             "Number"=>Ok(Self::Number),"String"=>Ok(Self::String),"Bool"=>Ok(Self::Bool),"Unit"=>Ok(Self::Unit),
             _=>Err(Diagnostic::new("TYPE",format!("Unknown type {name}"),span))
         }
+    }
+    pub(crate) fn from_name(name:&str,span:Span)->Result<Type,Diagnostic>{
+        Self::from_bound_name(name,&[],span)
     }
 }
 
@@ -45,12 +86,29 @@ pub enum TypedExprKind {
     OperationRef { id:String },
     Unary { op:UnaryOp,operand:Box<TypedExpr> },
     Binary { op:BinaryOp,left:Box<TypedExpr>,right:Box<TypedExpr> },
+    Choice { condition:Box<TypedExpr>,when_true:Box<TypedExpr>,when_false:Box<TypedExpr> },
     Call { callee:Box<TypedExpr>,arguments:Vec<TypedExpr> },
+    Sequence(Vec<TypedExpr>),
+    Record(Vec<(String,TypedExpr)>),
+    Field { record:Box<TypedExpr>,name:String },
+    RecordUpdate { record:Box<TypedExpr>,name:String,value:Box<TypedExpr> },
+    JsonRead { schema:Type,value:Box<TypedExpr> },
+    JsonWrite { value:Box<TypedExpr>,schema:Type },
+    TextScalars(Box<TypedExpr>),
+    TextWords(Box<TypedExpr>),
+    Histogram(Box<TypedExpr>),
+    FileRead(Box<TypedExpr>),
+    CsvTyped {schema:Type,value:Box<TypedExpr>},
+    Index { sequence:Box<TypedExpr>,index:Box<TypedExpr> },
+    Length(Box<TypedExpr>),
+    Sum(Box<TypedExpr>),
+    Lambda { parameter:String, body:Box<TypedExpr> },
+    Section { op:BinaryOp, right:Box<TypedExpr> },
 }
 
 #[derive(Clone)]
 struct Binding { ty:Type,assignable:bool }
-struct ActiveFunction { expected:Type,saw_return:bool }
+struct ActiveFunction { expected:Type,saw_return:bool,generics:Vec<String> }
 
 pub fn check(program:&Program, registry:&PackageRegistry, allow_print:bool)->Result<TypedProgram,Diagnostic>{
     let mut checker=Checker{
@@ -87,12 +145,16 @@ impl Checker {
         match ty {
             Type::Variable(id)=>match self.substitutions.get(id){Some(x)=>self.resolved(x),None=>ty.clone()},
             Type::Function(params,ret)=>Type::Function(params.iter().map(|x|self.resolved(x)).collect(),Box::new(self.resolved(ret))),
+            Type::Sequence(item)=>Type::Sequence(Box::new(self.resolved(item))),
+            Type::Record(fields)=>Type::Record(fields.iter().map(|(key,ty)|(key.clone(),self.resolved(ty))).collect()),
             _=>ty.clone()
         }
     }
     fn occurs(&self,id:u32,ty:&Type)->bool {
         match self.resolved(ty){Type::Variable(n)=>id==n,
-            Type::Function(a,r)=>a.iter().any(|t|self.occurs(id,t))||self.occurs(id,&r),_=>false}
+            Type::Function(a,r)=>a.iter().any(|t|self.occurs(id,t))||self.occurs(id,&r),
+            Type::Sequence(item)=>self.occurs(id,&item),
+            Type::Record(fields)=>fields.iter().any(|(_,ty)|self.occurs(id,ty)),_=>false}
     }
     fn unify(&mut self,left:&Type,right:&Type,span:Span,reason:&str)->Result<Type,Diagnostic>{
         let a=self.resolved(left);let b=self.resolved(right);
@@ -101,6 +163,17 @@ impl Checker {
             (Type::Variable(id),other)|(other,Type::Variable(id))=>{
                 if self.occurs(*id,other){return Err(Diagnostic::new("TYPE",format!("{reason}: recursive type"),span));}
                 self.substitutions.insert(*id,other.clone()); Ok(other.clone())
+            }
+            (Type::Sequence(ea),Type::Sequence(eb))=>{
+                Ok(Type::Sequence(Box::new(self.unify(ea,eb,span,reason)?)))
+            }
+            (Type::Record(fa),Type::Record(fb)) if fa.len()==fb.len() &&
+                fa.iter().zip(fb).all(|((a,_),(b,_))|a==b)=>{
+                let mut fields=Vec::with_capacity(fa.len());
+                for ((key,left),(_,right)) in fa.iter().zip(fb){
+                    fields.push((key.clone(),self.unify(left,right,span,reason)?));
+                }
+                Ok(Type::Record(fields))
             }
             (Type::Function(pa,ra),Type::Function(pb,rb)) if pa.len()==pb.len()=>{
                 let mut params=Vec::new();
@@ -143,18 +216,37 @@ impl Checker {
         Ok(())
     }
     fn predeclare(&mut self,statements:&[Stmt])->Result<(),Diagnostic>{
-        for stmt in statements {
-            let StmtKind::Function{name,parameters,returns,..}=&stmt.kind else {continue};
+        for outer in statements {
+            // Export wraps a declaration but does not change when names enter scope.
+            // Predeclare exported functions as well, so recursion and forward calls
+            // work identically for exported and ordinary H-Code functions.
+            let stmt=match &outer.kind {
+                StmtKind::Export{declaration}=>declaration.as_ref(),
+                _=>outer
+            };
+            let StmtKind::Function{name,type_parameters,parameters,returns,..}=&stmt.kind else {continue};
+            // Quantification currently has source-verification semantics only
+            // inside locked pure packages. Public generic invocation is
+            // independently fresh-instantiated by ExprKind::Operation.
+            if !type_parameters.is_empty() && self.allow_print {
+                return Err(Diagnostic::new("TYPE","∀ declarations are only available in verified package source".into(),stmt.span));
+            }
             if self.scopes.len()==1 && self.imported.contains_key(name) {
                 return Err(Diagnostic::new("TYPE",format!("Function {name} conflicts with package alias"),stmt.span));
             }
             let mut args=Vec::new();
             for param in parameters {
                 args.push(match &param.annotation {
-                    Some(a)=>Type::from_name(a,param.span)?,None=>self.fresh()
+                    Some(a)=>Type::from_bound_name(a,type_parameters,param.span)?,
+                    None if !type_parameters.is_empty()=>return Err(Diagnostic::new("TYPE","∀ requires explicitly annotated parameters".into(),param.span)),
+                    None=>self.fresh()
                 });
             }
-            let result=match returns{Some(t)=>Type::from_name(t,stmt.span)?,None=>self.fresh()};
+            let result=match returns{
+                Some(t)=>Type::from_bound_name(t,type_parameters,stmt.span)?,
+                None if !type_parameters.is_empty()=>return Err(Diagnostic::new("TYPE","∀ requires explicit return type".into(),stmt.span)),
+                None=>self.fresh()
+            };
             self.declare(name,Type::Function(args,Box::new(result)),false,stmt.span)?;
         }
         Ok(())
@@ -167,12 +259,18 @@ impl Checker {
                 let typed=self.statement(declaration)?;
                 TypedStmtKind::Export{declaration:Box::new(typed)}
             },
-            StmtKind::Let{name,value}=>{
+            StmtKind::Let{name,annotation,value}=>{
                 if self.scopes.len()==1 && self.imported.contains_key(name) {
                     return Err(Diagnostic::new("TYPE",format!("Declaration {name} conflicts with package alias"),node.span));
                 }
                 let expr=self.expression(value)?;
-                self.declare(name,expr.ty.clone(),true,node.span)?;
+                let binding_ty=if let Some(ty)=annotation {
+                    let bound=self.active_function.as_ref().map(|f|f.generics.as_slice()).unwrap_or(&[]);
+                    let expected=Type::from_bound_name(ty,bound,node.span)?;
+                    self.unify(&expected,&expr.ty,node.span,"Declaration type mismatch")?;
+                    expected
+                } else {expr.ty.clone()};
+                self.declare(name,binding_ty,true,node.span)?;
                 TypedStmtKind::Let{name:name.clone(),value:expr}
             }
             StmtKind::Assign{name,value}=>{
@@ -182,7 +280,7 @@ impl Checker {
                 self.unify(&binding.ty,&expr.ty,node.span,"Assignment type mismatch")?;
                 TypedStmtKind::Assign{name:name.clone(),value:expr}
             }
-            StmtKind::Function{name,parameters,body,..}=>{
+            StmtKind::Function{name,type_parameters,parameters,body,..}=>{
                 let binding=self.lookup(name,node.span)?;
                 let Type::Function(params,ret)=binding.ty else {unreachable!("predeclared function")};
                 self.push();
@@ -190,7 +288,7 @@ impl Checker {
                     self.declare(&param.name,ty.clone(),true,param.span)?;
                 }
                 let previous=self.active_function.take();
-                self.active_function=Some(ActiveFunction{expected:(*ret).clone(),saw_return:false});
+                self.active_function=Some(ActiveFunction{expected:(*ret).clone(),saw_return:false,generics:type_parameters.clone()});
                 let (typed_body,always_returns)=self.body(body)?;
                 let current=self.active_function.take().expect("inside function");
                 self.active_function=previous;
@@ -263,8 +361,198 @@ impl Checker {
             }
         }
     }
+    fn instantiate_type(ty:&Type,bound:&HashMap<String,Type>)->Type{
+        match ty {
+            Type::Generic(name)=>bound.get(name).cloned().unwrap_or_else(||ty.clone()),
+            Type::Sequence(inner)=>Type::Sequence(Box::new(Self::instantiate_type(inner,bound))),
+            Type::Record(fields)=>Type::Record(fields.iter().map(|(key,ty)|(key.clone(),Self::instantiate_type(ty,bound))).collect()),
+            Type::Function(args,ret)=>Type::Function(args.iter().map(|t|Self::instantiate_type(t,bound)).collect(),Box::new(Self::instantiate_type(ret,bound))),
+            _=>ty.clone()
+        }
+    }
+    // JSON is a data boundary: never erase functions, ∀T, Unit or unknown types.
+    fn valid_json_type(ty:&Type,depth:usize)->bool {
+        if depth>32 {return false;}
+        match ty {
+            Type::Number|Type::String|Type::Bool=>true,
+            Type::Sequence(value)=>Self::valid_json_type(value,depth+1),
+            Type::Record(fields)=>fields.len()<=64 &&
+                fields.iter().all(|(_,ty)|Self::valid_json_type(ty,depth+1)),
+            _=>false
+        }
+    }
     fn expression(&mut self,expr:&Expr)->Result<TypedExpr,Diagnostic>{
         let (kind,ty)=match &expr.kind {
+            ExprKind::JsonRead{schema,value}=>{
+                let resolved=Type::from_name(schema,expr.span)?;
+                if !Self::valid_json_type(&resolved,0){
+                    return Err(Diagnostic::new("TYPE","⤓ schema must be a concrete JSON-compatible type with depth <=32".into(),expr.span));
+                }
+                let input=self.expression(value)?;
+                self.unify(&Type::String,&input.ty,value.span,"⤓ expects JSON text of type String")?;
+                (TypedExprKind::JsonRead{schema:resolved.clone(),value:Box::new(input)},resolved)
+            }
+            ExprKind::JsonWrite(value)=>{
+                let checked=self.expression(value)?;
+                let resolved=self.resolved(&checked.ty);
+                if !Self::valid_json_type(&resolved,0){
+                    return Err(Diagnostic::new("TYPE","⤒ expects statically typed JSON-compatible data".into(),expr.span));
+                }
+                (TypedExprKind::JsonWrite{value:Box::new(checked),schema:resolved},Type::String)
+            }
+            ExprKind::FileRead(value)=>{
+                if !self.allow_print {
+                    return Err(Diagnostic::new("EFFECT","⧄ requires an explicitly permitted file-read capability; pure package operations cannot read files".into(),expr.span));
+                }
+                let input=self.expression(value)?;
+                self.unify(&Type::String,&input.ty,value.span,"⧄ requires String file name")?;
+                (TypedExprKind::FileRead(Box::new(input)),Type::String)
+            }
+            ExprKind::CsvTyped{schema,value}=>{
+                let ty=Type::from_name(schema,expr.span)?;
+                let Type::Record(ref fields)=ty else {
+                    return Err(Diagnostic::new("TYPE","⧇ requires an exact structural CSV record schema".into(),expr.span));
+                };
+                if fields.is_empty()||fields.len()>64||!fields.iter().all(|(_,v)|matches!(v,Type::String|Type::Number|Type::Bool)) {
+                    return Err(Diagnostic::new("TYPE","⧇ supports 1..64 String/Number/Bool record fields only".into(),expr.span));
+                }
+                let input=self.expression(value)?;
+                self.unify(&Type::String,&input.ty,value.span,"⧇ CSV input must be String")?;
+                (TypedExprKind::CsvTyped{schema:ty.clone(),value:Box::new(input)},Type::Sequence(Box::new(ty)))
+            }
+            ExprKind::TextScalars(value)|ExprKind::TextWords(value)=>{
+                let checked=self.expression(value)?;
+                self.unify(&Type::String,&checked.ty,value.span,"Unicode text operation requires String")?;
+                let typed=if matches!(&expr.kind,ExprKind::TextScalars(_)){
+                    TypedExprKind::TextScalars(Box::new(checked))
+                }else{
+                    TypedExprKind::TextWords(Box::new(checked))
+                };
+                (typed,Type::Sequence(Box::new(Type::String)))
+            }
+            ExprKind::Histogram(value)=>{
+                let checked=self.expression(value)?;
+                let element=self.fresh();
+                self.unify(&checked.ty,&Type::Sequence(Box::new(element.clone())),value.span,"⧉ requires a typed sequence")?;
+                let concrete=self.resolved(&element);
+                if !matches!(concrete,Type::String|Type::Number|Type::Bool){
+                    return Err(Diagnostic::new("TYPE",
+                        "⧉ requires a concrete Sequence<String|Number|Bool>; annotate an empty sequence".into(),expr.span));
+                }
+                let row=Type::Record(vec![
+                    ("count".into(),Type::Number),("value".into(),concrete)
+                ]);
+                (TypedExprKind::Histogram(Box::new(checked)),Type::Sequence(Box::new(row)))
+            }
+            ExprKind::Record(fields)=>{
+                let mut typed=Vec::with_capacity(fields.len());
+                let mut structure=Vec::with_capacity(fields.len());
+                for (key,value) in fields{
+                    let value=self.expression(value)?;
+                    structure.push((key.clone(),value.ty.clone()));
+                    typed.push((key.clone(),value));
+                }
+                structure.sort_by(|a,b|a.0.cmp(&b.0));
+                (TypedExprKind::Record(typed),Type::Record(structure))
+            }
+            ExprKind::Field{record,name}=>{
+                let typed=self.expression(record)?;
+                let resolved=self.resolved(&typed.ty);
+                let Type::Record(fields)=resolved else{
+                    return Err(Diagnostic::new("TYPE","Field access requires an explicitly typed record".into(),record.span));
+                };
+                let selected=fields.iter().find(|(key,_)|key==name).map(|(_,ty)|ty.clone())
+                    .ok_or_else(||Diagnostic::new("TYPE",format!("Unknown record field {name}"),expr.span))?;
+                (TypedExprKind::Field{record:Box::new(typed),name:name.clone()},selected)
+            }
+            ExprKind::RecordUpdate{record,name,value}=>{
+                let checked_record=self.expression(record)?;
+                let Type::Record(fields)=self.resolved(&checked_record.ty) else{
+                    return Err(Diagnostic::new("TYPE","⊞ requires a typed record".into(),record.span));
+                };
+                let expected=fields.iter().find(|(key,_)|key==name).map(|(_,ty)|ty.clone())
+                    .ok_or_else(||Diagnostic::new("TYPE",format!("Unknown record field {name}"),expr.span))?;
+                let checked_value=self.expression(value)?;
+                self.unify(&expected,&checked_value.ty,value.span,"Record update field type mismatch")?;
+                (TypedExprKind::RecordUpdate{record:Box::new(checked_record),name:name.clone(),
+                  value:Box::new(checked_value)},Type::Record(fields))
+            }
+            ExprKind::Sequence(items)=>{
+                let element=self.fresh();
+                let mut checked=Vec::with_capacity(items.len());
+                for item in items {
+                    let typed=self.expression(item)?;
+                    self.unify(&element,&typed.ty,item.span,"Sequence elements must have matching types")?;
+                    checked.push(typed);
+                }
+                (TypedExprKind::Sequence(checked),Type::Sequence(Box::new(element)))
+            }
+            ExprKind::Index{sequence,index}=>{
+                let seq=self.expression(sequence)?;
+                let offset=self.expression(index)?;
+                self.unify(&Type::Number,&offset.ty,index.span,"Sequence index must be Number")?;
+                if let ExprKind::Number(raw)=&index.kind {
+                    if raw.parse::<f64>().map(|n|!n.is_finite()||n.fract()!=0.0).unwrap_or(true){
+                        return Err(Diagnostic::new("TYPE","Sequence index must be an integer".into(),index.span));
+                    }
+                }
+                let elem=self.fresh();
+                self.unify(&seq.ty,&Type::Sequence(Box::new(elem.clone())),sequence.span,"Sequence index requires sequence")?;
+                (TypedExprKind::Index{sequence:Box::new(seq),index:Box::new(offset)},elem)
+            }
+            ExprKind::Sum(value)=>{
+                let seq=self.expression(value)?;
+                self.unify(&seq.ty,&Type::Sequence(Box::new(Type::Number)),value.span,"∑ requires a numeric sequence")?;
+                (TypedExprKind::Sum(Box::new(seq)),Type::Number)
+            }
+            ExprKind::Length(value)=>{
+                let seq=self.expression(value)?;
+                let elem=self.fresh();
+                self.unify(&seq.ty,&Type::Sequence(Box::new(elem)),value.span,"⌗ requires sequence")?;
+                (TypedExprKind::Length(Box::new(seq)),Type::Number)
+            }
+            ExprKind::Section{op,right}=>{
+                let arg=self.expression(right)?;
+                let (parameter,returned)=match op {
+                    BinaryOp::Add=>{
+                        // Reject concretely invalid RHS types at the site of
+                        // (+value). Delaying all checks to verify_constraints()
+                        // can otherwise mask a genuine + type error behind an
+                        // unrelated call-argument mismatch at use sites.
+                        let rhs=self.resolved(&arg.ty);
+                        if !matches!(rhs,Type::Number|Type::String|Type::Variable(_)) {
+                            return Err(Diagnostic::new("TYPE",format!("+ requires Number or String, got {rhs:?}"),right.span));
+                        }
+                        self.pending_add.push((arg.ty.clone(),expr.span));
+                        (arg.ty.clone(),arg.ty.clone())
+                    }
+                    BinaryOp::Multiply|BinaryOp::Divide|BinaryOp::Modulo=>{
+                        self.unify(&Type::Number,&arg.ty,right.span,"Operator section requires Number")?;
+                        (Type::Number,Type::Number)
+                    }
+                    BinaryOp::Less|BinaryOp::Greater|BinaryOp::LessEqual|BinaryOp::GreaterEqual=>{
+                        self.unify(&Type::Number,&arg.ty,right.span,"Operator section requires Number")?;
+                        (Type::Number,Type::Bool)
+                    }
+                    BinaryOp::Equal|BinaryOp::NotEqual=>{
+                        self.pending_equal.push((arg.ty.clone(),expr.span));
+                        (arg.ty.clone(),Type::Bool)
+                    }
+                    _=>return Err(Diagnostic::new("TYPE","Unsupported operator section".into(),expr.span))
+                };
+                let ty=Type::Function(vec![parameter],Box::new(returned));
+                (TypedExprKind::Section{op:*op,right:Box::new(arg)},ty)
+            }
+            ExprKind::Lambda{parameter,body}=>{
+                let arg=self.fresh();
+                self.push();
+                self.declare(parameter,arg.clone(),false,expr.span)?;
+                let inferred=self.expression(body);
+                self.pop();
+                let checked=inferred?;
+                let ty=Type::Function(vec![arg],Box::new(checked.ty.clone()));
+                (TypedExprKind::Lambda{parameter:parameter.clone(),body:Box::new(checked)},ty)
+            }
             ExprKind::Number(raw)=>(TypedExprKind::Number(raw.clone()),Type::Number),
             ExprKind::String(raw)=>(TypedExprKind::String(raw.clone()),Type::String),
             ExprKind::Bool(value)=>(TypedExprKind::Bool(*value),Type::Bool),
@@ -274,7 +562,15 @@ impl Checker {
             }
             ExprKind::Operation{alias,name_or_glyph,is_glyph}=>{
                 let op=self.operation(alias,name_or_glyph,*is_glyph,expr.span)?;
-                (TypedExprKind::OperationRef{id:op.id},Type::Function(op.parameters,Box::new(op.returns)))
+                // Fresh inference variables on EVERY use of a generic sign.
+                // A Number call must never constrain a later String call.
+                let mut substitutions=HashMap::new();
+                for name in &op.type_parameters {
+                    substitutions.insert(name.clone(),self.fresh());
+                }
+                let args=op.parameters.iter().map(|t|Self::instantiate_type(t,&substitutions)).collect();
+                let ret=Self::instantiate_type(&op.returns,&substitutions);
+                (TypedExprKind::OperationRef{id:op.id},Type::Function(args,Box::new(ret)))
             }
             ExprKind::Unary{op,operand}=>{
                 let inner=self.expression(operand)?;
@@ -282,9 +578,52 @@ impl Checker {
                 self.unify(&expected,&inner.ty,expr.span,"Invalid unary operand")?;
                 (TypedExprKind::Unary{op:*op,operand:Box::new(inner)},result)
             }
+            ExprKind::Choice{condition,when_true,when_false}=>{
+                let test=self.expression(condition)?;
+                self.unify(&Type::Bool,&test.ty,condition.span,"Choice condition must be Bool")?;
+                let positive=self.expression(when_true)?;
+                let negative=self.expression(when_false)?;
+                let ty=self.unify(&positive.ty,&negative.ty,expr.span,"Choice branches must have matching types")?;
+                (TypedExprKind::Choice{condition:Box::new(test),when_true:Box::new(positive),when_false:Box::new(negative)},ty)
+            }
             ExprKind::Binary{op,left,right}=>{
                 let l=self.expression(left)?;let r=self.expression(right)?;
                 let ty=match op {
+                    BinaryOp::Filter=>{
+                        let element=self.fresh();
+                        let seq=Type::Sequence(Box::new(element.clone()));
+                        self.unify(&l.ty,&seq,left.span,"⌕ requires a typed sequence")?;
+                        let callback=Type::Function(vec![element],Box::new(Type::Bool));
+                        self.unify(&r.ty,&callback,right.span,"⌕ predicate must be unary and return Bool")?;
+                        seq
+                    }
+                    BinaryOp::Map=>{
+                        let input=self.fresh();
+                        let output=self.fresh();
+                        let seq=Type::Sequence(Box::new(input.clone()));
+                        self.unify(&l.ty,&seq,left.span,"⇢ requires a typed sequence")?;
+                        let callback=Type::Function(vec![input],Box::new(output.clone()));
+                        self.unify(&r.ty,&callback,right.span,"⇢ transformer must be unary")?;
+                        Type::Sequence(Box::new(output))
+                    }
+                    BinaryOp::Concat=>{
+                        let elem=self.fresh();
+                        let list=Type::Sequence(Box::new(elem.clone()));
+                        self.unify(&l.ty,&list,left.span,"⧺ left operand must be sequence")?;
+                        self.unify(&r.ty,&list,right.span,"⧺ operands must share element type")?;
+                        Type::Sequence(Box::new(elem))
+                    }
+                    BinaryOp::Compose=>{
+                        // Composition: (B->C) and (A->B) produce (A->C).
+                        let input=self.fresh();
+                        let mid=self.fresh();
+                        let output=self.fresh();
+                        let outer=Type::Function(vec![mid.clone()],Box::new(output.clone()));
+                        let inner=Type::Function(vec![input.clone()],Box::new(mid));
+                        self.unify(&l.ty,&outer,expr.span,"Composition left operand must be unary callable")?;
+                        self.unify(&r.ty,&inner,expr.span,"Composition right operand must be unary callable")?;
+                        Type::Function(vec![input],Box::new(output))
+                    }
                     BinaryOp::Add=>{
                         let merged=self.unify(&l.ty,&r.ty,expr.span,"+ operands must have matching types")?;
                         self.pending_add.push((merged.clone(),expr.span));merged
@@ -374,8 +713,25 @@ impl Checker {
     fn finalize_expr(&self,e:&mut TypedExpr)->Result<(),Diagnostic>{
         e.ty=self.require_known(&e.ty,e.span)?;
         match &mut e.kind {
+            TypedExprKind::Sequence(items)=>{for item in items {self.finalize_expr(item)?;}},
+            TypedExprKind::Record(fields)=>{for (_,value) in fields{self.finalize_expr(value)?;}},
+            TypedExprKind::Field{record,..}=>self.finalize_expr(record)?,
+            TypedExprKind::JsonRead{value,..}|TypedExprKind::JsonWrite{value,..}=>self.finalize_expr(value)?,
+            TypedExprKind::TextScalars(value)|TypedExprKind::TextWords(value)|TypedExprKind::Histogram(value)|TypedExprKind::FileRead(value)=>self.finalize_expr(value)?,
+            TypedExprKind::CsvTyped{value,..}=>self.finalize_expr(value)?,
+            TypedExprKind::RecordUpdate{record,value,..}=>{self.finalize_expr(record)?;self.finalize_expr(value)?;},
+            TypedExprKind::Index{sequence,index}=>{self.finalize_expr(sequence)?;self.finalize_expr(index)?;},
+            TypedExprKind::Length(value)=>self.finalize_expr(value)?,
+            TypedExprKind::Sum(value)=>self.finalize_expr(value)?,
+            TypedExprKind::Lambda{body,..}=>self.finalize_expr(body)?,
+            TypedExprKind::Section{right,..}=>self.finalize_expr(right)?,
             TypedExprKind::Unary{operand,..}=>self.finalize_expr(operand)?,
             TypedExprKind::Binary{left,right,..}=>{self.finalize_expr(left)?;self.finalize_expr(right)?;},
+            TypedExprKind::Choice{condition,when_true,when_false}=>{
+                self.finalize_expr(condition)?;
+                self.finalize_expr(when_true)?;
+                self.finalize_expr(when_false)?;
+            },
             TypedExprKind::Call{callee,arguments}=>{
                 self.finalize_expr(callee)?;
                 for a in arguments{self.finalize_expr(a)?;}
@@ -386,7 +742,7 @@ impl Checker {
     }
 }
 fn contains_variable(t:&Type)->bool {
-    match t{Type::Variable(_)=>true,Type::Function(ps,r)=>ps.iter().any(contains_variable)||contains_variable(r),_=>false}
+    match t{Type::Variable(_)=>true,Type::Function(ps,r)=>ps.iter().any(contains_variable)||contains_variable(r),Type::Sequence(t)=>contains_variable(t),Type::Record(fields)=>fields.iter().any(|(_,ty)|contains_variable(ty)),_=>false}
 }
 fn statement_returns(s:&Stmt)->bool {
     match &s.kind{

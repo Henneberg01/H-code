@@ -1,0 +1,137 @@
+{
+  "version": 1,
+  "id": "HCODE-M15-M10-EIGHT-SAME-TASKS-2026-10-18-v1",
+  "originalDataset": "M10-EIGHT-2026-10-18-v1",
+  "description": "Same eight preserved M10 programs and idiomatic TypeScript source blobs; new M15 sign-first source variants only. No omissions or replaced baselines.",
+  "comparison": "Unicode code points primary; UTF-8 bytes mandatory; compiler stdout parity; no dependency/runtime claims.",
+  "pairs": [
+    {
+      "id": "typed-function",
+      "expected": "42\n",
+      "m10": {
+        "path": "compact/benchmarks/paired/typed-function.hc",
+        "blob": "33f0a9315f70b11c46dd16922c45b18d3f106ad9"
+      },
+      "m15": {
+        "path": "compact/benchmarks/m15/typed-function.hc",
+        "blob": "453e76231467dfdf3d8598682ce14cbb8b4afaaa"
+      },
+      "typescript": {
+        "path": "compact/benchmarks/paired/typed-function.ts",
+        "blob": "c5c7d191d9b519cfa2e5a939479e0494a5ccb026"
+      }
+    },
+    {
+      "id": "chained-functions",
+      "expected": "42\n",
+      "m10": {
+        "path": "compact/benchmarks/paired/chained-functions.hc",
+        "blob": "1298abb6b1ebf879f98279842590818860ca033c"
+      },
+      "m15": {
+        "path": "compact/benchmarks/m15/chained-functions.hc",
+        "blob": "08e2e53a3ab022302dcff0562a399ca81a90fcd2"
+      },
+      "typescript": {
+        "path": "compact/benchmarks/paired/chained-functions.ts",
+        "blob": "947eaea51c395548539591bd3c50a561ca4725a9"
+      }
+    },
+    {
+      "id": "recursive-fibonacci",
+      "expected": "13\n",
+      "m10": {
+        "path": "compact/benchmarks/paired/recursive-fibonacci.hc",
+        "blob": "66f02e2dce678b51f8d02766742d9d24aa5d66f7"
+      },
+      "m15": {
+        "path": "compact/benchmarks/m15/recursive-fibonacci.hc",
+        "blob": "ab7c9da0673f038e5e57b75cf3306b70a27dca45"
+      },
+      "typescript": {
+        "path": "compact/benchmarks/paired/recursive-fibonacci.ts",
+        "blob": "2a4e6ac1ef469a6e0c64381b79f901ee26085125"
+      }
+    },
+    {
+      "id": "counter-loop",
+      "expected": "0\n1\n2\n3\n",
+      "m10": {
+        "path": "compact/benchmarks/paired/counter-loop.hc",
+        "blob": "e8ec1ef3b9b39ded9071444fbc1e7cf6db3789f3"
+      },
+      "m15": {
+        "path": "compact/benchmarks/m15/counter-loop.hc",
+        "blob": "eb54d4b4b8dfca57269032cecd30879a5a895fac"
+      },
+      "typescript": {
+        "path": "compact/benchmarks/paired/counter-loop.ts",
+        "blob": "d66cb19178b452bf1a37357dca3b4cb03c1ce163"
+      }
+    },
+    {
+      "id": "string-greeting",
+      "expected": "Hi world\n",
+      "m10": {
+        "path": "compact/benchmarks/paired/string-greeting.hc",
+        "blob": "c48e8b2a6cfe4fac778d3d76c42906f0270a6e0a"
+      },
+      "m15": {
+        "path": "compact/benchmarks/m15/string-greeting.hc",
+        "blob": "4ee5faddb422708bd393152e759d1558bb62ee74"
+      },
+      "typescript": {
+        "path": "compact/benchmarks/paired/string-greeting.ts",
+        "blob": "02d3c8dcf385f25e592a44e1f6230755e4b4a96d"
+      }
+    },
+    {
+      "id": "boolean-check",
+      "expected": "true\n",
+      "m10": {
+        "path": "compact/benchmarks/paired/boolean-check.hc",
+        "blob": "af3787b3dc81eb7f9e543dc9ef645844d641d7cd"
+      },
+      "m15": {
+        "path": "compact/benchmarks/m15/boolean-check.hc",
+        "blob": "8d0381170804a5e39d6e97db0f4ed930436af3df"
+      },
+      "typescript": {
+        "path": "compact/benchmarks/paired/boolean-check.ts",
+        "blob": "89c50f14fc9edd04a9970017b9071c478d357b2b"
+      }
+    },
+    {
+      "id": "recursive-factorial",
+      "expected": "120\n",
+      "m10": {
+        "path": "compact/benchmarks/paired/recursive-factorial.hc",
+        "blob": "d6be5bdc1cd3d6f3cf29c1485756f4234a4af585"
+      },
+      "m15": {
+        "path": "compact/benchmarks/m15/recursive-factorial.hc",
+        "blob": "f2b46c3a937a6f0be833d6e163d0cb1e5f4f3a1c"
+      },
+      "typescript": {
+        "path": "compact/benchmarks/paired/recursive-factorial.ts",
+        "blob": "d06e5209341b98937157b3b0259a2d1af2388a7d"
+      }
+    },
+    {
+      "id": "conditional-branch",
+      "expected": "negative\n",
+      "m10": {
+        "path": "compact/benchmarks/paired/conditional-branch.hc",
+        "blob": "d1d504fb7421dc0d5854f4181c12a909400de70f"
+      },
+      "m15": {
+        "path": "compact/benchmarks/m15/conditional-branch.hc",
+        "blob": "56ca891ee0f68a2ab619b55229b74a06661085e8"
+      },
+      "typescript": {
+        "path": "compact/benchmarks/paired/conditional-branch.ts",
+        "blob": "d1dd9db0f047658326cd424ef28e69d8dcc1feb1"
+      }
+    }
+  ]
+}

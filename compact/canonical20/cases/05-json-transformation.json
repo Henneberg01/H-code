@@ -1,0 +1,69 @@
+{
+  "id": "05-json-transformation",
+  "acceptance": "deserialize structured input, transform nested typed fields, serialize valid JSON",
+  "tests": {
+    "positive": [
+      {
+        "id": "multiple-events",
+        "input": "{\"user\":{\"name\":\"Ada\",\"score\":7,\"active\":true},\"events\":[{\"id\":\"A\",\"value\":4},{\"id\":\"B\",\"value\":-3}]}",
+        "expected": "{\"events\":[{\"id\":\"A\",\"value\":4},{\"id\":\"B\",\"value\":-3}],\"user\":{\"active\":false,\"name\":\"Ada\",\"score\":10}}"
+      },
+      {
+        "id": "unicode-order",
+        "input": "{\"events\":[{\"value\":0,\"id\":\"Ø\"}],\"user\":{\"active\":false,\"score\":-2,\"name\":\"Zoë\"}}",
+        "expected": "{\"events\":[{\"id\":\"Ø\",\"value\":0}],\"user\":{\"active\":true,\"name\":\"Zoë\",\"score\":1}}"
+      },
+      {
+        "id": "empty-sequence",
+        "input": "{\"user\":{\"name\":\"Li\",\"score\":0,\"active\":true},\"events\":[]}",
+        "expected": "{\"events\":[],\"user\":{\"active\":false,\"name\":\"Li\",\"score\":3}}"
+      }
+    ],
+    "negative": [
+      {
+        "id": "invalid-json",
+        "input": "{not-json"
+      },
+      {
+        "id": "missing-user",
+        "input": "{\"events\":[]}"
+      },
+      {
+        "id": "unknown-root",
+        "input": "{\"user\":{\"name\":\"Ada\",\"score\":1,\"active\":true},\"events\":[],\"extra\":0}"
+      },
+      {
+        "id": "wrong-score-type",
+        "input": "{\"user\":{\"name\":\"Ada\",\"score\":\"1\",\"active\":true},\"events\":[]}"
+      },
+      {
+        "id": "missing-active",
+        "input": "{\"user\":{\"name\":\"Ada\",\"score\":1},\"events\":[]}"
+      },
+      {
+        "id": "event-invalid-id",
+        "input": "{\"user\":{\"name\":\"Ada\",\"score\":1,\"active\":true},\"events\":[{\"id\":2,\"value\":1}]}"
+      },
+      {
+        "id": "event-extra-field",
+        "input": "{\"user\":{\"name\":\"Ada\",\"score\":1,\"active\":true},\"events\":[{\"id\":\"A\",\"value\":1,\"other\":true}]}"
+      },
+      {
+        "id": "events-not-list",
+        "input": "{\"user\":{\"name\":\"Ada\",\"score\":1,\"active\":true},\"events\":{}}"
+      },
+      {
+        "id": "null-user",
+        "input": "{\"user\":null,\"events\":[]}"
+      },
+      {
+        "id": "nonfinite-json-number",
+        "input": "{\"user\":{\"name\":\"Ada\",\"score\":1e309,\"active\":true},\"events\":[]}"
+      },
+      {
+        "id": "root-null",
+        "input": "null"
+      }
+    ]
+  }
+}
