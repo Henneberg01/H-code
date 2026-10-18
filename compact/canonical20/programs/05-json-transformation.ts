@@ -23,7 +23,8 @@ function decode(raw:string):Payload{
   const events=value.events;
   if(!Array.isArray(events)||events.length>16384||!events.every(event))
     throw Error("Invalid events");
-  return {user:{name:user.name,score:user.score,active:user.active},events};
+  return {user:{name:user.name,score:user.score,active:user.active},
+    events:events.map(({id,value})=>({id,value}))};
 }
 function transform(raw:string):string{
   const value=decode(raw);
