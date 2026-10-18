@@ -9,6 +9,7 @@ pub enum Type {
     Number, String, Bool, Unit,
     Function(Vec<Type>,Box<Type>),
     Sequence(Box<Type>),
+    Record(Vec<(String,Type)>), // Sorted exact structural fields, no dynamic property lookup
     Generic(String), // Rigid ∀ binder, not a mutable inference variable
     Variable(u32),
     BuiltinPrint,
@@ -18,19 +19,45 @@ impl Type {
         if let Some(inner)=name.strip_prefix('⟦').and_then(|s|s.strip_suffix('⟧')){
             return Ok(Type::Sequence(Box::new(Self::from_bound_name(inner,bound,span)?)));
         }
-        if bound.iter().any(|item|item==name){return Ok(Type::Generic(name.to_string()));}
-        Self::from_name(name,span)
-    }
-    pub(crate) fn from_name(name:&str,span:Span)->Result<Type,Diagnostic>{
-        if let Some(rest)=name.strip_prefix("⟦"){
-            if let Some(inner)=rest.strip_suffix("⟧"){
-                return Ok(Type::Sequence(Box::new(Self::from_name(inner,span)?)));
+        if let Some(inner)=name.strip_prefix('⦃').and_then(|s|s.strip_suffix('⦄')){
+            // Split commas at depth zero. Records may nest inside sequences or other records.
+            let mut fields=Vec::new();
+            if !inner.is_empty(){
+                let mut pieces=Vec::new();let mut start=0usize;let mut open=Vec::new();
+                for (offset,c) in inner.char_indices(){
+                    match c {
+                        '⦃'|'⟦'=>open.push(c),
+                        '⦄'=>if open.pop()!=Some('⦃'){return Err(Diagnostic::new("TYPE","Unbalanced record annotation".into(),span));},
+                        '⟧'=>if open.pop()!=Some('⟦'){return Err(Diagnostic::new("TYPE","Unbalanced sequence annotation".into(),span));},
+                        ',' if open.is_empty()=>{pieces.push(&inner[start..offset]);start=offset+1;},
+                        _=>{}
+                    }
+                }
+                if !open.is_empty(){return Err(Diagnostic::new("TYPE","Unclosed record annotation".into(),span));}
+                pieces.push(&inner[start..]);
+                if pieces.len()>64{return Err(Diagnostic::new("TYPE","Record exceeds 64 fields".into(),span));}
+                for piece in pieces {
+                    let (key,value)=piece.split_once(':').ok_or_else(||Diagnostic::new("TYPE","Record field requires a type".into(),span))?;
+                    let first=key.as_bytes().first().copied();
+                    if !matches!(first,Some(b'a'..=b'z'|b'A'..=b'Z'|b'_')) ||
+                       !key.bytes().all(|c|c.is_ascii_alphanumeric()||c==b'_') ||
+                       fields.iter().any(|(n,_)|n==key){
+                        return Err(Diagnostic::new("TYPE",format!("Invalid or duplicate record field {key}"),span));
+                    }
+                    fields.push((key.to_string(),Self::from_bound_name(value,bound,span)?));
+                }
+                fields.sort_by(|a,b|a.0.cmp(&b.0));
             }
+            return Ok(Type::Record(fields));
         }
+        if bound.iter().any(|item|item==name){return Ok(Type::Generic(name.to_string()));}
         match name {
             "Number"=>Ok(Self::Number),"String"=>Ok(Self::String),"Bool"=>Ok(Self::Bool),"Unit"=>Ok(Self::Unit),
             _=>Err(Diagnostic::new("TYPE",format!("Unknown type {name}"),span))
         }
+    }
+    pub(crate) fn from_name(name:&str,span:Span)->Result<Type,Diagnostic>{
+        Self::from_bound_name(name,&[],span)
     }
 }
 
@@ -62,6 +89,8 @@ pub enum TypedExprKind {
     Choice { condition:Box<TypedExpr>,when_true:Box<TypedExpr>,when_false:Box<TypedExpr> },
     Call { callee:Box<TypedExpr>,arguments:Vec<TypedExpr> },
     Sequence(Vec<TypedExpr>),
+    Record(Vec<(String,TypedExpr)>),
+    Field { record:Box<TypedExpr>,name:String },
     Index { sequence:Box<TypedExpr>,index:Box<TypedExpr> },
     Length(Box<TypedExpr>),
     Sum(Box<TypedExpr>),
@@ -109,13 +138,15 @@ impl Checker {
             Type::Variable(id)=>match self.substitutions.get(id){Some(x)=>self.resolved(x),None=>ty.clone()},
             Type::Function(params,ret)=>Type::Function(params.iter().map(|x|self.resolved(x)).collect(),Box::new(self.resolved(ret))),
             Type::Sequence(item)=>Type::Sequence(Box::new(self.resolved(item))),
+            Type::Record(fields)=>Type::Record(fields.iter().map(|(key,ty)|(key.clone(),self.resolved(ty))).collect()),
             _=>ty.clone()
         }
     }
     fn occurs(&self,id:u32,ty:&Type)->bool {
         match self.resolved(ty){Type::Variable(n)=>id==n,
             Type::Function(a,r)=>a.iter().any(|t|self.occurs(id,t))||self.occurs(id,&r),
-            Type::Sequence(item)=>self.occurs(id,&item),_=>false}
+            Type::Sequence(item)=>self.occurs(id,&item),
+            Type::Record(fields)=>fields.iter().any(|(_,ty)|self.occurs(id,ty)),_=>false}
     }
     fn unify(&mut self,left:&Type,right:&Type,span:Span,reason:&str)->Result<Type,Diagnostic>{
         let a=self.resolved(left);let b=self.resolved(right);
@@ -127,6 +158,14 @@ impl Checker {
             }
             (Type::Sequence(ea),Type::Sequence(eb))=>{
                 Ok(Type::Sequence(Box::new(self.unify(ea,eb,span,reason)?)))
+            }
+            (Type::Record(fa),Type::Record(fb)) if fa.len()==fb.len() &&
+                fa.iter().zip(fb).all(|((a,_),(b,_))|a==b)=>{
+                let mut fields=Vec::with_capacity(fa.len());
+                for ((key,left),(_,right)) in fa.iter().zip(fb){
+                    fields.push((key.clone(),self.unify(left,right,span,reason)?));
+                }
+                Ok(Type::Record(fields))
             }
             (Type::Function(pa,ra),Type::Function(pb,rb)) if pa.len()==pb.len()=>{
                 let mut params=Vec::new();
@@ -318,12 +357,34 @@ impl Checker {
         match ty {
             Type::Generic(name)=>bound.get(name).cloned().unwrap_or_else(||ty.clone()),
             Type::Sequence(inner)=>Type::Sequence(Box::new(Self::instantiate_type(inner,bound))),
+            Type::Record(fields)=>Type::Record(fields.iter().map(|(key,ty)|(key.clone(),Self::instantiate_type(ty,bound))).collect()),
             Type::Function(args,ret)=>Type::Function(args.iter().map(|t|Self::instantiate_type(t,bound)).collect(),Box::new(Self::instantiate_type(ret,bound))),
             _=>ty.clone()
         }
     }
     fn expression(&mut self,expr:&Expr)->Result<TypedExpr,Diagnostic>{
         let (kind,ty)=match &expr.kind {
+            ExprKind::Record(fields)=>{
+                let mut typed=Vec::with_capacity(fields.len());
+                let mut structure=Vec::with_capacity(fields.len());
+                for (key,value) in fields{
+                    let value=self.expression(value)?;
+                    structure.push((key.clone(),value.ty.clone()));
+                    typed.push((key.clone(),value));
+                }
+                structure.sort_by(|a,b|a.0.cmp(&b.0));
+                (TypedExprKind::Record(typed),Type::Record(structure))
+            }
+            ExprKind::Field{record,name}=>{
+                let typed=self.expression(record)?;
+                let resolved=self.resolved(&typed.ty);
+                let Type::Record(fields)=resolved else{
+                    return Err(Diagnostic::new("TYPE","Field access requires an explicitly typed record".into(),record.span));
+                };
+                let selected=fields.iter().find(|(key,_)|key==name).map(|(_,ty)|ty.clone())
+                    .ok_or_else(||Diagnostic::new("TYPE",format!("Unknown record field {name}"),expr.span))?;
+                (TypedExprKind::Field{record:Box::new(typed),name:name.clone()},selected)
+            }
             ExprKind::Sequence(items)=>{
                 let element=self.fresh();
                 let mut checked=Vec::with_capacity(items.len());
@@ -561,6 +622,8 @@ impl Checker {
         e.ty=self.require_known(&e.ty,e.span)?;
         match &mut e.kind {
             TypedExprKind::Sequence(items)=>{for item in items {self.finalize_expr(item)?;}},
+            TypedExprKind::Record(fields)=>{for (_,value) in fields{self.finalize_expr(value)?;}},
+            TypedExprKind::Field{record,..}=>self.finalize_expr(record)?,
             TypedExprKind::Index{sequence,index}=>{self.finalize_expr(sequence)?;self.finalize_expr(index)?;},
             TypedExprKind::Length(value)=>self.finalize_expr(value)?,
             TypedExprKind::Sum(value)=>self.finalize_expr(value)?,
@@ -583,7 +646,7 @@ impl Checker {
     }
 }
 fn contains_variable(t:&Type)->bool {
-    match t{Type::Variable(_)=>true,Type::Function(ps,r)=>ps.iter().any(contains_variable)||contains_variable(r),Type::Sequence(t)=>contains_variable(t),_=>false}
+    match t{Type::Variable(_)=>true,Type::Function(ps,r)=>ps.iter().any(contains_variable)||contains_variable(r),Type::Sequence(t)=>contains_variable(t),Type::Record(fields)=>fields.iter().any(|(_,ty)|contains_variable(ty)),_=>false}
 }
 fn statement_returns(s:&Stmt)->bool {
     match &s.kind{
