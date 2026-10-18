@@ -13,6 +13,7 @@ pub struct PackageDef { pub operations:Vec<OperationSig>, pub typed_source:Typed
 pub struct OperationSig {
     pub id:String,pub name:String,pub glyph:String,
     pub parameters:Vec<Type>,pub returns:Type,pub implementation:String,
+    pub type_parameters:Vec<String>,
 }
 
 #[derive(Deserialize)]
@@ -26,7 +27,8 @@ struct LockEntry {
 #[derive(Deserialize)]
 struct Manifest { format:u32,name:String,version:String,source:String,operations:Vec<Operation> }
 #[derive(Deserialize)]
-struct Operation { name:String,glyph:String,parameters:Vec<Parameter>,returns:String,effects:Vec<String>,implementation:String }
+struct Operation { name:String,glyph:String,parameters:Vec<Parameter>,returns:String,effects:Vec<String>,implementation:String,
+    #[serde(default,rename="typeParameters")] type_parameters:Vec<String> }
 #[derive(Deserialize)]
 struct Parameter { name:String,#[serde(rename="type")] ty:String }
 
@@ -74,7 +76,7 @@ fn version(v:&str)->bool {
     let xs:Vec<_>=v.split('.').collect();
     xs.len()==3 && xs.iter().all(|x|!x.is_empty()&& x.bytes().all(|n|n.is_ascii_digit())&&(x.len()==1||!x.starts_with('0')))
 }
-fn parse_contract_type(ty:&str,format:u32)->Result<Type,Diagnostic>{
+fn parse_contract_type(ty:&str,format:u32,bound:&[String])->Result<Type,Diagnostic>{
     // V1 contracts remain scalar-only. V2 reuses the compiler's own *concrete*
     // recursive Type::Sequence; no unchecked Any, T, generic erasure or JS types.
     if format==1 && (ty.contains('⟦') || ty.contains('⟧')){
@@ -83,7 +85,7 @@ fn parse_contract_type(ty:&str,format:u32)->Result<Type,Diagnostic>{
     if ty.len()>256 || ty.matches('⟦').count()>16 {
         return Err(failure("Package contract type exceeds nesting or length limit"));
     }
-    Type::from_name(ty,Span::new(1,1))
+    Type::from_bound_name(ty,bound,Span::new(1,1))
         .map_err(|_|failure(format!("Unsupported package contract type {ty}")))
 }
 fn reserved_glyph(c:char)->bool {
@@ -105,7 +107,7 @@ pub fn load_lockfile(path:&Path)->Result<PackageRegistry,Diagnostic>{
         let (manifest_path,manifest_bytes)=safe_read(root,&entry.manifest)?;
         verify_sha(&manifest_bytes,&entry.manifest_hash,&format!("{key} manifest"))?;
         let manifest:Manifest=serde_json::from_slice(&manifest_bytes).map_err(|e|failure(format!("Invalid package manifest: {e}")))?;
-        if !matches!(manifest.format,1|2) {
+        if !matches!(manifest.format,1|2|3) {
             return Err(failure(format!("Unsupported package manifest format {}: {key}",manifest.format)));
         }
         if manifest.name!=entry.name||manifest.version!=entry.version{
@@ -121,11 +123,26 @@ pub fn load_lockfile(path:&Path)->Result<PackageRegistry,Diagnostic>{
         if ast.statements.iter().any(|s|!matches!(s.kind,StmtKind::Function{..})) {
             return Err(failure(format!("{key}: only top-level functions permitted in a pure package")));
         }
+        if manifest.format!=3 && ast.statements.iter().any(|s|matches!(&s.kind,StmtKind::Function{type_parameters,..} if !type_parameters.is_empty())){
+            return Err(failure("∀ source functions require format 3"));
+        }
         // Entire library body is statically checked with no ambient I/O functions.
         let typed_source=check(&ast,&PackageRegistry::default(),false)?;
         let mut operations=Vec::new();let mut names=HashSet::new();let mut glyphs=HashSet::new();
         if manifest.operations.is_empty()||manifest.operations.len()>100 {return Err(failure("Package must export 1..100 operations"));}
         for op in manifest.operations {
+            if manifest.format!=3 && !op.type_parameters.is_empty(){
+                return Err(failure("∀ type parameters require manifest format 3"));
+            }
+            if op.type_parameters.len()>8{return Err(failure("Maximum 8 ∀ type parameters"));}
+            let mut vars=HashSet::new();
+            for name in &op.type_parameters{
+                if !ident(name) || !name.starts_with(|c:char|c.is_ascii_uppercase()) ||
+                    name.len()>32 || matches!(name.as_str(),"Number"|"String"|"Bool"|"Unit") ||
+                    !vars.insert(name.clone()){
+                    return Err(failure(format!("Invalid or duplicate ∀ binder {name}")));
+                }
+            }
             if !ident(&op.name)||keyword(&op.name)||!names.insert(op.name.clone()){
                 return Err(failure(format!("Invalid or duplicate operation name {}",op.name)));
             }
@@ -142,23 +159,41 @@ pub fn load_lockfile(path:&Path)->Result<PackageRegistry,Diagnostic>{
                 if !ident(&param.name)||keyword(&param.name)||!param_names.insert(param.name.clone()){
                     return Err(failure(format!("Invalid or duplicate parameter name {}",param.name)));
                 }
-                parameters.push(parse_contract_type(&param.ty,manifest.format)?);
+                parameters.push(parse_contract_type(&param.ty,manifest.format,&op.type_parameters)?);
             }
-            let returns=parse_contract_type(&op.returns,manifest.format)?;
+            let returns=parse_contract_type(&op.returns,manifest.format,&op.type_parameters)?;
             let implementation=ast.statements.iter().find_map(|s|match &s.kind {
-                StmtKind::Function{name,parameters,returns,body:_} if name==&op.implementation=>Some((parameters,returns)),
+                StmtKind::Function{name,type_parameters,parameters,returns,body:_} if name==&op.implementation=>Some((type_parameters,parameters,returns)),
                 _=>None
             }).ok_or_else(||failure(format!("{}: implementation {} not found",op.name,op.implementation)))?;
-            if implementation.0.len()!=parameters.len(){return Err(failure(format!("{}: contract argument count mismatch",op.name)));}
-            for (i,(param,sig)) in implementation.0.iter().zip(&op.parameters).enumerate() {
+            if implementation.0!=&op.type_parameters{
+                return Err(failure(format!("{}: ∀ binder mismatch between manifest and source",op.name)));
+            }
+            if implementation.1.len()!=parameters.len(){return Err(failure(format!("{}: contract argument count mismatch",op.name)));}
+            for (i,(param,sig)) in implementation.1.iter().zip(&op.parameters).enumerate() {
                 if param.name!=sig.name || param.annotation.as_deref()!=Some(sig.ty.as_str()) {
                     return Err(failure(format!("{}: parameter {} contract mismatch",op.name,i+1)));
                 }
             }
-            if implementation.1.as_deref()!=Some(op.returns.as_str()){
+            if implementation.2.as_deref()!=Some(op.returns.as_str()){
                 return Err(failure(format!("{}: return contract mismatch",op.name)));
             }
-            operations.push(OperationSig{id:format!("{key}::{}",op.name),name:op.name,glyph:op.glyph,parameters,returns,implementation:op.implementation});
+            if manifest.format==3 && !op.type_parameters.is_empty(){
+                fn mentions(ty:&Type,name:&str)->bool{
+                    match ty {
+                        Type::Generic(v)=>v==name,
+                        Type::Sequence(inner)=>mentions(inner,name),
+                        Type::Function(xs,ret)=>xs.iter().any(|a|mentions(a,name))||mentions(ret,name),
+                        _=>false
+                    }
+                }
+                for name in &op.type_parameters{
+                    if !parameters.iter().any(|p|mentions(p,name)) && !mentions(&returns,name){
+                        return Err(failure(format!("Unused ∀ binder {name}")));
+                    }
+                }
+            }
+            operations.push(OperationSig{id:format!("{key}::{}",op.name),name:op.name,glyph:op.glyph,parameters,returns,implementation:op.implementation,type_parameters:op.type_parameters});
         }
         registry.packages.insert(key,PackageDef{operations,typed_source});
     }
