@@ -48,15 +48,21 @@ export function verifyCanonical06(){
  // against real local HTTP server, independently runs H-Code JS interpreter,
  // and compares both with immutable TypeScript oracle over fixed + unseen cases.
  // A JSON label cannot pass this gate. Rust type/effect negative cases included.
+ // Node's outer --test runner exports NODE_TEST_CONTEXT to child tests.
+ // Do not let that private parent test context alter a second standalone
+ // test runner's reporter or TAP summary; run a clean isolated child.
+ const childEnv={...process.env};
+ delete childEnv.NODE_TEST_CONTEXT;
+ delete childEnv.NODE_TEST_REPORTER;
  const result=spawnSync(process.execPath,
-   ['--experimental-strip-types','--test',join(root,'scripts/canonical20-verify-06.test.mjs')],
-   {cwd:root,encoding:'utf8',timeout:240000,windowsHide:true});
+   ['--experimental-strip-types','--test','--test-reporter=tap',join(root,'scripts/canonical20-verify-06.test.mjs')],
+   {cwd:root,env:childEnv,encoding:'utf8',timeout:240000,windowsHide:true});
  if(result.error)throw Error('Canonical06 verifier could not start: '+result.error.message);
  if(result.status!==0)
    throw Error('Canonical06 verifier failed ('+result.status+'): '+(result.stderr+'\n'+result.stdout).slice(-3500));
  const match=/^# tests (\d+)$/m.exec(result.stdout);
  if(!match||Number(match[1])<4||!/^# fail 0$/m.test(result.stdout))
-   throw Error('Canonical06 expected live parity and negative test suites did not run');
+   throw Error('Canonical06 expected live parity and negative test suites did not run: '+result.stdout.slice(-1200));
  const compiledBytes=/^# CANONICAL06_GENERATED_JS_BYTES=(\d+)$/m.exec(result.stdout);
  const compiledSha=/^# CANONICAL06_GENERATED_JS_SHA256=([a-f0-9]{64})$/m.exec(result.stdout);
  if(!compiledBytes||!compiledSha||Number(compiledBytes[1])<1)
