@@ -672,7 +672,7 @@ impl Checker {
             ExprKind::Binary{op,left,right}=>{
                 let l=self.expression(left)?;
                 let r=if matches!(op,BinaryOp::Filter|BinaryOp::Map) &&
-                          matches!(right.kind,ExprKind::Lambda{..}){
+                          matches!(&right.kind,ExprKind::Lambda{..}){
                     let element=self.fresh();
                     self.unify(&l.ty,&Type::Sequence(Box::new(element.clone())),left.span,
                         "⌕/⇢ requires a typed input sequence")?;
