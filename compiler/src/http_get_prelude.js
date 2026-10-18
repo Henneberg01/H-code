@@ -14,9 +14,9 @@ const __hc_http_get=async raw=>{
   catch{
     return __hc_record([['body',''],['ok',false],['retryAfter',0],['status',0]]);
   }
-  if(!response.body)throw Error('H-Code HTTP response has no body');
-  const reader=response.body.getReader(),pieces=[];let length=0;
-  try{
+  // RFC no-content responses (e.g. 204/205) have no ReadableStream.
+  const reader=response.body?.getReader(),pieces=[];let length=0;
+  if(reader)try{
     while(true){
       const part=await reader.read();
       if(part.done)break;
