@@ -56,6 +56,7 @@ impl Emitter {
     TypedExprKind::TextScalars(value)=>format!("__hc_text_scalars({})",self.expr(value)),
     TypedExprKind::TextWords(value)=>format!("__hc_text_words({})",self.expr(value)),
     TypedExprKind::Histogram(value)=>format!("__hc_hist({})",self.expr(value)),
+    TypedExprKind::Markdown(value)=>format!("__hc_md_tokens({})",self.expr(value)),
     TypedExprKind::FileRead(value)=>format!("__hc_csv_read_file({})",self.expr(value)),
     TypedExprKind::FileWrite{filename,content}=>format!("__hc_file_write({}, {})",self.expr(filename),self.expr(content)),
     TypedExprKind::HttpGet(value)=>if matches!(value.ty,Type::Sequence(_)) {
@@ -149,6 +150,7 @@ impl Emitter {
 // that require it. A new glyph must not inflate the runtime of unrelated code.
 fn expr_uses_json(e:&TypedExpr)->bool {
  match &e.kind {
+  TypedExprKind::Markdown(value)=>expr_uses_json(value),
   TypedExprKind::FileWrite{filename,content}=>expr_uses_json(filename)||expr_uses_json(content),
   TypedExprKind::JsonRead{..}|TypedExprKind::JsonWrite{..}=>true,
   TypedExprKind::Record(fields)=>fields.iter().any(|(_,v)|expr_uses_json(v)),
@@ -181,8 +183,44 @@ fn stmt_uses_json(s:&TypedStmt)->bool {
 }
 // Only include the Unicode module for programs that actually use any of
 // the universal text/histogram primitives (including verified imported packages).
+fn expr_uses_markdown(e:&TypedExpr)->bool {
+ match &e.kind {
+  TypedExprKind::Markdown(_)=>true,
+  TypedExprKind::FileWrite{filename,content}=>expr_uses_markdown(filename)||expr_uses_markdown(content),
+  TypedExprKind::JsonRead{value,..}|TypedExprKind::JsonWrite{value,..}=>expr_uses_markdown(value),
+  TypedExprKind::Record(fields)=>fields.iter().any(|(_,v)|expr_uses_markdown(v)),
+  TypedExprKind::Field{record,..}=>expr_uses_markdown(record),
+  TypedExprKind::RecordUpdate{record,value,..}=>expr_uses_markdown(record)||expr_uses_markdown(value),
+  TypedExprKind::Sequence(items)=>items.iter().any(expr_uses_markdown),
+  TypedExprKind::Index{sequence,index}=>expr_uses_markdown(sequence)||expr_uses_markdown(index),
+  TypedExprKind::Length(x)|TypedExprKind::Sum(x)|
+  TypedExprKind::TextScalars(x)|TypedExprKind::TextWords(x)|TypedExprKind::Histogram(x)|TypedExprKind::FileRead(x)|TypedExprKind::HttpGet(x)|TypedExprKind::Sleep(x)=>expr_uses_markdown(x),
+  TypedExprKind::CsvTyped{value,..}|TypedExprKind::ArithEval(value)=>expr_uses_markdown(value),
+  TypedExprKind::Lambda{body,..}|TypedExprKind::Section{right:body,..}|TypedExprKind::Unary{operand:body,..}=>expr_uses_markdown(body),
+  TypedExprKind::Binary{left,right,..}=>expr_uses_markdown(left)||expr_uses_markdown(right),
+  TypedExprKind::Choice{condition,when_true,when_false}=>
+   expr_uses_markdown(condition)||expr_uses_markdown(when_true)||expr_uses_markdown(when_false),
+  TypedExprKind::Call{callee,arguments}=>expr_uses_markdown(callee)||arguments.iter().any(expr_uses_markdown),
+  TypedExprKind::Number(_)|TypedExprKind::String(_)|TypedExprKind::Bool(_)|
+  TypedExprKind::Identifier(_)|TypedExprKind::OperationRef{..}|TypedExprKind::StdinText=>false
+ }
+}
+fn stmt_uses_markdown(s:&TypedStmt)->bool {
+ match &s.kind {
+  TypedStmtKind::Use{..}|TypedStmtKind::Import{..}=>false,
+  TypedStmtKind::Export{declaration}=>stmt_uses_markdown(declaration),
+  TypedStmtKind::Let{value,..}|TypedStmtKind::Assign{value,..}|
+  TypedStmtKind::Return(value)|TypedStmtKind::Expression(value)=>expr_uses_markdown(value),
+  TypedStmtKind::Function{body,..}|TypedStmtKind::While{body,..}=>body.iter().any(stmt_uses_markdown),
+  TypedStmtKind::If{condition,then_body,else_body}=>expr_uses_markdown(condition)||
+   then_body.iter().any(stmt_uses_markdown)||else_body.as_ref().is_some_and(|b|b.iter().any(stmt_uses_markdown))
+ }
+}
+// Only include the Unicode module for programs that actually use any of
+// the universal text/histogram primitives (including verified imported packages).
 fn expr_uses_text(e:&TypedExpr)->bool {
  match &e.kind {
+  TypedExprKind::Markdown(value)=>expr_uses_text(value),
   TypedExprKind::FileWrite{filename,content}=>expr_uses_text(filename)||expr_uses_text(content),
   TypedExprKind::TextScalars(..)|TypedExprKind::TextWords(..)|TypedExprKind::Histogram(..)=>true,
   TypedExprKind::FileRead(value)|TypedExprKind::HttpGet(value)|TypedExprKind::Sleep(value)|TypedExprKind::CsvTyped{value,..}|TypedExprKind::ArithEval(value)=>expr_uses_text(value),
@@ -217,6 +255,7 @@ fn stmt_uses_text(s:&TypedStmt)->bool {
 
 fn expr_uses_csv(e:&TypedExpr)->bool {
   match &e.kind {
+  TypedExprKind::Markdown(value)=>expr_uses_csv(value),
   TypedExprKind::FileWrite{filename,content}=>expr_uses_csv(filename)||expr_uses_csv(content),
    TypedExprKind::FileRead(v)|TypedExprKind::HttpGet(v)|TypedExprKind::Sleep(v)=>expr_uses_csv(v),
    TypedExprKind::CsvTyped{..}=>true,
@@ -250,6 +289,7 @@ fn stmt_uses_csv(s:&TypedStmt)->bool {
 }
 fn expr_uses_file(e:&TypedExpr)->bool {
   match &e.kind {
+  TypedExprKind::Markdown(value)=>expr_uses_file(value),
   TypedExprKind::FileWrite{filename,content}=>expr_uses_file(filename)||expr_uses_file(content),
    TypedExprKind::FileRead(..)=>true,
    TypedExprKind::CsvTyped{value,..}|TypedExprKind::ArithEval(value)|TypedExprKind::HttpGet(value)|TypedExprKind::Sleep(value)=>expr_uses_file(value),
@@ -284,6 +324,7 @@ fn stmt_uses_file(s:&TypedStmt)->bool {
 // Link the network runtime only when a checked expression contains ⤋.
 fn expr_uses_http(e:&TypedExpr)->bool {
  match &e.kind {
+  TypedExprKind::Markdown(value)=>expr_uses_http(value),
   TypedExprKind::FileWrite{filename,content}=>expr_uses_http(filename)||expr_uses_http(content),
   TypedExprKind::HttpGet(_)=>true,
   TypedExprKind::JsonRead{value,..}|TypedExprKind::JsonWrite{value,..}|
@@ -318,6 +359,7 @@ fn stmt_uses_http(s:&TypedStmt)->bool {
 
 fn expr_uses_sleep(e:&TypedExpr)->bool {
  match &e.kind {
+  TypedExprKind::Markdown(value)=>expr_uses_sleep(value),
   TypedExprKind::FileWrite{filename,content}=>expr_uses_sleep(filename)||expr_uses_sleep(content),
   TypedExprKind::Sleep(_)=>true,
   TypedExprKind::JsonRead{value,..}|TypedExprKind::JsonWrite{value,..}|
@@ -352,6 +394,7 @@ fn stmt_uses_sleep(s:&TypedStmt)->bool {
 
 fn expr_uses_file_write(e:&TypedExpr)->bool {
  match &e.kind {
+  TypedExprKind::Markdown(value)=>expr_uses_file_write(value),
   TypedExprKind::FileWrite{..}=>true,
   TypedExprKind::JsonRead{value,..}|TypedExprKind::JsonWrite{value,..}|
   TypedExprKind::Sleep(value)|TypedExprKind::FileRead(value)|TypedExprKind::CsvTyped{value,..}|
@@ -385,6 +428,7 @@ fn stmt_uses_file_write(s:&TypedStmt)->bool {
 
 fn expr_cli_flags(e:&TypedExpr)->u8 {
   match &e.kind {
+    TypedExprKind::Markdown(v)=>expr_cli_flags(v),
     TypedExprKind::FileWrite{filename,content}=>expr_cli_flags(filename)|expr_cli_flags(content),
     TypedExprKind::StdinText=>1,
     TypedExprKind::ArithEval(v)=>2|expr_cli_flags(v),
@@ -429,6 +473,9 @@ pub fn emit(program:&TypedProgram,registry:&PackageRegistry)->Result<String,Stri
    }
   }
  }
+ let requires_markdown=program.statements.iter().any(stmt_uses_markdown) ||
+  imported.keys().any(|id|registry.packages.get(id)
+    .is_some_and(|pkg|pkg.typed_source.statements.iter().any(stmt_uses_markdown)));
  let requires_json=program.statements.iter().any(stmt_uses_json) ||
   imported.keys().any(|id|registry.packages.get(id)
     .is_some_and(|pkg|pkg.typed_source.statements.iter().any(stmt_uses_json)));
@@ -612,6 +659,7 @@ const __hc_hist = input => {
 };
 "#);
   }
+  if requires_markdown {output.push_str(include_str!("markdown_prelude.js"));}
   if requires_csv {output.push_str(include_str!("csv_parser_prelude.js"));}
   if requires_file {output.push_str(include_str!("file_read_prelude.js"));}
   if requires_file_write {
