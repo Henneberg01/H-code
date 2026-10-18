@@ -21,7 +21,7 @@
     "m14:measure": "node scripts/m14-compare.mjs",
     "m15:measure": "node scripts/m15-compare.mjs",
     "benchmark20:status": "node scripts/canonical20-coverage.mjs",
-    "benchmark20:test": "node --test scripts/test/canonical20-coverage.test.mjs",
+    "benchmark20:test": "node --test scripts/test/canonical20-coverage.test.mjs scripts/test/canonical20-calculator-idiomatic.test.mjs",
     "benchmark20:strict": "node scripts/canonical20-coverage.mjs --require-complete",
     "m12:measure": "node scripts/m12-records-compare.mjs",
     "m12:json-measure": "node scripts/m12-typed-json-compare.mjs",
@@ -31,7 +31,8 @@
     "benchmark20:verify03": "node scripts/canonical20-verify-03.mjs",
     "benchmark20:verify04": "node scripts/canonical20-verify-04.mjs",
     "benchmark20:csv-idiomatic": "node --experimental-strip-types scripts/canonical20-csv-idiomatic.mjs",
-    "benchmark20:verify01": "node scripts/canonical20-verify-01.mjs"
+    "benchmark20:verify01": "node scripts/canonical20-verify-01.mjs",
+    "benchmark20:calc-idiomatic": "node scripts/canonical20-arith-idiomatic.mjs"
   },
   "engines": {
     "node": ">=20"
