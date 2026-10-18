@@ -1,0 +1,216 @@
+{
+  "id": "08-concurrent-requests",
+  "acceptance": "fan out to three deterministic fake HTTP endpoints and combine results without serial blocking",
+  "canonicalRegistryGitBlobSha": "46653ef90ffb3e420fba4ddfbfac3c4cfd57f3b3",
+  "stage": "real-parallel-contract-not-canonical-readiness",
+  "maxFanout": 16,
+  "parallelResponseBarrier": "all requested endpoints must arrive before server releases any response",
+  "cases": [
+    {
+      "id": "three-out-of-order",
+      "responses": [
+        {
+          "status": 200,
+          "body": "first",
+          "delayMs": 60
+        },
+        {
+          "status": 200,
+          "body": "second",
+          "delayMs": 0
+        },
+        {
+          "status": 200,
+          "body": "third",
+          "delayMs": 20
+        }
+      ],
+      "expected": [
+        {
+          "body": "first",
+          "ok": true,
+          "retryAfter": 0,
+          "status": 200
+        },
+        {
+          "body": "second",
+          "ok": true,
+          "retryAfter": 0,
+          "status": 200
+        },
+        {
+          "body": "third",
+          "ok": true,
+          "retryAfter": 0,
+          "status": 200
+        }
+      ]
+    },
+    {
+      "id": "three-mixed-statuses",
+      "responses": [
+        {
+          "status": 500,
+          "body": "server error",
+          "delayMs": 15
+        },
+        {
+          "status": 429,
+          "body": "slow down",
+          "retryAfterSeconds": 1,
+          "delayMs": 0
+        },
+        {
+          "status": 200,
+          "body": "ready",
+          "delayMs": 8
+        }
+      ],
+      "expected": [
+        {
+          "body": "server error",
+          "ok": false,
+          "retryAfter": 0,
+          "status": 500
+        },
+        {
+          "body": "slow down",
+          "ok": false,
+          "retryAfter": 1000,
+          "status": 429
+        },
+        {
+          "body": "ready",
+          "ok": true,
+          "retryAfter": 0,
+          "status": 200
+        }
+      ]
+    },
+    {
+      "id": "three-unicode",
+      "responses": [
+        {
+          "status": 200,
+          "body": "Søren 🇩🇰",
+          "delayMs": 12
+        },
+        {
+          "status": 200,
+          "body": "東京",
+          "delayMs": 25
+        },
+        {
+          "status": 200,
+          "body": "mañana",
+          "delayMs": 0
+        }
+      ],
+      "expected": [
+        {
+          "body": "Søren 🇩🇰",
+          "ok": true,
+          "retryAfter": 0,
+          "status": 200
+        },
+        {
+          "body": "東京",
+          "ok": true,
+          "retryAfter": 0,
+          "status": 200
+        },
+        {
+          "body": "mañana",
+          "ok": true,
+          "retryAfter": 0,
+          "status": 200
+        }
+      ]
+    },
+    {
+      "id": "five-fanout",
+      "responses": [
+        {
+          "status": 200,
+          "body": "a",
+          "delayMs": 20
+        },
+        {
+          "status": 200,
+          "body": "b",
+          "delayMs": 0
+        },
+        {
+          "status": 204,
+          "body": "",
+          "delayMs": 14
+        },
+        {
+          "status": 502,
+          "body": "gateway",
+          "delayMs": 5
+        },
+        {
+          "status": 200,
+          "body": "e",
+          "delayMs": 10
+        }
+      ],
+      "expected": [
+        {
+          "body": "a",
+          "ok": true,
+          "retryAfter": 0,
+          "status": 200
+        },
+        {
+          "body": "b",
+          "ok": true,
+          "retryAfter": 0,
+          "status": 200
+        },
+        {
+          "body": "",
+          "ok": true,
+          "retryAfter": 0,
+          "status": 204
+        },
+        {
+          "body": "gateway",
+          "ok": false,
+          "retryAfter": 0,
+          "status": 502
+        },
+        {
+          "body": "e",
+          "ok": true,
+          "retryAfter": 0,
+          "status": 200
+        }
+      ]
+    },
+    {
+      "id": "one-request",
+      "responses": [
+        {
+          "status": 200,
+          "body": "single",
+          "delayMs": 0
+        }
+      ],
+      "expected": [
+        {
+          "body": "single",
+          "ok": true,
+          "retryAfter": 0,
+          "status": 200
+        }
+      ]
+    },
+    {
+      "id": "zero-requests",
+      "responses": [],
+      "expected": []
+    }
+  ]
+}

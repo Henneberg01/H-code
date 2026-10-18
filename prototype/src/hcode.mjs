@@ -702,15 +702,22 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
         if(!Array.isArray(httpEffects))
           throw Error('⤋ requires asynchronous H-Code interpreter; synchronous execution cannot perform HTTP');
         const url=expr(node.value,scope);
-        if(typeof url!=='string')throw TypeError('⤋ expects String URL');
+        const batch=Array.isArray(url);
+        if(batch){
+          if(url.length>16||!url.every(x=>typeof x==='string'))
+            throw TypeError('⤋ batch expects at most 16 String URLs');
+        }else if(typeof url!=='string')throw TypeError('⤋ expects String URL');
         const index=httpIndex++;
         if(index<httpEffects.length){
           const previous=httpEffects[index];
-          if(previous.url!==url)throw Error('Non-deterministic H-Code HTTP replay');
+          const same=batch?Array.isArray(previous.url)&&
+            previous.url.length===url.length&&previous.url.every((u,i)=>u===url[i]):
+            previous.url===url;
+          if(!same)throw Error('Non-deterministic H-Code HTTP replay');
           return previous.value;
         }
         if(index!==httpEffects.length)throw Error('H-Code HTTP journal sequence gap');
-        throw new PendingHttpEffect(url,index);
+        throw new PendingHttpEffect(batch?[...url]:url,index);
       }
       case 'Sleep':{
         if(pureDepth>0||functionDepth>0)throw Error('⌛ delay effect denied in pure package or sync closure');
@@ -1052,7 +1059,7 @@ export async function executeAsync(source,options={}){
   const registry=options.registry??new Map();
   const program=linkProgram(parse(source),registry);
   const journal=[],sleepJournal=[];
-  let totalSleepMs=0;
+  let totalSleepMs=0,totalHttpRequests=0;
   let cachedStdin=false,stdinValue;
   const cachedFiles=new Map();
   const readStdin=typeof options.readStdin==='function'?()=>{
@@ -1068,7 +1075,7 @@ export async function executeAsync(source,options={}){
     try{
       const result=evaluate(program,{...options,registry,readStdin,readFile,httpEffects:journal,sleepEffects:sleepJournal,stdout:line=>lines.push(line)});
       for(const line of lines)options.stdout?.(line);
-      return {...result,httpRequests:journal.length,sleeps:sleepJournal.length,totalSleepMs};
+      return {...result,httpRequests:totalHttpRequests,sleeps:sleepJournal.length,totalSleepMs};
     }catch(error){
       if(error instanceof PendingSleepEffect){
         if(error.index!==sleepJournal.length)throw Error('Out-of-order H-Code delay effect');
@@ -1082,31 +1089,46 @@ export async function executeAsync(source,options={}){
       if(!(error instanceof PendingHttpEffect))throw error;
       if(typeof options.httpGet!=='function')
         throw Error('H-Code HTTP capability denied: inject a trusted httpGet host');
-      if(journal.length>=maxHttpRequests)throw Error('H-Code HTTP effect budget exceeded');
       if(error.index!==journal.length)throw Error('Out-of-order H-Code HTTP effect');
-      let url;
-      try{url=new URL(error.url);}catch{throw TypeError('H-Code HTTP URL is invalid');}
-      if(!['http:','https:'].includes(url.protocol)||url.username||url.password)
-        throw TypeError('H-Code HTTP(S) URL required without embedded credentials');
-      let answer;
-      try{answer=await options.httpGet(error.url);}
-      catch{answer={status:0,ok:false,body:'',retryAfter:0};}
-      // Normalize and freeze the host boundary; input records cannot carry
-      // arbitrary fields, prototypes, functions or unbounded response bodies.
-      if(answer===null||typeof answer!=='object'||Array.isArray(answer)||
-         Object.keys(answer).sort().join(',')!=='body,ok,retryAfter,status'||
-         !Number.isInteger(answer.status)||
-         !(answer.status===0||answer.status>=200&&answer.status<=599)||
-         typeof answer.ok!=='boolean'||typeof answer.body!=='string'||
-         !Number.isInteger(answer.retryAfter)||answer.retryAfter<0||answer.retryAfter>120000||
-         (answer.status===0&&(answer.ok||answer.body!==''))||
-         (answer.status!==0&&answer.ok!==(answer.status>=200&&answer.status<300))||
-         new TextEncoder().encode(answer.body).byteLength>65536)
-        throw TypeError('Invalid H-Code HTTP response from host');
-      const response=Object.assign(Object.create(null),{
-        body:answer.body,ok:answer.ok,retryAfter:answer.retryAfter,status:answer.status
-      });
-      journal.push({url:error.url,value:Object.freeze(response)});
+      const batch=Array.isArray(error.url),urls=batch?error.url:[error.url];
+      if(urls.length>16||!urls.every(u=>typeof u==='string'))
+        throw TypeError('⤋ batch expects at most 16 String URLs');
+      if(journal.length>=maxHttpRequests||totalHttpRequests+urls.length>maxHttpRequests)
+        throw Error('H-Code HTTP effect budget exceeded');
+      // Validate ALL URLs before allowing any host I/O.
+      for(const raw of urls){
+        let url;
+        try{url=new URL(raw);}catch{throw TypeError('H-Code HTTP URL is invalid');}
+        if(!['http:','https:'].includes(url.protocol)||url.username||url.password)
+          throw TypeError('H-Code HTTP(S) URL required without embedded credentials');
+      }
+      // Every host call must start before any result is awaited. This is true
+      // concurrency; the interpreter does not serialize effect journal entries.
+      const answers=await Promise.all(urls.map(async u=>{
+        try{return await options.httpGet(u);}
+        catch{return {status:0,ok:false,body:'',retryAfter:0};}
+      }));
+      const normalize=answer=>{
+        // Normalize and freeze the host boundary; no arbitrary fields,
+        // prototypes, functions or unbounded response bodies.
+        if(answer===null||typeof answer!=='object'||Array.isArray(answer)||
+           Object.keys(answer).sort().join(',')!=='body,ok,retryAfter,status'||
+           !Number.isInteger(answer.status)||
+           !(answer.status===0||answer.status>=200&&answer.status<=599)||
+           typeof answer.ok!=='boolean'||typeof answer.body!=='string'||
+           !Number.isInteger(answer.retryAfter)||answer.retryAfter<0||answer.retryAfter>120000||
+           (answer.status===0&&(answer.ok||answer.body!==''))||
+           (answer.status!==0&&answer.ok!==(answer.status>=200&&answer.status<300))||
+           new TextEncoder().encode(answer.body).byteLength>65536)
+          throw TypeError('Invalid H-Code HTTP response from host');
+        return Object.freeze(Object.assign(Object.create(null),{
+          body:answer.body,ok:answer.ok,retryAfter:answer.retryAfter,status:answer.status
+        }));
+      };
+      const values=answers.map(normalize);
+      const value=batch?Object.freeze(values):values[0];
+      journal.push({url:batch?Object.freeze([...urls]):urls[0],value});
+      totalHttpRequests+=urls.length;
     }
   }
 }

@@ -13,6 +13,7 @@ import {verifyCanonical03} from './canonical20-verify-03.mjs';
 import {verifyCanonical04} from './canonical20-verify-04.mjs';
 import {verifyCanonical01} from './canonical20-verify-01.mjs';
 import {verifyCanonical06} from './canonical20-verify-06.mjs';
+import {verifyCanonical08} from './canonical20-verify-08.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
 const registryBytes=readFileSync(join(root,'compact/canonical20/workloads.json'));
@@ -108,6 +109,12 @@ export function readiness(){
         // Do NOT trust the frozen JSON registry's original unsupported label.
         fullEvidence[w.id]=verifyCanonical06();
         verified++;
+      }else if(w.id==='08-concurrent-requests'){
+        // Exactly the original concurrent HTTP acceptance: barrier server
+        // blocks any response until all calls begin. All three independently
+        // executed runtimes must pass SHA-locked fixtures and generated cases.
+        fullEvidence[w.id]=verifyCanonical08();
+        verified++;
       }else{unsupported++;}
     }else if(w.status==='reference_partial'){
       if(w.evidence==='m10:fibonacci'){
@@ -156,7 +163,7 @@ export function readiness(){
     historicalM14IsGlobalMetric:false,
     evidenceByFullTask:fullEvidence,
     evidenceByPartialTask:evidence,
-    explanation:'Full verification is derived from frozen Rust/JS/TS proofs (including real HTTP for task06); original preregistration remains SHA-frozen and every unsupported task stays in the denominator. Correctness oracles are not automatically competitive TypeScript baselines.'
+    explanation:'Full verification is derived from frozen Rust/JS/TS proofs (including real HTTP retries and task08 genuine parallel barrier); original preregistration remains SHA-frozen and every unsupported task stays in the denominator. Correctness oracles are not automatically competitive TypeScript baselines.'
   };
 }
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){

@@ -57,7 +57,9 @@ impl Emitter {
     TypedExprKind::TextWords(value)=>format!("__hc_text_words({})",self.expr(value)),
     TypedExprKind::Histogram(value)=>format!("__hc_hist({})",self.expr(value)),
     TypedExprKind::FileRead(value)=>format!("__hc_csv_read_file({})",self.expr(value)),
-    TypedExprKind::HttpGet(value)=>format!("(await __hc_http_get({}))",self.expr(value)),
+    TypedExprKind::HttpGet(value)=>if matches!(value.ty,Type::Sequence(_)) {
+      format!("(await __hc_http_batch({}))",self.expr(value))
+    }else{format!("(await __hc_http_get({}))",self.expr(value))},
     TypedExprKind::Sleep(value)=>format!("(await __hc_sleep({}))",self.expr(value)),
     TypedExprKind::CsvTyped{schema,value}=>format!("__hc_csv_typed({}, {})",self.expr(value),csv_schema(schema)),
     TypedExprKind::StdinText=>"__hc_stdin()".into(),
