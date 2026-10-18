@@ -101,3 +101,11 @@ fn runtime_json_validation_is_recursive_exact_and_fails_closed(){
     let err=compile(&src).unwrap_err();
     assert!(err.contains("⤓ schema must be a concrete"),"{err}");
 }
+
+#[test]
+fn sha_frozen_m12_json_microcase_runs_in_real_compiler_generated_javascript(){
+    let file=std::path::Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap()
+        .join("compact/benchmarks/m12/json-typed.hc");
+    let source=std::fs::read_to_string(file).unwrap();
+    assert_eq!(run(&source).unwrap(),"Ada\n{\"age\":42,\"name\":\"Ada\"}\n");
+}
