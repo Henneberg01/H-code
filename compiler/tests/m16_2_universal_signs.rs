@@ -156,6 +156,15 @@ fn old_manifest_formats_cannot_smuggle_quantifiers(){
 }
 
 #[test]
+fn type_variables_remain_in_scope_for_pure_local_annotations(){
+    let mut f=Temp::new();
+    let changed="∀T ƒ head(xs:⟦T⟧)→T {≔first:T←xs⟦0⟧;↩first;}\n∀T ƒ repeat(xs:⟦T⟧)→⟦T⟧ ↩ xs⧺xs;\n";
+    f.source_edit(changed);
+    let reg=f.load().unwrap();
+    assert_eq!(run(&(USE.to_string()+"print(p∷⥇(⟦1⟧));print(p∷⥇(⟦\"x\"⟧));"),&reg).unwrap(),"1\nx\n");
+}
+
+#[test]
 fn hash_modification_is_rejected_even_for_statistically_typed_generic_functions(){
     let mut f=Temp::new();f.save();assert!(f.load().is_ok());
     fs::write(f.source(),"∀T ƒ head(xs:⟦T⟧)→T ↩ 777;\n").unwrap();

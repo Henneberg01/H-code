@@ -71,7 +71,7 @@ pub enum TypedExprKind {
 
 #[derive(Clone)]
 struct Binding { ty:Type,assignable:bool }
-struct ActiveFunction { expected:Type,saw_return:bool }
+struct ActiveFunction { expected:Type,saw_return:bool,generics:Vec<String> }
 
 pub fn check(program:&Program, registry:&PackageRegistry, allow_print:bool)->Result<TypedProgram,Diagnostic>{
     let mut checker=Checker{
@@ -218,7 +218,8 @@ impl Checker {
                 }
                 let expr=self.expression(value)?;
                 let binding_ty=if let Some(ty)=annotation {
-                    let expected=Type::from_name(ty,node.span)?;
+                    let bound=self.active_function.as_ref().map(|f|f.generics.as_slice()).unwrap_or(&[]);
+                    let expected=Type::from_bound_name(ty,bound,node.span)?;
                     self.unify(&expected,&expr.ty,node.span,"Declaration type mismatch")?;
                     expected
                 } else {expr.ty.clone()};
@@ -232,7 +233,7 @@ impl Checker {
                 self.unify(&binding.ty,&expr.ty,node.span,"Assignment type mismatch")?;
                 TypedStmtKind::Assign{name:name.clone(),value:expr}
             }
-            StmtKind::Function{name,parameters,body,..}=>{
+            StmtKind::Function{name,type_parameters,parameters,body,..}=>{
                 let binding=self.lookup(name,node.span)?;
                 let Type::Function(params,ret)=binding.ty else {unreachable!("predeclared function")};
                 self.push();
@@ -240,7 +241,7 @@ impl Checker {
                     self.declare(&param.name,ty.clone(),true,param.span)?;
                 }
                 let previous=self.active_function.take();
-                self.active_function=Some(ActiveFunction{expected:(*ret).clone(),saw_return:false});
+                self.active_function=Some(ActiveFunction{expected:(*ret).clone(),saw_return:false,generics:type_parameters.clone()});
                 let (typed_body,always_returns)=self.body(body)?;
                 let current=self.active_function.take().expect("inside function");
                 self.active_function=previous;
