@@ -9,7 +9,7 @@ impl Workspace{
   let root=std::env::temp_dir().join(format!("hcode-m163-{}-{n}",std::process::id()));
   fs::create_dir_all(root.join("packages/poly.auto")).unwrap();
   fs::copy(root_source(),root.join("packages/poly.auto/signs.hcs")).unwrap();
-  fs::copy(root().join("packages/poly.auto/demo.hc"),root.join("packages/poly.auto/demo.hc")).unwrap();
+  fs::copy(Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap().join("packages/poly.auto/demo.hc"),root.join("packages/poly.auto/demo.hc")).unwrap();
   Self(root)
  }
  fn run(&self,extra:&[&str])->std::process::Output{
