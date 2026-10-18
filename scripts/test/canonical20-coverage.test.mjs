@@ -16,9 +16,9 @@ test('all 20 canonical tasks remain registered in source order, including unsupp
 test('source-locked reference-only examples cannot be misrepresented as global 70% proof',{skip:!canRunTs},()=>{
   const r=readiness();
   assert.equal(r.preregisteredTasks,20);
-  assert.equal(r.verifiedFullWorkloads,3);
+  assert.equal(r.verifiedFullWorkloads,4);
   assert.equal(r.partialReferenceEvidence,0);
-  assert.equal(r.unsupported,17);
+  assert.equal(r.unsupported,16);
   assert.equal(r.complete,false);
   assert.equal(r.globalMedianCodepointReduction,null);
   assert.equal(r.objectiveAchieved,false);
@@ -37,6 +37,12 @@ test('source-locked reference-only examples cannot be misrepresented as global 7
   assert.equal(r.capabilityDemandIsNotCompilerCoverage,true);
   assert.deepEqual(r.requestedByUnverifiedTasks.slice(0,3).map(x=>[x.capability,x.workloads]),
     [['records',4],['async',3],['multi-file-project',3]]);
+  assert.equal(r.evidenceByFullTask['03-text-frequency-counter'].kind,'full-compiler-evidence');
+  assert.equal(r.evidenceByFullTask['03-text-frequency-counter'].positiveFixturesVerified,10);
+  assert.equal(r.evidenceByFullTask['03-text-frequency-counter'].generatedUnicodeVariantsVerified,28);
+  assert.equal(r.evidenceByFullTask['03-text-frequency-counter'].staticTypeFailuresRejectedInRustAndReference,6);
+  assert.equal(r.evidenceByFullTask['03-text-frequency-counter'].genericPrimitiveProgramsVerified,5);
+  assert.equal(r.evidenceByFullTask['03-text-frequency-counter'].runtimeOversizedTokenSequenceRejected,true);
   assert.equal(r.evidenceByFullTask['05-json-transformation'].kind,'full-compiler-evidence');
   assert.equal(r.evidenceByFullTask['05-json-transformation'].positiveFixturesVerified,3);
   assert.equal(r.evidenceByFullTask['05-json-transformation'].generatedVariantsVerified,12);
@@ -62,8 +68,8 @@ test('the strict twenty-workload CI gate intentionally fails until all 20 pass',
   assert.match(child.stderr,/all 20 must be compiler-verified/);
   const report=JSON.parse(child.stdout);
   assert.equal(report.preregisteredTasks,20);
-  assert.equal(report.verifiedFullWorkloads,3);
-  assert.equal(report.unsupported,17);
+  assert.equal(report.verifiedFullWorkloads,4);
+  assert.equal(report.unsupported,16);
   assert.equal(report.globalMedianCodepointReduction,null);
   assert.equal(report.objectiveAchieved,false);
 });
