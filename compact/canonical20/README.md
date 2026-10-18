@@ -23,6 +23,8 @@ The other **14 tasks are explicitly unsupported/unverified** and remain counted 
 
 The checker **still refuses arbitrary `status: verified` labels**. Workloads 01, 02, 03, 04, 05 and 10 are counted as fully verified only by separately executing their source-SHA-locked, compiler-generated program and a TypeScript baseline with the full positive/negative fixture contract. A JSON label alone cannot manufacture a green benchmark.
 
+**Task 06 (M19.06-B0; fixture/TypeScript-oracle stage only):** six SHA-frozen loopback HTTP sequences including 500/429/200, bounded exponential backoff, Retry-After, terminal 4xx and exhaustion are now tested against a genuine local HTTP server and an independent developer-authored TypeScript baseline. Run `npm run benchmark20:http-contract`. **No H-Code HTTP primitive, async effect, or Rust/JS compiler/runtime proof is implemented by this stage. Task 06 remains unsupported; coverage stays 6/20.** See `compact/canonical20/PROOF-06-DRAFT.md`.
+
 ### What we build next: evidence-driven language primitives
 
 The status command also reports **required capabilities across all unverified workloads**. This is the immutable registration's demand tally, **not** a claim about which features the current compiler already has:

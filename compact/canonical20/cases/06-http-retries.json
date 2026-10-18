@@ -1,0 +1,74 @@
+{
+  "id": "06-http-retries",
+  "acceptance": "fake 500/429/200 responses, bounded retries and deterministic trace",
+  "canonicalRegistryGitBlobSha": "46653ef90ffb3e420fba4ddfbfac3c4cfd57f3b3",
+  "stage": "fixture-contract-only-not-compiler-verified",
+  "requestMethod": "GET",
+  "maxAttempts": 4,
+  "baseDelayMs": 100,
+  "maxBackoffMs": 1000,
+  "timeoutMs": 2000,
+  "retryableStatuses": [429, 500, 502, 503, 504],
+  "cases": [
+    {
+      "id": "first-200",
+      "responses": [{"status": 200, "body": "ok"}],
+      "expected": {"ok": true, "status": 200, "body": "ok", "reason": null,
+        "trace": [{"attempt": 1, "status": 200, "decision": "success", "waitMs": 0}]}
+    },
+    {
+      "id": "recover-500-429-200",
+      "responses": [
+        {"status": 500, "body": "temp"},
+        {"status": 429, "body": "rate-limited", "retryAfterSeconds": 1},
+        {"status": 200, "body": "recovered"}
+      ],
+      "expected": {"ok": true, "status": 200, "body": "recovered", "reason": null,
+        "trace": [
+          {"attempt": 1, "status": 500, "decision": "retry", "waitMs": 100},
+          {"attempt": 2, "status": 429, "decision": "retry", "waitMs": 1000},
+          {"attempt": 3, "status": 200, "decision": "success", "waitMs": 0}
+        ]}
+    },
+    {
+      "id": "terminal-400",
+      "responses": [{"status": 400, "body": "bad request"}],
+      "expected": {"ok": false, "status": 400, "body": "bad request", "reason": "http",
+        "trace": [{"attempt": 1, "status": 400, "decision": "http-error", "waitMs": 0}]}
+    },
+    {
+      "id": "exhaust-503",
+      "responses": [
+        {"status": 503, "body": "unavailable-1"},
+        {"status": 503, "body": "unavailable-2"},
+        {"status": 503, "body": "unavailable-3"},
+        {"status": 503, "body": "unavailable-4"}
+      ],
+      "expected": {"ok": false, "status": 503, "body": "unavailable-4", "reason": "exhausted",
+        "trace": [
+          {"attempt": 1, "status": 503, "decision": "retry", "waitMs": 100},
+          {"attempt": 2, "status": 503, "decision": "retry", "waitMs": 200},
+          {"attempt": 3, "status": 503, "decision": "retry", "waitMs": 400},
+          {"attempt": 4, "status": 503, "decision": "exhausted", "waitMs": 0}
+        ]}
+    },
+    {
+      "id": "recover-502-200",
+      "responses": [
+        {"status": 502, "body": "gateway"},
+        {"status": 200, "body": "ready"}
+      ],
+      "expected": {"ok": true, "status": 200, "body": "ready", "reason": null,
+        "trace": [
+          {"attempt": 1, "status": 502, "decision": "retry", "waitMs": 100},
+          {"attempt": 2, "status": 200, "decision": "success", "waitMs": 0}
+        ]}
+    },
+    {
+      "id": "terminal-404",
+      "responses": [{"status": 404, "body": "not found"}],
+      "expected": {"ok": false, "status": 404, "body": "not found", "reason": "http",
+        "trace": [{"attempt": 1, "status": 404, "decision": "http-error", "waitMs": 0}]}
+    }
+  ]
+}
