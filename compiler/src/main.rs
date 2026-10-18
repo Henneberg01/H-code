@@ -49,10 +49,10 @@ fn run()->Result<(),String>{
     fs::write(&destination,javascript).map_err(|e|format!("Cannot write {}: {e}",destination.display()))?;
     println!("Built {}",destination.display());
    }else{
-    // Stdin is disabled; the compiled JS is delivered to Node via argument, not shell.
+    // Stdin is inherited as a real explicit effect. Programs without ⌨ never read it.
     let result=Command::new("node").arg("--input-type=module").arg("--eval").arg(javascript)
-      .stdin(Stdio::null()).status().map_err(|e|format!("Cannot execute Node.js: {e}"))?;
-    if !result.success(){return Err(format!("Compiled H-Code program exited with {result}"));}
+      .stdin(Stdio::inherit()).status().map_err(|e|format!("Cannot execute Node.js: {e}"))?;
+    if !result.success(){std::process::exit(result.code().unwrap_or(1));}
    }
   }
   _=>unreachable!()
