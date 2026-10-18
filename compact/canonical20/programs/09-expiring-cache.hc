@@ -1,0 +1,27 @@
+// TTL key-value cache expressed in H-Code; no compiler cache macro.
+≔ops←⤓⟦⦃at:Number,key:String,op:String,ttl:Number,value:String⦄⟧⌨
+≔cache:⟦⦃expires:Number,key:String,value:String⦄⟧←⟦⟧
+≔out:⟦⦃hit:Bool,key:String,size:Number,value:String⦄⟧←⟦⟧
+≔i←0
+⟳(i<⌗ops){
+ ≔c←ops⟦i⟧
+ cache←cache⌕λe:e·expires>c·at
+ ≔hit←⊥
+ ≔v←""
+ ⊢(c·op≡"set"){
+  cache←cache⌕λe:e·key≠c·key
+  ⊢(c·ttl>0){
+   ⊢(⌗cache≡8){
+    ≔old←cache⟦0⟧·key
+    cache←cache⌕λe:e·key≠old
+   }
+   cache←cache⧺⟦⦃expires:c·at+c·ttl,key:c·key,value:c·value⦄⟧
+  }
+ }⊣⇒⊢(c·op≡"get"){
+  ≔found←cache⌕λe:e·key≡c·key
+  ⊢(⌗found>0){hit←⊤;v←found⟦0⟧·value}
+ }
+ out←out⧺⟦⦃hit:hit,key:c·key,size:⌗cache,value:v⦄⟧
+ i←i+1
+}
+print(⤒out)
