@@ -65,7 +65,7 @@ export function convert(inputFile:string, outputRoot:string){
 }
 if(process.argv[1]&&process.argv[1].endsWith('07-file-conversion.ts')){
  const name=readFileSync(0,'utf8').trim();
- if(!/^[a-z0-9-]+\.csv$/.test(name))throw Error('Unsafe file input');
- const input=join(resolve(process.cwd(),'data','canonical07'),name);
+ if(!/^canonical07\/[a-z0-9-]+\.csv$/.test(name))throw Error('Unsafe file input');
+ const input=join(resolve(process.cwd(),'data'),name);
  console.log(convert(input,process.env.HCODE_FILE_WRITE_ROOT??''));
 }
