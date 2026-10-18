@@ -160,7 +160,7 @@ test('canonical12 rejects oversize bodies, malformed UTF-8, invalid types and JS
     for(const body of [
       '{'+ ' '.repeat(16400) +'}',
       Buffer.from([0x7b,0xff,0x7d]),
-      '{"id":"broken","name":"\uD800","qty":1}'
+      '{"id":"broken","name":"\\ud800","qty":1}'
     ]){
       const response=await fetch(instance.url+'/items',{
         method:'POST',headers:{'content-type':'application/json'},body
