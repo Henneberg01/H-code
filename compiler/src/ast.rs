@@ -52,6 +52,8 @@ pub enum ExprKind {
     JsonRead { schema: String, value: Box<Expr> },
     JsonWrite(Box<Expr>),
     FileRead(Box<Expr>),
+    // M19.06: effectful, implicitly-awaited GET; symbol ⤋.
+    HttpGet(Box<Expr>),
     StdinText,
     ArithEval(Box<Expr>),
     CsvTyped { schema: String, value: Box<Expr> },
