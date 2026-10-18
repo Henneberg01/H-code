@@ -74,11 +74,17 @@ fn version(v:&str)->bool {
     let xs:Vec<_>=v.split('.').collect();
     xs.len()==3 && xs.iter().all(|x|!x.is_empty()&& x.bytes().all(|n|n.is_ascii_digit())&&(x.len()==1||!x.starts_with('0')))
 }
-fn parse_type(ty:&str)->Result<Type,Diagnostic>{
-    if ty.contains('⟦') || ty.contains('⟧'){
+fn parse_contract_type(ty:&str,format:u32)->Result<Type,Diagnostic>{
+    // V1 contracts remain scalar-only. V2 reuses the compiler's own *concrete*
+    // recursive Type::Sequence; no unchecked Any, T, generic erasure or JS types.
+    if format==1 && (ty.contains('⟦') || ty.contains('⟧')){
         return Err(failure("Sequence types require package manifest v2; v1 scalar contracts only"));
     }
-    Type::from_name(ty,Span::new(1,1)).map_err(|_|failure(format!("Unsupported package contract type {ty}")))
+    if ty.len()>256 || ty.matches('⟦').count()>16 {
+        return Err(failure("Package contract type exceeds nesting or length limit"));
+    }
+    Type::from_name(ty,Span::new(1,1))
+        .map_err(|_|failure(format!("Unsupported package contract type {ty}")))
 }
 fn reserved_glyph(c:char)->bool {
     matches!(c,'ƒ'|'≔'|'↩'|'→'|'←'|'⊤'|'⊥'|'∧'|'∨'|'¬'|'≡'|'≠'|'≤'|'≥'|'∷'|'▷'|'∘'|'◇'|'⌗'|'⧺'|'∑'|'⌕'|'⇢'|'λ'|'⊢'|'⊣'|'⟳'|'⇒'|'⟦'|'⟧'|'∅'|'∀'|'∈')
@@ -99,7 +105,10 @@ pub fn load_lockfile(path:&Path)->Result<PackageRegistry,Diagnostic>{
         let (manifest_path,manifest_bytes)=safe_read(root,&entry.manifest)?;
         verify_sha(&manifest_bytes,&entry.manifest_hash,&format!("{key} manifest"))?;
         let manifest:Manifest=serde_json::from_slice(&manifest_bytes).map_err(|e|failure(format!("Invalid package manifest: {e}")))?;
-        if manifest.format!=1||manifest.name!=entry.name||manifest.version!=entry.version{
+        if !matches!(manifest.format,1|2) {
+            return Err(failure(format!("Unsupported package manifest format {}: {key}",manifest.format)));
+        }
+        if manifest.name!=entry.name||manifest.version!=entry.version{
             return Err(failure(format!("Package manifest identity mismatch: {key}")));
         }
         if !manifest.source.ends_with(".hc") || !manifest.source.as_bytes().iter().all(|c|c.is_ascii_alphanumeric()||matches!(*c,b'_'|b'-'|b'.')) || manifest.source.contains("..") {
@@ -133,9 +142,9 @@ pub fn load_lockfile(path:&Path)->Result<PackageRegistry,Diagnostic>{
                 if !ident(&param.name)||keyword(&param.name)||!param_names.insert(param.name.clone()){
                     return Err(failure(format!("Invalid or duplicate parameter name {}",param.name)));
                 }
-                parameters.push(parse_type(&param.ty)?);
+                parameters.push(parse_contract_type(&param.ty,manifest.format)?);
             }
-            let returns=parse_type(&op.returns)?;
+            let returns=parse_contract_type(&op.returns,manifest.format)?;
             let implementation=ast.statements.iter().find_map(|s|match &s.kind {
                 StmtKind::Function{name,parameters,returns,body:_} if name==&op.implementation=>Some((parameters,returns)),
                 _=>None
