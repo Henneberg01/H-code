@@ -16,12 +16,19 @@ test('all 20 canonical tasks remain registered in source order, including unsupp
 test('source-locked reference-only examples cannot be misrepresented as global 70% proof',{skip:!canRunTs},()=>{
   const r=readiness();
   assert.equal(r.preregisteredTasks,20);
-  assert.equal(r.verifiedFullWorkloads,5);
+  assert.equal(r.verifiedFullWorkloads,6);
   assert.equal(r.partialReferenceEvidence,0);
-  assert.equal(r.unsupported,15);
+  assert.equal(r.unsupported,14);
   assert.equal(r.complete,false);
   assert.equal(r.globalMedianCodepointReduction,null);
   assert.equal(r.objectiveAchieved,false);
+  assert.equal(r.evidenceByFullTask['01-calculator-cli'].kind,'full-compiler-evidence');
+  assert.equal(r.evidenceByFullTask['01-calculator-cli'].positiveFrozenInputsVerified,17);
+  assert.equal(r.evidenceByFullTask['01-calculator-cli'].negativeFrozenInputsVerified,15);
+  assert.equal(r.evidenceByFullTask['01-calculator-cli'].previouslyUnseenGeneratedInputsVerified,64);
+  assert.equal(r.evidenceByFullTask['01-calculator-cli'].invalidUtf8Rejected,true);
+  assert.equal(r.evidenceByFullTask['01-calculator-cli'].oversizedStdinRejected,true);
+  assert.equal(r.evidenceByFullTask['01-calculator-cli'].rustStaticWrongTypesRejected,5);
   assert.equal(r.evidenceByFullTask['02-fibonacci-recursion'].kind,'full-compiler-evidence');
   assert.equal(r.evidenceByFullTask['02-fibonacci-recursion'].fixedAcceptanceOutput,'13\n');
   assert.equal(r.evidenceByFullTask['02-fibonacci-recursion'].positiveCasesVerified,16);
@@ -73,8 +80,8 @@ test('the strict twenty-workload CI gate intentionally fails until all 20 pass',
   assert.match(child.stderr,/all 20 must be compiler-verified/);
   const report=JSON.parse(child.stdout);
   assert.equal(report.preregisteredTasks,20);
-  assert.equal(report.verifiedFullWorkloads,5);
-  assert.equal(report.unsupported,15);
+  assert.equal(report.verifiedFullWorkloads,6);
+  assert.equal(report.unsupported,14);
   assert.equal(report.globalMedianCodepointReduction,null);
   assert.equal(report.objectiveAchieved,false);
 });
