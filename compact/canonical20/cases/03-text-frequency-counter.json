@@ -1,0 +1,92 @@
+{
+  "id": "03-text-frequency-counter",
+  "acceptance": "normalize and count tokens; deterministic frequency ordering including Unicode cases",
+  "normalization": "NFC + lower case + NFC",
+  "tokenizer": "[\\p{L}\\p{N}][\\p{L}\\p{M}\\p{N}\\p{Pc}]* /gu",
+  "sort": "Unicode scalar order",
+  "historicCorpusGitBlobSha": "46653ef90ffb3e420fba4ddfbfac3c4cfd57f3b3",
+  "positives": [
+    {
+      "id": "ascii-casing",
+      "input": "Red RED blue red BLUE",
+      "expected": "[{\"count\":2,\"value\":\"blue\"},{\"count\":3,\"value\":\"red\"}]"
+    },
+    {
+      "id": "canonical-combining",
+      "input": "CAFÉ café café café.",
+      "expected": "[{\"count\":4,\"value\":\"café\"}]"
+    },
+    {
+      "id": "unicode-cjk",
+      "input": "東京 東京 世界 世界 עולם",
+      "expected": "[{\"count\":1,\"value\":\"עולם\"},{\"count\":2,\"value\":\"世界\"},{\"count\":2,\"value\":\"東京\"}]"
+    },
+    {
+      "id": "emoji-delimiters",
+      "input": "🦊 fox 🦊 FOX 🐶 hĕllo",
+      "expected": "[{\"count\":2,\"value\":\"fox\"},{\"count\":1,\"value\":\"hĕllo\"}]"
+    },
+    {
+      "id": "digits",
+      "input": "123 123 ٤٥٦ ٤٥٦ Ⅱ",
+      "expected": "[{\"count\":2,\"value\":\"123\"},{\"count\":2,\"value\":\"٤٥٦\"},{\"count\":1,\"value\":\"ⅱ\"}]"
+    },
+    {
+      "id": "punctuation",
+      "input": "can't can't hi_hi @HI_HI co-op",
+      "expected": "[{\"count\":2,\"value\":\"can\"},{\"count\":1,\"value\":\"co\"},{\"count\":2,\"value\":\"hi_hi\"},{\"count\":1,\"value\":\"op\"},{\"count\":2,\"value\":\"t\"}]"
+    },
+    {
+      "id": "empty",
+      "input": "",
+      "expected": "[]"
+    },
+    {
+      "id": "word-order",
+      "input": "z Z A a ä Ä ø Ø",
+      "expected": "[{\"count\":2,\"value\":\"a\"},{\"count\":2,\"value\":\"z\"},{\"count\":2,\"value\":\"ä\"},{\"count\":2,\"value\":\"ø\"}]"
+    },
+    {
+      "id": "whitespace",
+      "input": "alpha\tBETA\nalpha  beta",
+      "expected": "[{\"count\":2,\"value\":\"alpha\"},{\"count\":2,\"value\":\"beta\"}]"
+    },
+    {
+      "id": "greek-turkish",
+      "input": "İ i I ı Σ σ ς",
+      "expected": "[{\"count\":2,\"value\":\"i\"},{\"count\":1,\"value\":\"i̇\"},{\"count\":1,\"value\":\"ı\"},{\"count\":1,\"value\":\"ς\"},{\"count\":2,\"value\":\"σ\"}]"
+    }
+  ],
+  "negatives": [
+    {
+      "id": "words-number",
+      "source": "print(⟟42);",
+      "diagnostic": "Unicode text operation requires String"
+    },
+    {
+      "id": "scalars-boolean",
+      "source": "print(⫶⊤);",
+      "diagnostic": "Unicode text operation requires String"
+    },
+    {
+      "id": "hist-not-sequence",
+      "source": "print(⧉42);",
+      "diagnostic": "⧉ requires a typed sequence"
+    },
+    {
+      "id": "hist-records",
+      "source": "print(⧉⟦⦃value:1⦄⟧);",
+      "diagnostic": "⧉ requires a concrete"
+    },
+    {
+      "id": "hist-heterogeneous",
+      "source": "print(⧉⟦1,\"a\"⟧);",
+      "diagnostic": "Sequence elements must have matching types"
+    },
+    {
+      "id": "hist-untyped-empty",
+      "source": "print(⧉⟦⟧);",
+      "diagnostic": "⧉ requires a concrete"
+    }
+  ]
+}

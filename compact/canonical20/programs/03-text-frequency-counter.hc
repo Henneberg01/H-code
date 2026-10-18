@@ -1,0 +1,11 @@
+ƒ frequency(s:String)→String ↩ ⤒(⧉(⟟s));
+print(frequency("Red RED blue red BLUE"));
+print(frequency("CAFÉ café café café."));
+print(frequency("東京 東京 世界 世界 עולם"));
+print(frequency("🦊 fox 🦊 FOX 🐶 hĕllo"));
+print(frequency("123 123 ٤٥٦ ٤٥٦ Ⅱ"));
+print(frequency("can't can't hi_hi @HI_HI co-op"));
+print(frequency(""));
+print(frequency("z Z A a ä Ä ø Ø"));
+print(frequency("alpha\tBETA\nalpha  beta"));
+print(frequency("İ i I ı Σ σ ς"));
