@@ -1,0 +1,488 @@
+{
+  "id": "12-crud-api",
+  "acceptance": "server endpoints create/read/update/delete, request validation and deterministic persistence",
+  "originalRegistryGitBlobSha": "46653ef90ffb3e420fba4ddfbfac3c4cfd57f3b3",
+  "contractVersion": "m19.12-b0-2026-10-18",
+  "responseContentType": "application/json; charset=utf-8",
+  "storageFilename": "items-state.json",
+  "cases": [
+    {
+      "id": "create-read-update-restart-delete",
+      "steps": [
+        {
+          "method": "POST",
+          "path": "/items",
+          "body": {
+            "id": "alpha",
+            "name": "First",
+            "qty": 3
+          },
+          "status": 201,
+          "response": {
+            "id": "alpha",
+            "name": "First",
+            "qty": 3,
+            "version": 1
+          }
+        },
+        {
+          "method": "GET",
+          "path": "/items/alpha",
+          "status": 200,
+          "response": {
+            "id": "alpha",
+            "name": "First",
+            "qty": 3,
+            "version": 1
+          }
+        },
+        {
+          "method": "PUT",
+          "path": "/items/alpha",
+          "body": {
+            "name": "Revised",
+            "qty": 0,
+            "version": 1
+          },
+          "status": 200,
+          "response": {
+            "id": "alpha",
+            "name": "Revised",
+            "qty": 0,
+            "version": 2
+          }
+        },
+        {
+          "restart": true
+        },
+        {
+          "method": "GET",
+          "path": "/items/alpha",
+          "status": 200,
+          "response": {
+            "id": "alpha",
+            "name": "Revised",
+            "qty": 0,
+            "version": 2
+          }
+        },
+        {
+          "method": "DELETE",
+          "path": "/items/alpha",
+          "status": 204,
+          "response": null
+        },
+        {
+          "restart": true
+        },
+        {
+          "method": "GET",
+          "path": "/items/alpha",
+          "status": 404,
+          "response": {
+            "error": "not_found"
+          }
+        }
+      ],
+      "snapshot": []
+    },
+    {
+      "id": "validation-and-no-partial-mutation",
+      "steps": [
+        {
+          "method": "POST",
+          "path": "/items",
+          "body": {
+            "id": "safe",
+            "name": "Saved",
+            "qty": 5
+          },
+          "status": 201,
+          "response": {
+            "id": "safe",
+            "name": "Saved",
+            "qty": 5,
+            "version": 1
+          }
+        },
+        {
+          "method": "POST",
+          "path": "/items",
+          "body": {
+            "id": "safe",
+            "name": "Duplicate",
+            "qty": 9
+          },
+          "status": 409,
+          "response": {
+            "error": "conflict"
+          }
+        },
+        {
+          "method": "POST",
+          "path": "/items",
+          "body": {
+            "id": "extra",
+            "name": "Extra",
+            "qty": 1,
+            "admin": true
+          },
+          "status": 400,
+          "response": {
+            "error": "invalid"
+          }
+        },
+        {
+          "method": "POST",
+          "path": "/items",
+          "body": {
+            "id": "bad",
+            "name": "Missing"
+          },
+          "status": 400,
+          "response": {
+            "error": "invalid"
+          }
+        },
+        {
+          "method": "POST",
+          "path": "/items",
+          "body": {
+            "id": "bad",
+            "name": "Bad",
+            "qty": "7"
+          },
+          "status": 400,
+          "response": {
+            "error": "invalid"
+          }
+        },
+        {
+          "method": "POST",
+          "path": "/items",
+          "rawBody": "{not-json",
+          "status": 400,
+          "response": {
+            "error": "invalid"
+          }
+        },
+        {
+          "method": "PUT",
+          "path": "/items/safe",
+          "body": {
+            "name": "No",
+            "qty": 8,
+            "version": 0
+          },
+          "status": 400,
+          "response": {
+            "error": "invalid"
+          }
+        },
+        {
+          "method": "GET",
+          "path": "/items/safe",
+          "status": 200,
+          "response": {
+            "id": "safe",
+            "name": "Saved",
+            "qty": 5,
+            "version": 1
+          }
+        }
+      ],
+      "snapshot": [
+        {
+          "id": "safe",
+          "name": "Saved",
+          "qty": 5,
+          "version": 1
+        }
+      ]
+    },
+    {
+      "id": "unicode-and-strict-id",
+      "steps": [
+        {
+          "method": "POST",
+          "path": "/items",
+          "body": {
+            "id": "cafe",
+            "name": "東京 🛒",
+            "qty": 0
+          },
+          "status": 201,
+          "response": {
+            "id": "cafe",
+            "name": "東京 🛒",
+            "qty": 0,
+            "version": 1
+          }
+        },
+        {
+          "method": "POST",
+          "path": "/items",
+          "body": {
+            "id": "Bad ID",
+            "name": "Blocked",
+            "qty": 1
+          },
+          "status": 400,
+          "response": {
+            "error": "invalid"
+          }
+        },
+        {
+          "method": "PUT",
+          "path": "/items/cafe",
+          "body": {
+            "name": "Dansk æøå",
+            "qty": 42,
+            "version": 1
+          },
+          "status": 200,
+          "response": {
+            "id": "cafe",
+            "name": "Dansk æøå",
+            "qty": 42,
+            "version": 2
+          }
+        },
+        {
+          "restart": true
+        },
+        {
+          "method": "GET",
+          "path": "/items/cafe",
+          "status": 200,
+          "response": {
+            "id": "cafe",
+            "name": "Dansk æøå",
+            "qty": 42,
+            "version": 2
+          }
+        }
+      ],
+      "snapshot": [
+        {
+          "id": "cafe",
+          "name": "Dansk æøå",
+          "qty": 42,
+          "version": 2
+        }
+      ]
+    },
+    {
+      "id": "route-method-and-missing-entities",
+      "steps": [
+        {
+          "method": "GET",
+          "path": "/items/ghost",
+          "status": 404,
+          "response": {
+            "error": "not_found"
+          }
+        },
+        {
+          "method": "GET",
+          "path": "/items",
+          "status": 405,
+          "response": {
+            "error": "method_not_allowed"
+          }
+        },
+        {
+          "method": "PATCH",
+          "path": "/items/ghost",
+          "status": 405,
+          "response": {
+            "error": "method_not_allowed"
+          }
+        },
+        {
+          "method": "GET",
+          "path": "/unknown",
+          "status": 404,
+          "response": {
+            "error": "not_found"
+          }
+        },
+        {
+          "method": "GET",
+          "path": "/items/Bad_ID",
+          "status": 400,
+          "response": {
+            "error": "invalid"
+          }
+        },
+        {
+          "method": "DELETE",
+          "path": "/items/ghost",
+          "status": 404,
+          "response": {
+            "error": "not_found"
+          }
+        },
+        {
+          "method": "POST",
+          "path": "/items/ghost",
+          "body": {
+            "id": "ghost",
+            "name": "Blocked",
+            "qty": 0
+          },
+          "status": 405,
+          "response": {
+            "error": "method_not_allowed"
+          }
+        }
+      ],
+      "snapshot": []
+    },
+    {
+      "id": "stale-version-conflicts",
+      "steps": [
+        {
+          "method": "POST",
+          "path": "/items",
+          "body": {
+            "id": "v1",
+            "name": "Init",
+            "qty": 1
+          },
+          "status": 201,
+          "response": {
+            "id": "v1",
+            "name": "Init",
+            "qty": 1,
+            "version": 1
+          }
+        },
+        {
+          "method": "PUT",
+          "path": "/items/v1",
+          "body": {
+            "name": "Winner",
+            "qty": 2,
+            "version": 1
+          },
+          "status": 200,
+          "response": {
+            "id": "v1",
+            "name": "Winner",
+            "qty": 2,
+            "version": 2
+          }
+        },
+        {
+          "method": "PUT",
+          "path": "/items/v1",
+          "body": {
+            "name": "Stale",
+            "qty": 3,
+            "version": 1
+          },
+          "status": 409,
+          "response": {
+            "error": "conflict"
+          }
+        },
+        {
+          "restart": true
+        },
+        {
+          "method": "GET",
+          "path": "/items/v1",
+          "status": 200,
+          "response": {
+            "id": "v1",
+            "name": "Winner",
+            "qty": 2,
+            "version": 2
+          }
+        }
+      ],
+      "snapshot": [
+        {
+          "id": "v1",
+          "name": "Winner",
+          "qty": 2,
+          "version": 2
+        }
+      ]
+    },
+    {
+      "id": "delete-survives-restart-and-reinsert",
+      "steps": [
+        {
+          "method": "POST",
+          "path": "/items",
+          "body": {
+            "id": "del",
+            "name": "One",
+            "qty": 1
+          },
+          "status": 201,
+          "response": {
+            "id": "del",
+            "name": "One",
+            "qty": 1,
+            "version": 1
+          }
+        },
+        {
+          "method": "DELETE",
+          "path": "/items/del",
+          "status": 204,
+          "response": null
+        },
+        {
+          "method": "DELETE",
+          "path": "/items/del",
+          "status": 404,
+          "response": {
+            "error": "not_found"
+          }
+        },
+        {
+          "restart": true
+        },
+        {
+          "method": "POST",
+          "path": "/items",
+          "body": {
+            "id": "del",
+            "name": "Two",
+            "qty": 2
+          },
+          "status": 201,
+          "response": {
+            "id": "del",
+            "name": "Two",
+            "qty": 2,
+            "version": 1
+          }
+        },
+        {
+          "method": "GET",
+          "path": "/items/del",
+          "status": 200,
+          "response": {
+            "id": "del",
+            "name": "Two",
+            "qty": 2,
+            "version": 1
+          }
+        }
+      ],
+      "snapshot": [
+        {
+          "id": "del",
+          "name": "Two",
+          "qty": 2,
+          "version": 1
+        }
+      ]
+    }
+  ]
+}

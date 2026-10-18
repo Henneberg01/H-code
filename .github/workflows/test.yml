@@ -124,6 +124,9 @@ jobs:
       - name: Verify task11 Markdown heading and link extraction on six locked fixtures and nineteen generated cases
         run: npm run benchmark20:verify11
         if: ${{ success() || failure() }}
+      - name: Validate canonical12 independent CRUD oracle over real HTTP and durable state (B0 only)
+        run: npm run benchmark20:contract12
+        if: ${{ success() || failure() }}
       - name: Canonical twenty source-locked readiness check
         run: npm run benchmark20:status
         if: ${{ success() || failure() }}
