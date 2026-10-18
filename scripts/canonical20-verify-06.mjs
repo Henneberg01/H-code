@@ -57,6 +57,10 @@ export function verifyCanonical06(){
  const match=/^# tests (\d+)$/m.exec(result.stdout);
  if(!match||Number(match[1])<4||!/^# fail 0$/m.test(result.stdout))
    throw Error('Canonical06 expected live parity and negative test suites did not run');
+ const compiledBytes=/^# CANONICAL06_GENERATED_JS_BYTES=(\d+)$/m.exec(result.stdout);
+ const compiledSha=/^# CANONICAL06_GENERATED_JS_SHA256=([a-f0-9]{64})$/m.exec(result.stdout);
+ if(!compiledBytes||!compiledSha||Number(compiledBytes[1])<1)
+   throw Error('Canonical06 generated JavaScript size evidence missing');
 
  cache=Object.freeze({
    kind:'full-compiler-evidence',
@@ -73,6 +77,8 @@ export function verifyCanonical06(){
    typescriptCorrectnessOracleUnicodeCodepoints:all.ts.points,
    hcodeUtf8Bytes:all.hc.bytes,
    typescriptCorrectnessOracleUtf8Bytes:all.ts.bytes,
+   compiledJavascriptUtf8Bytes:Number(compiledBytes[1]),
+   compiledJavascriptSha256:compiledSha[1],
    comparisonIsCorrectnessOracleNotCompetitiveBaseline:true,
    provisionalCodepointReductionVsCorrectnessOraclePct:pct(all.hc.points,all.ts.points),
    provisionalUtf8ReductionVsCorrectnessOraclePct:pct(all.hc.bytes,all.ts.bytes),
