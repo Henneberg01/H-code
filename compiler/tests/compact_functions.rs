@@ -41,6 +41,7 @@ fn short_form_infers_types_and_supports_export_and_recursion(){
     assert_eq!(output(code),"42\n");
     let export="export ƒ inc(n: Number) → Number ↩ n+1;";
     assert!(generated(export).is_ok());
+    assert_eq!(output("export ƒ inc(n: Number) → Number ↩ n+1; print(inc(41));"),"42\n");
     let recursion="ƒ fact(n: Number) → Number {if(n<=1){↩ 1;}↩ n*fact(n-1);} print(fact(5));";
     assert_eq!(output(recursion),"120\n");
 }

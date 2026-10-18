@@ -161,7 +161,14 @@ impl Checker {
         Ok(())
     }
     fn predeclare(&mut self,statements:&[Stmt])->Result<(),Diagnostic>{
-        for stmt in statements {
+        for outer in statements {
+            // Export wraps a declaration but does not change when names enter scope.
+            // Predeclare exported functions as well, so recursion and forward calls
+            // work identically for exported and ordinary H-Code functions.
+            let stmt=match &outer.kind {
+                StmtKind::Export{declaration}=>declaration.as_ref(),
+                _=>outer
+            };
             let StmtKind::Function{name,parameters,returns,..}=&stmt.kind else {continue};
             if self.scopes.len()==1 && self.imported.contains_key(name) {
                 return Err(Diagnostic::new("TYPE",format!("Function {name} conflicts with package alias"),stmt.span));

@@ -17,7 +17,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       # Compile Rust early: JavaScript failures must not conceal compiler failures.
       # Keep test suites independent: one regression must not hide other failures.
-      - run: cargo test --manifest-path compiler/Cargo.toml
+      - run: cargo test --manifest-path compiler/Cargo.toml --no-fail-fast
         if: ${{ success() || failure() }}
       - run: npm test
         if: ${{ success() || failure() }}
