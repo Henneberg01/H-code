@@ -383,40 +383,6 @@ fn stmt_uses_file_write(s:&TypedStmt)->bool {
  }
 }
 
-fn expr_uses_sleep(e:&TypedExpr)->bool {
- match &e.kind {
-  TypedExprKind::FileWrite{filename,content}=>expr_uses_sleep(filename)||expr_uses_sleep(content),
-  TypedExprKind::Sleep(_)=>true,
-  TypedExprKind::JsonRead{value,..}|TypedExprKind::JsonWrite{value,..}|
-  TypedExprKind::HttpGet(value)|TypedExprKind::FileRead(value)|TypedExprKind::CsvTyped{value,..}|
-  TypedExprKind::ArithEval(value)|TypedExprKind::TextScalars(value)|
-  TypedExprKind::TextWords(value)|TypedExprKind::Histogram(value)|
-  TypedExprKind::Length(value)|TypedExprKind::Sum(value)|
-  TypedExprKind::Unary{operand:value,..}|TypedExprKind::Lambda{body:value,..}|
-  TypedExprKind::Section{right:value,..}=>expr_uses_sleep(value),
-  TypedExprKind::Record(fields)=>fields.iter().any(|(_,value)|expr_uses_sleep(value)),
-  TypedExprKind::Field{record,..}=>expr_uses_sleep(record),
-  TypedExprKind::RecordUpdate{record,value,..}=>expr_uses_sleep(record)||expr_uses_sleep(value),
-  TypedExprKind::Sequence(items)=>items.iter().any(expr_uses_sleep),
-  TypedExprKind::Index{sequence,index}=>expr_uses_sleep(sequence)||expr_uses_sleep(index),
-  TypedExprKind::Binary{left,right,..}=>expr_uses_sleep(left)||expr_uses_sleep(right),
-  TypedExprKind::Choice{condition,when_true,when_false}=>expr_uses_sleep(condition)||expr_uses_sleep(when_true)||expr_uses_sleep(when_false),
-  TypedExprKind::Call{callee,arguments}=>expr_uses_sleep(callee)||arguments.iter().any(expr_uses_sleep),
-  _=>false
- }
-}
-fn stmt_uses_sleep(s:&TypedStmt)->bool {
- match &s.kind {
-  TypedStmtKind::Use{..}|TypedStmtKind::Import{..}=>false,
-  TypedStmtKind::Export{declaration}=>stmt_uses_sleep(declaration),
-  TypedStmtKind::Let{value,..}|TypedStmtKind::Assign{value,..}|
-  TypedStmtKind::Return(value)|TypedStmtKind::Expression(value)=>expr_uses_sleep(value),
-  TypedStmtKind::Function{body,..}|TypedStmtKind::While{body,..}=>body.iter().any(stmt_uses_sleep),
-  TypedStmtKind::If{condition,then_body,else_body}=>expr_uses_sleep(condition)||
-    then_body.iter().any(stmt_uses_sleep)||else_body.as_ref().is_some_and(|body|body.iter().any(stmt_uses_sleep))
- }
-}
-
 fn expr_cli_flags(e:&TypedExpr)->u8 {
   match &e.kind {
     TypedExprKind::FileWrite{filename,content}=>expr_cli_flags(filename)|expr_cli_flags(content),
