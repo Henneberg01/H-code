@@ -5,6 +5,7 @@ on:
     branches:
       - feat/m14-typed-lambda-glyph
       - feat/m15-sign-blocks-delimiters
+      - feat/m16-typed-user-signs
 permissions:
   contents: read
 jobs:
