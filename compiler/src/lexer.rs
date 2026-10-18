@@ -123,6 +123,7 @@ pub fn lex(source: &str) -> Result<Vec<Token>, Diagnostic> {
                 "use"=>TokenKind::Use,"import"=>TokenKind::Import,"export"=>TokenKind::Export,"as"=>TokenKind::As,
                 "true"=>TokenKind::True,"false"=>TokenKind::False,"and"=>TokenKind::And,
                 "or"=>TokenKind::Or,"not"=>TokenKind::Not,"lambda"=>TokenKind::Lambda,"forall"=>TokenKind::Forall,
+                "json_in"=>TokenKind::JsonRead,"json_out"=>TokenKind::JsonWrite,
                 _=>TokenKind::Identifier(word)
             };
             result.push(Token{kind,span});continue;
