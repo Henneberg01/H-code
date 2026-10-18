@@ -101,6 +101,7 @@ pub enum TypedExprKind {
     FileRead(Box<TypedExpr>),
     FileWrite { filename:Box<TypedExpr>, content:Box<TypedExpr> },
     HttpGet(Box<TypedExpr>),
+    HttpServe(Box<TypedExpr>),
     Sleep(Box<TypedExpr>),
     StdinText,
     ArithEval(Box<TypedExpr>),
@@ -482,6 +483,24 @@ impl Checker {
                 let output=if batch {Type::Sequence(Box::new(structure))}else{structure};
                 (TypedExprKind::HttpGet(Box::new(input)),output)
             }
+            ExprKind::HttpServe(value)=>{
+                // The server itself is an application effect. Its callback is a
+                // pure, statically typed H-Code function, not JS passed through.
+                if !self.allow_print || self.active_function.is_some() || self.lambda_depth>0 {
+                    return Err(Diagnostic::new("EFFECT","⤊ HTTP serve is only available in effectful top-level flow".into(),expr.span));
+                }
+                let input=self.expression(value)?;
+                let request=Type::Record(vec![
+                    ("body".into(),Type::String),("method".into(),Type::String),
+                    ("path".into(),Type::String)
+                ]);
+                let response=Type::Record(vec![
+                    ("body".into(),Type::String),("status".into(),Type::Number)
+                ]);
+                let expected=Type::Function(vec![request],Box::new(response));
+                self.unify(&expected,&input.ty,value.span,"⤊ requires (Request)->Response handler")?;
+                (TypedExprKind::HttpServe(Box::new(input)),Type::Unit)
+            }
             ExprKind::Sleep(value)=>{
                 if !self.allow_print || self.active_function.is_some() || self.lambda_depth>0 {
                     return Err(Diagnostic::new("EFFECT","⌛ delay is only available in effectful top-level program flow; pure packages and sync closures cannot wait".into(),expr.span));
@@ -820,7 +839,7 @@ impl Checker {
             TypedExprKind::Record(fields)=>{for (_,value) in fields{self.finalize_expr(value)?;}},
             TypedExprKind::Field{record,..}=>self.finalize_expr(record)?,
             TypedExprKind::JsonRead{value,..}|TypedExprKind::JsonWrite{value,..}=>self.finalize_expr(value)?,
-            TypedExprKind::TextScalars(value)|TypedExprKind::TextWords(value)|TypedExprKind::Histogram(value)|TypedExprKind::Markdown(value)|TypedExprKind::FileRead(value)|TypedExprKind::HttpGet(value)|TypedExprKind::Sleep(value)|TypedExprKind::ArithEval(value)=>self.finalize_expr(value)?,
+            TypedExprKind::TextScalars(value)|TypedExprKind::TextWords(value)|TypedExprKind::Histogram(value)|TypedExprKind::Markdown(value)|TypedExprKind::HttpServe(value)|TypedExprKind::FileRead(value)|TypedExprKind::HttpGet(value)|TypedExprKind::Sleep(value)|TypedExprKind::ArithEval(value)=>self.finalize_expr(value)?,
             TypedExprKind::CsvTyped{value,..}=>self.finalize_expr(value)?,
             TypedExprKind::FileWrite{filename,content}=>{self.finalize_expr(filename)?;self.finalize_expr(content)?;},
             TypedExprKind::RecordUpdate{record,value,..}=>{self.finalize_expr(record)?;self.finalize_expr(value)?;},

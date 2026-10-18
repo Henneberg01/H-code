@@ -127,6 +127,9 @@ jobs:
       - name: Validate canonical12 independent CRUD oracle over real HTTP and durable state (B0 only)
         run: npm run benchmark20:contract12
         if: ${{ success() || failure() }}
+      - name: M19.12 B1 native typed inbound HTTP serve symbol and independent JS parity
+        run: npm run benchmark20:serve12b1
+        if: ${{ success() || failure() }}
       - name: Canonical twenty source-locked readiness check
         run: npm run benchmark20:status
         if: ${{ success() || failure() }}
