@@ -1,4 +1,5 @@
 // H-Code M1 reference interpreter and symbol linker. NOT a production compiler.
+import {specializeCall,checkSpecializedReturn} from './package-v3-signatures.mjs';
 export const CORE_GLYPHS = Object.freeze({
   '\u0192': 'fn', '\u2254': 'let', '\u21a9': 'return', '\u2192': '->',
   '\u2190': '=', '\u22a4': 'true', '\u22a5': 'false',
@@ -365,7 +366,7 @@ export function linkProgram(ast, registry=new Map()) {
         if(args.length!==contract.parameters.length)throw new HCodeError(`${callee.id} expects ${contract.parameters.length} argument(s), got ${args.length}`,line,column);
         for(let i=0;i<args.length;i++){
           const observed=literalType(args[i]),expected=contract.parameters[i].type;
-          if(observed&&observed!==expected)throw new HCodeError(`${callee.id} argument ${i+1} expects ${expected}, got ${observed}`,line,column);
+          if(observed&&!(contract.typeParameters?.length)&&observed!==expected)throw new HCodeError(`${callee.id} argument ${i+1} expects ${expected}, got ${observed}`,line,column);
         }
       }
       return {...node,callee,args};
@@ -573,6 +574,11 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
     }
   }
   function block(node,parent){const scope=new Scope(parent);for(const statement of node.body)stmt(statement,scope);}
+  const usesBoundType=(type,binders=[])=>{
+    if(!type)return false;
+    while(type.startsWith('⟦')&&type.endsWith('⟧'))type=type.slice(1,-1);
+    return binders.includes(type);
+  };
   function stmt(node,scope){
     step();
     switch(node.kind){
@@ -599,10 +605,12 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
           if(args.length!==node.params.length)throw Error(`${node.name} expects ${node.params.length} arguments`);
           const inner=new Scope(scope);inner.returnType=node.returnType;
           for(let j=0;j<args.length;j++){
-            requireType(args[j],node.params[j].type);
+            // Rigid ∀ is verified statically on the trusted SHA-locked source;
+            // the package boundary performs concrete per-call specialization.
+            if(!usesBoundType(node.params[j].type,node.typeParameters))requireType(args[j],node.params[j].type);
             inner.define(node.params[j].name,args[j],node.params[j].type);
           }
-          try{for(const statement of node.body.body)stmt(statement,inner);}catch(e){if(e instanceof ReturnSignal){requireType(e.value,node.returnType,'return');return e.value;}throw e;}
+          try{for(const statement of node.body.body)stmt(statement,inner);}catch(e){if(e instanceof ReturnSignal){if(!usesBoundType(node.returnType,node.typeParameters))requireType(e.value,node.returnType,'return');return e.value;}throw e;}
           return null;
         };
         scope.define(node.name,fn);break;
@@ -627,6 +635,7 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
       operations.set(id,(...args)=>{
         step();
         if(args.length!==operation.parameters.length)throw Error(`${id} expects ${operation.parameters.length} argument(s)`);
+        const specialized=pkg.manifest.format===3?specializeCall(operation,args,maxSequenceItems):null;
         for(let j=0;j<args.length;j++){
           const actual=runtimeType(args[j]),expected=operation.parameters[j].type;
           if(pkg.manifest.format===2){
@@ -636,7 +645,9 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
         }
         const result=implementation(...args);
         const actual=runtimeType(result);
-        if(pkg.manifest.format===2){
+        if(pkg.manifest.format===3){
+          checkSpecializedReturn(result,specialized,maxSequenceItems);
+        }else if(pkg.manifest.format===2){
           try{requireType(result,operation.returns,'return');}
           catch(e){throw Error(`${id}: return expects ${operation.returns}: ${e.message}`);}
         }else if(actual!==operation.returns)throw Error(`${id}: return expects ${operation.returns}, got ${actual}`);
