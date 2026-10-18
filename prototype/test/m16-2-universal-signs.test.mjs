@@ -85,6 +85,16 @@ test('each invocation is specialized freshly, without leaking earlier T to later
   assert.equal(normalizeBinders(['T'])[0],'T');
 });
 
+test('verified polymorphic source supports type-preserving local annotations',()=>{
+  fixture(f=>{
+    f.editSource('∀T ƒ head(xs:⟦T⟧)→T {≔first:T←xs⟦0⟧;↩first;}\n'+
+      '∀T ƒ repeat(xs:⟦T⟧)→⟦T⟧ ↩ xs⧺xs;\n');
+    const r=f.load();
+    assert.equal(stdout(uses+'print(poly∷⥇(⟦1⟧));print(poly∷⥇(⟦"x"⟧));',r),'1\nx');
+    assert.throws(()=>stdout(uses+'print(poly∷⥇(⟦⊤,1⟧));',r),/matching|Heterogeneous|expects/);
+  });
+});
+
 test('mismatched element types, arity and unknown empty type are rejected',()=>{
   const r=loadLockedPackages(lock);
   for(const program of [
