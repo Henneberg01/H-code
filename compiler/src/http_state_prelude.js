@@ -1,7 +1,7 @@
 // M19.12 B2a: capability-gated transactional state around the same generic
 // inbound H-Code HTTP server. The entire reducer is USER-WRITTEN H-Code.
 // No CRUD routes, schemas, IDs or request bodies are interpreted here.
-const __hc_http_serve_state=(handler,initial)=>{
+const __hc_http_serve_state=(handler,initial,expanded=false)=>{
   __hc_tick();
   if(typeof handler!=='function' || typeof initial!=='string')
     throw TypeError('⤊(handler,initial) expects Function and String');
@@ -11,24 +11,37 @@ const __hc_http_serve_state=(handler,initial)=>{
   const mode=process.env.HCODE_HTTP_STATE_MODE??'legacy';
   if(mode!=='legacy'&&mode!=='cas-v1')throw Error('⤊ unknown persistence mode');
   const cas=mode==='cas-v1';
+  // Expanded typed HTTP responses require CAS v1 receipts to persist MIME
+  // headers together with response bodies. Legacy journal remains unchanged.
+  if(expanded&&!cas)
+    throw Error('⤊ extended HTTP response requires opt-in cas-v1 persistent state');
   const store=cas?createHttpCasStateStore({root,initial}):createHttpStateStore({root,initial});
   try {
     return __hc_http_serve((request,metadata)=>{
       const requestId=metadata.requestId;
       if(requestId&&!__hc_state_receipt_id.test(requestId))
-        return __hc_record([['body','invalid_request_id'],['status',400]]);
+        return expanded?
+          __hc_record([['body','invalid_request_id'],['contentType','text/plain; charset=utf-8'],['status',400]]):
+          __hc_record([['body','invalid_request_id'],['status',400]]);
       const digest=requestId?__hc_state_request_digest(
         request.method,request.path,request.body,metadata.contentType):null;
       if(cas){
+        const typedRequest=expanded?__hc_record([
+          ['body',request.body],['contentType',metadata.contentType],
+          ['method',request.method],['path',request.path]
+        ]):request;
         const result=executeHttpCasTransaction({
-          store,handler,request,metadata,digest,
+          store,handler,request:typedRequest,metadata,digest,expanded,
           invoke:(fn,r,state)=>{
             __hc_cas_reducer_active=true;
             try{return fn(r,state);}
             finally{__hc_cas_reducer_active=false;}
           }
         });
-        return __hc_record([['body',result.body],['status',result.status]]);
+        return expanded?
+          __hc_record([['body',result.body],['contentType',result.contentType],
+                       ['status',result.status]]):
+          __hc_record([['body',result.body],['status',result.status]]);
       }
       const previous=requestId?store.receiptFor(requestId):null;
       if(previous){

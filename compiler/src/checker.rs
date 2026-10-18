@@ -621,16 +621,30 @@ impl Checker {
                 let checked_handler=self.expression(handler)?;
                 let checked_initial=self.expression(initial)?;
                 self.unify(&Type::String,&checked_initial.ty,initial.span,"⤊ initial state requires String")?;
-                let request=Type::Record(vec![
+                // B3a: same ⤊ glyph, two reusable typed HTTP envelopes.
+                // The legacy three-field request/response remains supported.
+                let extended=matches!(&checked_handler.ty,
+                    Type::Function(args,_) if matches!(args.first(),
+                        Some(Type::Record(fields)) if fields.iter().any(|(key,_)|key=="contentType")));
+                let mut request_fields:Vec<(String,Type)>=vec![
                     ("body".into(),Type::String),("method".into(),Type::String),
                     ("path".into(),Type::String)
-                ]);
-                let response=Type::Record(vec![
+                ];
+                let mut response_fields:Vec<(String,Type)>=vec![
                     ("body".into(),Type::String),("state".into(),Type::String),
                     ("status".into(),Type::Number)
-                ]);
-                let expected=Type::Function(vec![request,Type::String],Box::new(response));
-                self.unify(&expected,&checked_handler.ty,handler.span,"⤊ state handler must accept (Request,String) and return {body,state,status}")?;
+                ];
+                if extended {
+                    request_fields.push(("contentType".into(),Type::String));
+                    response_fields.push(("contentType".into(),Type::String));
+                    request_fields.sort_by(|a,b|a.0.cmp(&b.0));
+                    response_fields.sort_by(|a,b|a.0.cmp(&b.0));
+                }
+                let expected=Type::Function(
+                    vec![Type::Record(request_fields),Type::String],
+                    Box::new(Type::Record(response_fields)));
+                self.unify(&expected,&checked_handler.ty,handler.span,
+                    "⤊ state handler must accept a typed HTTP Request,String and return body/state/status (and contentType for extended requests)")?;
                 (TypedExprKind::HttpServeState{handler:Box::new(checked_handler),initial:Box::new(checked_initial)},Type::Unit)
             }
             ExprKind::Sleep(value)=>{

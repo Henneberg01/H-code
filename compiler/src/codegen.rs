@@ -60,7 +60,12 @@ impl Emitter {
     TypedExprKind::FileRead(value)=>format!("__hc_csv_read_file({})",self.expr(value)),
     TypedExprKind::FileWrite{filename,content}=>format!("__hc_file_write({}, {})",self.expr(filename),self.expr(content)),
     TypedExprKind::HttpServe(handler)=>format!("__hc_http_serve({})",self.expr(handler)),
-    TypedExprKind::HttpServeState{handler,initial}=>format!("__hc_http_serve_state({}, {})",self.expr(handler),self.expr(initial)),
+    TypedExprKind::HttpServeState{handler,initial}=>{
+      let expanded=matches!(&handler.ty,
+          Type::Function(args,_) if matches!(args.first(),
+              Some(Type::Record(fields)) if fields.iter().any(|(key,_)|key=="contentType")));
+      format!("__hc_http_serve_state({}, {}, {})",self.expr(handler),self.expr(initial),expanded)
+    },
     TypedExprKind::HttpGet(value)=>if matches!(value.ty,Type::Sequence(_)) {
       format!("(await __hc_http_batch({}))",self.expr(value))
     }else{format!("(await __hc_http_get({}))",self.expr(value))},

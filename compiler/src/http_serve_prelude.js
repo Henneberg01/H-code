@@ -56,15 +56,19 @@ const __hc_http_serve = (handler,onClose=null) => {
       // async operations and durable state are separate B2/B3 capabilities.
       if(result && typeof result.then==='function')
         throw TypeError('⤊ B1 handler cannot return a Promise');
+      const hasContentType=result&&typeof result==='object'&&Object.hasOwn(result,'contentType');
       if(!result || typeof result!=='object' || Array.isArray(result) ||
          Object.getPrototypeOf(result)!==null ||
-         Object.keys(result).length!==2 ||
-         !Object.hasOwn(result,'body')||!Object.hasOwn(result,'status') ||
+         Object.keys(result).sort().join(',')!==
+           (hasContentType?'body,contentType,status':'body,status') ||
          typeof result.body!=='string' || !result.body.isWellFormed() ||
          !Number.isInteger(result.status) || result.status<200 || result.status>599 ||
-         new TextEncoder().encode(result.body).length>65536)
-        throw TypeError('⤊ handler returned an invalid {body:String,status:Number} record');
-      res.writeHead(result.status,{'content-type':'text/plain; charset=utf-8','cache-control':'no-store'});
+         new TextEncoder().encode(result.body).length>65536 ||
+         (hasContentType&&(typeof result.contentType!=='string' ||
+         result.contentType.length>128 ||
+         !/^[a-z][a-z0-9._+-]*\/[a-z0-9._+-]+(?:; charset=utf-8)?$/.test(result.contentType))))
+        throw TypeError('⤊ handler returned invalid typed response');
+      res.writeHead(result.status,{'content-type':hasContentType?result.contentType:'text/plain; charset=utf-8','cache-control':'no-store'});
       res.end(result.status===204||result.status===304?'':result.body);
     }catch{
       fail(res,500,'handler_error');

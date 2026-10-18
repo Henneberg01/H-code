@@ -20,7 +20,11 @@ const plain=value=>value!==null&&typeof value==='object'&&!Array.isArray(value)&
 const text=(value,max)=>typeof value==='string'&&value.isWellFormed()&&
   Buffer.byteLength(value,'utf8')<=max;
 const keys=(value,list)=>Object.keys(value).sort().join(',')===list;
-const receiptValid=value=>plain(value)&&keys(value,'body,digest,id,status')&&
+const receiptValid=value=>plain(value)&&
+  (keys(value,'body,digest,id,status')||
+   (keys(value,'body,contentType,digest,id,status')&&
+     text(value.contentType,128)&&
+     /^[a-z][a-z0-9._+-]*\/[a-z0-9._+-]+(?:; charset=utf-8)?$/.test(value.contentType)))&&
   ID.test(value.id)&&DIGEST.test(value.digest)&&
   Number.isInteger(value.status)&&value.status>=200&&value.status<=599&&
   text(value.body,65536);
