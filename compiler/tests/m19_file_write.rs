@@ -9,7 +9,7 @@ fn compile(s:&str)->Result<String,String>{
 fn root()->std::path::PathBuf{
  let stamp=SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();
  let path=env::temp_dir().join(format!("hcode-m19-07-{}-{}",std::process::id(),stamp));
- fs::create_dir(&path).unwrap(); path.canonicalize().unwrap()
+ fs::create_dir(&path).unwrap(); path
 }
 #[test]
 fn glyph_ascii_alias_and_type_effect_restrictions(){
