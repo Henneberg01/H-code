@@ -56,7 +56,7 @@ fn json_records_arrays_and_nested_types_are_executable_in_compiled_js(){
         (r#"≔p←⤓⦃⦄"{}";print(⤒p);≔xs:⟦Number⟧←⟦⟧;print(⤒xs);"#,
          "{}\n[]\n"),
     ];
-    for(const (src,expected) of cases {
+    for (src,expected) in cases {
         assert_eq!(run(src).unwrap(),expected,"{src}");
     }
 }
@@ -71,7 +71,7 @@ fn compiler_rejects_invalid_json_schemas_non_string_input_and_unsafe_serializati
         (r#"≔f←λx:x+1;print(⤒f);"#,"⤒ expects statically typed JSON-compatible"),
         (r#"ƒ f()→String ↩ ⤓⦃a:Number⦄"{\"a\":42}";"#,"Return type mismatch"),
     ];
-    for(const (src,expected) of cases {
+    for (src,expected) in cases {
         let err=compile(src).unwrap_err();
         assert!(err.contains(expected),"{src}: {err}");
     }
@@ -89,7 +89,7 @@ fn runtime_json_validation_is_recursive_exact_and_fails_closed(){
         (r#"print(⤓Number "{bad}");"#,"Invalid JSON text"),
         (r#"print(⤓⦃data:⟦Number⟧⦄"{\"data\":[1,\"bad\"]}");"#,"JSON Number type mismatch"),
     ];
-    for(const (src,expected) of cases {
+    for (src,expected) in cases {
         let err=run(src).unwrap_err();
         assert!(err.contains(expected),"{src}: {err}");
     }
