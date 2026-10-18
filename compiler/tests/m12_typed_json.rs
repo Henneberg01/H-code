@@ -109,3 +109,15 @@ fn sha_frozen_m12_json_microcase_runs_in_real_compiler_generated_javascript(){
     let source=std::fs::read_to_string(file).unwrap();
     assert_eq!(run(&source).unwrap(),"Ada\n{\"age\":42,\"name\":\"Ada\"}\n");
 }
+
+#[test]
+fn json_validation_runtime_is_emitted_only_when_the_program_uses_json(){
+    let without_json=compile("print(42);").unwrap();
+    assert!(!without_json.contains("const __hc_json_read"),
+        "A JSON glyph cannot silently inflate every non-JSON H-Code program");
+    assert!(!without_json.contains("const __hc_json_write"));
+    let with_json=compile(r#"print(⤓Number "42");"#).unwrap();
+    assert!(with_json.contains("const __hc_json_read"));
+    assert!(with_json.contains("const __hc_json_write"));
+    assert_eq!(run("print(42);").unwrap(),"42\n");
+}
