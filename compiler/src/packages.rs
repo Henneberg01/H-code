@@ -89,7 +89,7 @@ fn parse_contract_type(ty:&str,format:u32,bound:&[String])->Result<Type,Diagnost
         .map_err(|_|failure(format!("Unsupported package contract type {ty}")))
 }
 pub(crate) fn reserved_glyph(c:char)->bool {
-    matches!(c,'ƒ'|'≔'|'↩'|'→'|'←'|'⊤'|'⊥'|'∧'|'∨'|'¬'|'≡'|'≠'|'≤'|'≥'|'∷'|'▷'|'∘'|'◇'|'⌗'|'⧺'|'∑'|'⌕'|'⇢'|'λ'|'⊢'|'⊣'|'⟳'|'⇒'|'⟦'|'⟧'|'⦃'|'⦄'|'·'|'⊞'|'⤓'|'⤒'|'⫶'|'⟟'|'⧉'|'⧄'|'⧇'|'⌨'|'⩚'|'∅'|'∀'|'∈')
+    matches!(c,'ƒ'|'≔'|'↩'|'→'|'←'|'⊤'|'⊥'|'∧'|'∨'|'¬'|'≡'|'≠'|'≤'|'≥'|'∷'|'▷'|'∘'|'◇'|'⌗'|'⧺'|'∑'|'⌕'|'⇢'|'λ'|'⊢'|'⊣'|'⟳'|'⇒'|'⟦'|'⟧'|'⦃'|'⦄'|'·'|'⊞'|'⤓'|'⤒'|'⫶'|'⟟'|'⧉'|'⧄'|'⤋'|'⏳'|'⎙'|'⧇'|'⌨'|'⩚'|'∅'|'∀'|'∈')
 }
 
 pub fn load_lockfile(path:&Path)->Result<PackageRegistry,Diagnostic>{
@@ -199,4 +199,16 @@ pub fn load_lockfile(path:&Path)->Result<PackageRegistry,Diagnostic>{
         registry.packages.insert(key,PackageDef{operations,typed_source});
     }
     Ok(registry)
+}
+
+// Intrinsic effect and output signs may never be shadowed by a signed package.
+#[cfg(test)]
+mod m19_reserved_async_signs {
+    use super::reserved_glyph;
+    #[test]
+    fn packages_cannot_shadow_http_delay_or_output_signs(){
+        for glyph in ['⤋','⏳','⎙'] {
+            assert!(reserved_glyph(glyph),"Unreserved intrinsic {glyph}");
+        }
+    }
 }

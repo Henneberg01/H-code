@@ -47,6 +47,26 @@ const runTs=path=>{
   if(result.error||result.status!==0)throw Error('TS failed: '+(result.error?.message||result.stderr));
   return result.stdout.replace(/\r\n/g,'\n');
 };
+// Async HTTP proof is isolated in a Node child so synchronous coverage reports
+// cannot silently mark task 06 as verified without running the real proof.
+function verifyCanonical06FromChild(){
+  const result=spawnSync(process.execPath,
+    ['--experimental-strip-types','scripts/canonical20-verify-06.mjs'],
+    {cwd:root,encoding:'utf8',windowsHide:true,timeout:180000});
+  if(result.error||result.status!==0){
+    throw Error('Canonical06 real compiler/JS/TypeScript proof failed: '+
+      (result.error?.message||result.stderr?.slice(0,1500)||'no evidence'));
+  }
+  let value;
+  try{value=JSON.parse(result.stdout);}catch{throw Error('Canonical06 proof did not emit valid JSON evidence');}
+  if(value.id!=='06-http-retries'||value.kind!=='full-compiler-evidence'||
+     value.verified!==true||value.positiveCases!==6||value.generatedVariantsVerified!==12||
+     value.negativeCases<1||value.hcodeCodePoints<=0||value.typescriptCodePoints<=0){
+    throw Error('Canonical06 returned incomplete compiler proof');
+  }
+  return value;
+}
+
 function fibonacciEvidence(){
   const baseline=JSON.parse(read('compact/results/frozen-baseline-m10-eight.json').toString('utf8'));
   const ids=JSON.parse(read('compact/benchmarks/paired/manifest.json').toString('utf8')).pairs;
@@ -100,6 +120,9 @@ export function readiness(){
         // The frozen original preregistry remains untouched; promotion is derived
         // exclusively from repeatable, SHA-locked full Rust/JS/TS execution.
         fullEvidence[w.id]=verifyCanonical05();
+        verified++;
+      }else if(w.id==='06-http-retries'){
+        fullEvidence[w.id]=verifyCanonical06FromChild();
         verified++;
       }else{unsupported++;}
     }else if(w.status==='reference_partial'){

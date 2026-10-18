@@ -4,7 +4,7 @@
 
 Source registry: `compact/canonical20/workloads.json`; coverage checker: `npm run benchmark20:status` on Node22+. The registered source is anchored to Git blob SHA `46653ef90ffb3e420fba4ddfbfac3c4cfd57f3b3` from the original M19 preregistration. Rewriting the scope requires an explicit new reviewed registry version, not silent benchmark edits. All twenty IDs, category requirements and acceptance criteria are recorded so that skipped work cannot disappear from the denominator.
 
-**Current derived state on `main` after merged PR #33 and successful Windows/Linux CI: 6/20 compiler-verified, 0/20 partial references, 14/20 unsupported.** The initial manifest JSON retains its original pre-implementation statuses and Git blob SHA; **separate SHA-locked proof harnesses derive full verification only when each task's actual Rust/JS/TypeScript execution passes**. Do not modify the twenty IDs or call a registry field a test.
+**Current calculated state with M19.06 source-locked proof: 7/20 compiler-verified, 0/20 partial references, 13/20 unsupported, contingent on the end-to-end Windows/Linux gates.** The initial manifest JSON retains its original pre-implementation statuses and Git blob SHA; **separate SHA-locked proof harnesses derive full verification only when each task's actual Rust/JS/TypeScript execution passes**. Do not modify the twenty IDs or call a registry field a test.
 
 Task **01 — stdin arithmetic CLI** implements real typechecked `⌨` (stdin String effect) and `⩚` (pure String→Number arithmetic parser), with exactly 17 frozen valid and 15 invalid command-line inputs, 64 independently expected generated arithmetic expressions, input byte/UTF-8 limits, negative Rust types, byte-exact stdout/stderr/process status, and real `hcodec run` CLI parity on Windows/Linux. Original authored source is **11 codepoints / 15 bytes**, and the handwritten TypeScript correctness oracle remains at **2,365 codepoints**, but is *not* a competitive source baseline. A separately tested, exact-SHA-pinned maintained library comparator in PR #34 uses `@expr-eval/js@3.7.0`: **11 H-Code versus 2,786 all-authored TS codepoints = 99.61% fewer on *task 01 only***, plus 121,201 installed library bytes, 6,255 Rust-compiled JS bytes and distinct package metadata tracked outside author source. See PROOF-01.md. See `compact/canonical20/PROOF-01.md`.
 
@@ -19,11 +19,11 @@ Task **02 — Fibonacci recursion** now uses exactly its original M10-pinned sou
 Task **10 — typed sum/map/filter** now executes the original **three unchanged SHA-frozen M14 H-Code programs in the real Rust compiler**, validates them against their historical TypeScript baselines (68.46% median *on those three*), and separately verifies one new complete source-locked program covering 11 concrete typed transformations across Number, String, Bool, records, nested sequences and typed empty lists. The full proof adds 19 generated variable input sets (47 expected outputs) and 6 static type failures, all using the actual language, not a hidden app-specific package. It achieves **505 vs 836 developed codepoints = 39.59% fewer** and **645 vs 836 UTF-8 bytes = 22.85% fewer**, with 7,305 generated JS bytes tracked separately. Source locks and evidence: `compact/canonical20/PROOF-10.md`.
 
 
-The other **14 tasks are explicitly unsupported/unverified** and remain counted on `main`. Thus **6/20 fully verified**, **0/20 partial references**, **14/20 unsupported** in the calculated evidence view. This is not evidence of reaching 70% across actual products or apps. Even though M14's Rust/Node CI is now green for the three narrow collections examples, those are not a substitute for a complete CRUD API, auth session system, file converter or browser app.
+The other **13 tasks are explicitly unsupported/unverified** and remain counted in the fixed corpus. Thus **7/20 fully verified**, **0/20 partial references**, **13/20 unsupported** in the calculated evidence view. This is not evidence of reaching 70% across actual products or apps. Even though M14's Rust/Node CI is now green for the three narrow collections examples, those are not a substitute for a complete CRUD API, auth session system, file converter or browser app.
 
-The checker **still refuses arbitrary `status: verified` labels**. Workloads 01, 02, 03, 04, 05 and 10 are counted as fully verified only by separately executing their source-SHA-locked, compiler-generated program and a TypeScript baseline with the full positive/negative fixture contract. A JSON label alone cannot manufacture a green benchmark.
+The checker **still refuses arbitrary `status: verified` labels**. Workloads 01, 02, 03, 04, 05, 06 and 10 are counted as fully verified only by separately executing their source-SHA-locked, compiler-generated program and a TypeScript baseline with the full positive/negative fixture contract. A JSON label alone cannot manufacture a green benchmark.
 
-**Task 06 (M19.06-B0; fixture/TypeScript-oracle stage only):** six SHA-frozen loopback HTTP sequences including 500/429/200, bounded exponential backoff, Retry-After, terminal 4xx and exhaustion are now tested against a genuine local HTTP server and an independent developer-authored TypeScript baseline. Run `npm run benchmark20:http-contract`. **No H-Code HTTP primitive, async effect, or Rust/JS compiler/runtime proof is implemented by this stage. Task 06 remains unsupported; coverage stays 6/20.** See `compact/canonical20/PROOF-06-DRAFT.md`.
+**Task 06 — symbol-native HTTP retries:** the Rust compiler implements real effectful `⤋` (typed allowlisted HTTP GET), `⏳` (bounded asynchronous delay) and `⎙` (intrinsic print sign), while source-level `⟳` / `⊢` / `⊣` implement the entire bounded retry algorithm. A separate independent JS H-Code interpreter uses a bounded effect journal and real injected HTTP host. Six original SHA-frozen HTTP sequences and **12 deterministic unseen variants** execute as real HTTP requests in the Rust-generated program, JS reference and idiomatic TypeScript comparator; one full network-failure case verifies four bounded attempts. The source is **707 H-Code vs 3,112 TypeScript codepoints (77.28% fewer for task06 alone)** and 895 vs 3,112 UTF-8 bytes (71.24% fewer); generated JavaScript and dependencies are counted separately. The original registry and cases remain byte-frozen. Run `npm run benchmark20:verify06`. See `compact/canonical20/PROOF-06.md`.
 
 ### What we build next: evidence-driven language primitives
 
@@ -31,12 +31,12 @@ The status command also reports **required capabilities across all unverified wo
 
 | Required capability in unverified tasks | Workloads requiring it |
 |---|---:|
-| `records` | 4 |
-| `async` | 3 |
+| `records` | 3 |
+| `async` | 2 |
 | `multi-file-project` | 3 |
 | `dom` | 2 |
-| `filesystem-read` | 2 |
-| `http-client` | 2 |
+| `filesystem-read` | 1 |
+| `http-client` | 1 |
 | `http-server` | 2 |
 | `map` | 2 |
 | `test-runner` | 2 |
@@ -59,6 +59,7 @@ npm run benchmark20:verify03
 npm run benchmark20:verify10
 npm run benchmark20:verify02
 npm run benchmark20:verify05
+npm run benchmark20:verify06
 npm run benchmark20:status
 npm run benchmark20:test
 npm run benchmark20:strict # expected exit 2 until all 20 are verified

@@ -14,17 +14,20 @@ const __hc_http_get=async raw=>{
   catch{
     return __hc_record([['body',''],['ok',false],['retryAfter',0],['status',0]]);
   }
-  if(!response.body)throw Error('H-Code HTTP response has no body');
-  const reader=response.body.getReader(),pieces=[];let length=0;
-  try{
-    while(true){
-      const part=await reader.read();
-      if(part.done)break;
-      length+=part.value.byteLength;
-      if(length>65536)throw Error('H-Code HTTP response exceeds 64 KiB');
-      pieces.push(part.value);
-    }
-  }finally{reader.releaseLock();}
+  // HTTP 204/205 (and some 304 replies) legitimately have no body stream.
+  const pieces=[];let length=0;
+  if(response.body){
+    const reader=response.body.getReader();
+    try{
+      while(true){
+        const part=await reader.read();
+        if(part.done)break;
+        length+=part.value.byteLength;
+        if(length>65536)throw Error('H-Code HTTP response exceeds 64 KiB');
+        pieces.push(part.value);
+      }
+    }finally{reader.releaseLock();}
+  }
   const bytes=new Uint8Array(length);let offset=0;
   for(const part of pieces){bytes.set(part,offset);offset+=part.byteLength;}
   let body;

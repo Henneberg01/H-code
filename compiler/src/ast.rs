@@ -54,6 +54,8 @@ pub enum ExprKind {
     FileRead(Box<Expr>),
     // M19.06: effectful, implicitly-awaited GET; symbol ⤋.
     HttpGet(Box<Expr>),
+    // M19.06-B2: generic effectful asynchronous bounded delay.
+    SleepMs(Box<Expr>),
     StdinText,
     ArithEval(Box<Expr>),
     CsvTyped { schema: String, value: Box<Expr> },

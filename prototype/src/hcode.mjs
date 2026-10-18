@@ -12,11 +12,11 @@ export const CORE_GLYPHS = Object.freeze({
   '\u2983':'record-open', '\u2984':'record-close', '\u00b7':'field', '\u229e':'record-update',
   '\u2913':'json-read', '\u2912':'json-write',
   '\u2af6':'text-scalars', '\u27df':'text-words', '\u29c9':'histogram',
-  '\u29c4':'file-read', '\u290b':'http-get', '\u29c7':'csv-typed',
+  '\u29c4':'file-read', '\u290b':'http-get', '\u23f3':'sleep-ms', '\u2399':'print', '\u29c7':'csv-typed',
   '\u2328':'stdin-text', '\u2a5a':'arith-eval', '\u2317': '#', '\u29fa': '++', '\u2211': '@+', '\u2315': '@?', '\u21e2': '@>', '\u03bb': 'lambda', '\u2200': 'forall'
 });
 export const RESERVED_USER_GLYPHS = new Set(['\u2205', '\u2200', '\u2208', ...Object.keys(CORE_GLYPHS)]);
-const RESERVED = new Set(['fn','let','return','true','false','if','else','while','and','or','not','use','as','lambda','forall','json_in','json_out','text_scalars','text_words','text_hist','file_read','http_get','csv_typed','stdin_text','arith_eval']);
+const RESERVED = new Set(['fn','let','return','true','false','if','else','while','and','or','not','use','as','lambda','forall','json_in','json_out','text_scalars','text_words','text_hist','file_read','http_get','sleep_ms','csv_typed','stdin_text','arith_eval']);
 const TWO = new Set(['==','!=','<=','>=','->','::','|>','<<','[[',']]','++','@+','@?','@>','=>','<+']);
 const ONE = new Set(['+','-','*','/','%','<','>','=','(',')','{','}',',',';',':','?','#','.']);
 const ILLEGAL = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]|\p{Default_Ignorable_Code_Point}/u;
@@ -27,6 +27,9 @@ const SYMBOL_CHARACTER = /^\p{S}$/u;
 // engine; the source program, not JavaScript glue, owns retry policy and state.
 class PendingHttpEffect extends Error {
   constructor(url,index){super('Pending H-Code HTTP request');this.url=url;this.index=index;}
+}
+class PendingSleepEffect extends Error {
+  constructor(ms,index){super('Pending H-Code scheduler delay');this.ms=ms;this.index=index;}
 }
 export class HCodeError extends Error {
   constructor(message, line=1, column=1) {
@@ -92,10 +95,10 @@ export function tokenize(source) {
     }
     if(letter(c)){
       let word='';while(alnum(peek()))word+=advance();
-      emit(word==='json_in'?'json-read':word==='json_out'?'json-write':word==='text_scalars'?'text-scalars':word==='text_words'?'text-words':word==='text_hist'?'histogram':word==='file_read'?'file-read':word==='http_get'?'http-get':word==='csv_typed'?'csv-typed':word==='stdin_text'?'stdin-text':word==='arith_eval'?'arith-eval':(RESERVED.has(word)?word:'ident'),word,ln,col);continue;
+      emit(word==='json_in'?'json-read':word==='json_out'?'json-write':word==='text_scalars'?'text-scalars':word==='text_words'?'text-words':word==='text_hist'?'histogram':word==='file_read'?'file-read':word==='http_get'?'http-get':word==='sleep_ms'?'sleep-ms':word==='csv_typed'?'csv-typed':word==='stdin_text'?'stdin-text':word==='arith_eval'?'arith-eval':(RESERVED.has(word)?word:'ident'),word,ln,col);continue;
     }
     if(Object.hasOwn(CORE_GLYPHS,c)){
-      advance();const alias=CORE_GLYPHS[c];emit(alias,alias,ln,col);continue;
+      advance();const alias=CORE_GLYPHS[c];emit(alias==='print'?'ident':alias,alias,ln,col);continue;
     }
     const two=c+(peek(1)??'');
     if(TWO.has(two)){advance();advance();emit(two==='<+'?'record-update':two,two,ln,col);continue;}
@@ -254,6 +257,7 @@ class Parser {
     else if(this.accept('arith-eval'))left={kind:'ArithEval',value:this.expr(8)};
     else if(this.accept('file-read'))left={kind:'FileRead',value:this.expr(8)};
     else if(this.accept('http-get'))left={kind:'HttpGet',value:this.expr(8)};
+    else if(this.accept('sleep-ms'))left={kind:'SleepMs',value:this.expr(8)};
     else if(this.accept('csv-typed')){
       const schema=this.typeName();
       left={kind:'CsvTyped',schema,value:this.expr(8)};
@@ -429,7 +433,7 @@ export function linkProgram(ast, registry=new Map()) {
     if(node.kind==='Sequence')return {...node,items:node.items.map(expression)};
     if(node.kind==='Record')return {...node,fields:node.fields.map(f=>({name:f.name,value:expression(f.value)}))};
     if(node.kind==='Field')return {...node,record:expression(node.record)};
-    if(node.kind==='JsonRead'||node.kind==='JsonWrite'||node.kind==='TextScalars'||node.kind==='TextWords'||node.kind==='Histogram'||node.kind==='FileRead'||node.kind==='HttpGet'||node.kind==='CsvTyped'||node.kind==='ArithEval')return {...node,value:expression(node.value)};
+    if(node.kind==='JsonRead'||node.kind==='JsonWrite'||node.kind==='TextScalars'||node.kind==='TextWords'||node.kind==='Histogram'||node.kind==='FileRead'||node.kind==='HttpGet'||node.kind==='SleepMs'||node.kind==='CsvTyped'||node.kind==='ArithEval')return {...node,value:expression(node.value)};
     if(node.kind==='RecordUpdate')return {...node,record:expression(node.record),value:expression(node.value)};
     if(node.kind==='Index')return {...node,sequence:expression(node.sequence),index:expression(node.index)};
     if(node.kind==='Length')return {...node,value:expression(node.value)};
@@ -476,8 +480,8 @@ class Scope {
 class ReturnSignal{constructor(value){this.value=value;}}
 const runtimeType=value=>value===null?'Unit':typeof value==='number'?'Number':typeof value==='string'?'String':typeof value==='boolean'?'Bool':'unsupported';
 
-export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=16384,registry=new Map(),readFile=null,readStdin=null,httpEffects=null}={}){
-  const root=new Scope(),operations=new Map(),operationSpecs=new Map(),loadedLibraries=new Set();let steps=0,stdinConsumed=false,httpIndex=0,pureDepth=0,functionDepth=0;
+export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=16384,registry=new Map(),readFile=null,readStdin=null,httpEffects=null,asyncJournal=null}={}){
+  const root=new Scope(),operations=new Map(),operationSpecs=new Map(),loadedLibraries=new Set();let steps=0,stdinConsumed=false,effectIndex=0,pureDepth=0,functionDepth=0;const effects=asyncJournal??httpEffects;
   const step=()=>{if(++steps>maxSteps)throw Error('Execution step limit exceeded');};
   root.define('print',(...args)=>{stdout(args.map(x=>x===null?'none':String(x)).join(' '));return null;});
   const truth=v=>{if(typeof v!=='boolean')throw Error('Condition must be Boolean');return v;};
@@ -695,18 +699,33 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
       case 'ArithEval':return safeArithmetic(expr(node.value,scope));
       case 'HttpGet':{
         if(pureDepth>0||functionDepth>0)throw Error('⤋ HTTP effect denied in verified pure package or sync closure');
-        if(!Array.isArray(httpEffects))
+        if(!Array.isArray(effects))
           throw Error('⤋ requires asynchronous H-Code interpreter; synchronous execution cannot perform HTTP');
         const url=expr(node.value,scope);
         if(typeof url!=='string')throw TypeError('⤋ expects String URL');
-        const index=httpIndex++;
-        if(index<httpEffects.length){
-          const previous=httpEffects[index];
-          if(previous.url!==url)throw Error('Non-deterministic H-Code HTTP replay');
+        const index=effectIndex++;
+        if(index<effects.length){
+          const previous=effects[index];
+          if(previous.kind!=='http'||previous.url!==url)throw Error('Non-deterministic H-Code HTTP replay');
           return previous.value;
         }
-        if(index!==httpEffects.length)throw Error('H-Code HTTP journal sequence gap');
+        if(index!==effects.length)throw Error('H-Code HTTP journal sequence gap');
         throw new PendingHttpEffect(url,index);
+      }
+      case 'SleepMs':{
+        if(pureDepth>0||functionDepth>0)throw Error('⏳ delay effect denied in verified pure package or sync closure');
+        if(!Array.isArray(effects))throw Error('⏳ requires asynchronous H-Code interpreter');
+        const ms=expr(node.value,scope);
+        if(!Number.isInteger(ms)||ms<0||ms>120000)
+          throw RangeError('⏳ delay requires integer milliseconds in 0..120000');
+        const index=effectIndex++;
+        if(index<effects.length){
+          const previous=effects[index];
+          if(previous.kind!=='sleep'||previous.ms!==ms)throw Error('Non-deterministic H-Code scheduler replay');
+          return null;
+        }
+        if(index!==effects.length)throw Error('H-Code scheduler journal sequence gap');
+        throw new PendingSleepEffect(ms,index);
       }
       case 'FileRead':{
         const path=expr(node.value,scope);
@@ -1021,11 +1040,13 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
  * this replay strategy deliberately handles only top-level effectful programs.
  */
 export async function executeAsync(source,options={}){
-  if(typeof options.httpGet!=='function')
-    throw Error('H-Code HTTP capability denied: inject a trusted httpGet host');
   const maxHttpRequests=options.maxHttpRequests??32;
-  if(!Number.isInteger(maxHttpRequests)||maxHttpRequests<1||maxHttpRequests>64)
-    throw RangeError('Invalid bounded H-Code HTTP request limit');
+  const maxSleepCalls=options.maxSleepCalls??64;
+  const maxAsyncEffects=options.maxAsyncEffects??96;
+  if(!Number.isInteger(maxHttpRequests)||maxHttpRequests<1||maxHttpRequests>64||
+     !Number.isInteger(maxSleepCalls)||maxSleepCalls<1||maxSleepCalls>128||
+     !Number.isInteger(maxAsyncEffects)||maxAsyncEffects<1||maxAsyncEffects>192)
+    throw RangeError('Invalid bounded H-Code async effect configuration');
   const registry=options.registry??new Map();
   const program=linkProgram(parse(source),registry);
   const journal=[];
@@ -1042,13 +1063,27 @@ export async function executeAsync(source,options={}){
   for(;;){
     const lines=[];
     try{
-      const result=evaluate(program,{...options,registry,readStdin,readFile,httpEffects:journal,stdout:line=>lines.push(line)});
+      const result=evaluate(program,{...options,registry,readStdin,readFile,asyncJournal:journal,stdout:line=>lines.push(line)});
       for(const line of lines)options.stdout?.(line);
-      return {...result,httpRequests:journal.length};
+      return {...result,httpRequests:journal.filter(x=>x.kind==='http').length,sleepCalls:journal.filter(x=>x.kind==='sleep').length};
     }catch(error){
-      if(!(error instanceof PendingHttpEffect))throw error;
-      if(journal.length>=maxHttpRequests)throw Error('H-Code HTTP effect budget exceeded');
-      if(error.index!==journal.length)throw Error('Out-of-order H-Code HTTP effect');
+      const sleepEffect=error instanceof PendingSleepEffect;
+      if(!(error instanceof PendingHttpEffect)&&!sleepEffect)throw error;
+      if(journal.length>=maxAsyncEffects)throw Error('H-Code async effect budget exceeded');
+      if(error.index!==journal.length)throw Error('Out-of-order H-Code async effect');
+      if(sleepEffect){
+        if(journal.filter(x=>x.kind==='sleep').length>=maxSleepCalls)
+          throw Error('H-Code sleep effect budget exceeded');
+        const scheduler=options.sleep??(ms=>new Promise(resolve=>setTimeout(resolve,ms)));
+        if(typeof scheduler!=='function')throw TypeError('H-Code sleep scheduler must be callable');
+        await scheduler(error.ms);
+        journal.push({kind:'sleep',ms:error.ms});
+        continue;
+      }
+      if(journal.filter(x=>x.kind==='http').length>=maxHttpRequests)
+        throw Error('H-Code HTTP effect budget exceeded');
+      if(typeof options.httpGet!=='function')
+        throw Error('H-Code HTTP capability denied: inject a trusted httpGet host');
       let url;
       try{url=new URL(error.url);}catch{throw TypeError('H-Code HTTP URL is invalid');}
       if(!['http:','https:'].includes(url.protocol)||url.username||url.password)
@@ -1071,7 +1106,7 @@ export async function executeAsync(source,options={}){
       const response=Object.assign(Object.create(null),{
         body:answer.body,ok:answer.ok,retryAfter:answer.retryAfter,status:answer.status
       });
-      journal.push({url:error.url,value:Object.freeze(response)});
+      journal.push({kind:'http',url:error.url,value:Object.freeze(response)});
     }
   }
 }

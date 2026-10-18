@@ -1,0 +1,36 @@
+// Canonical06: HTTP GET retries are H-Code-written logic, not a hidden macro.
+≔u←⌨;
+≔a←0;
+≔d←100;
+≔o←⊥;
+≔s←0;
+≔b←"";
+≔e←"";
+≔t:⟦⦃attempt:Number,status:Number,decision:String,waitMs:Number⦄⟧←⟦⟧;
+⟳(a<4∧¬o∧e≡""){
+ a←a+1;
+ ≔r←⤋u;
+ o←r·ok;
+ s←r·status;
+ b←r·body;
+ ≔q←s≡429∨s≡500∨s≡502∨s≡503∨s≡504;
+ ≔z←"";
+ ≔w←0;
+ ⊢(o){z←"success";}
+ ⊣{
+  ⊢(s≡0){
+   ⊢(a≡4){z←"network-exhausted";e←"network";}
+   ⊣{z←"network-retry";w←d;}
+  }⊣{
+   ⊢(q){
+    ⊢(a≡4){z←"exhausted";e←"exhausted";}
+    ⊣{z←"retry";w←d;⊢(r·retryAfter>w){w←r·retryAfter;}}
+   }⊣{z←"http-error";e←"http";}
+  }
+ }
+ ⊢(w>1000){w←1000;}
+ t←t⧺⟦⦃attempt:a,status:s,decision:z,waitMs:w⦄⟧;
+ ⊢(w>0){⏳w;}
+ d←d*2;
+}
+⎙(⤒⦃ok:o,status:s,body:b,reason:e,trace:t⦄);

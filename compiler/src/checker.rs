@@ -99,6 +99,7 @@ pub enum TypedExprKind {
     Histogram(Box<TypedExpr>),
     FileRead(Box<TypedExpr>),
     HttpGet(Box<TypedExpr>),
+    SleepMs(Box<TypedExpr>),
     StdinText,
     ArithEval(Box<TypedExpr>),
     CsvTyped {schema:Type,value:Box<TypedExpr>},
@@ -437,6 +438,19 @@ impl Checker {
                 ]);
                 (TypedExprKind::HttpGet(Box::new(input)),structure)
             }
+            ExprKind::SleepMs(value)=>{
+                if !self.allow_print || self.active_function.is_some() || self.lambda_depth>0 {
+                    return Err(Diagnostic::new("EFFECT","⏳ delay is available only in effectful top-level source, not pure packages or sync closures".into(),expr.span));
+                }
+                let input=self.expression(value)?;
+                self.unify(&Type::Number,&input.ty,value.span,"⏳ expects a Number of milliseconds")?;
+                if let ExprKind::Number(raw)=&value.kind {
+                    if raw.parse::<f64>().map(|n|n.fract()!=0.0||n<0.0||n>120000.0).unwrap_or(true) {
+                        return Err(Diagnostic::new("TYPE","⏳ delay requires integer milliseconds in 0..120000".into(),value.span));
+                    }
+                }
+                (TypedExprKind::SleepMs(Box::new(input)),Type::Unit)
+            }
             ExprKind::CsvTyped{schema,value}=>{
                 let ty=Type::from_name(schema,expr.span)?;
                 let Type::Record(ref fields)=ty else {
@@ -748,7 +762,7 @@ impl Checker {
             TypedExprKind::Record(fields)=>{for (_,value) in fields{self.finalize_expr(value)?;}},
             TypedExprKind::Field{record,..}=>self.finalize_expr(record)?,
             TypedExprKind::JsonRead{value,..}|TypedExprKind::JsonWrite{value,..}=>self.finalize_expr(value)?,
-            TypedExprKind::TextScalars(value)|TypedExprKind::TextWords(value)|TypedExprKind::Histogram(value)|TypedExprKind::FileRead(value)|TypedExprKind::HttpGet(value)|TypedExprKind::ArithEval(value)=>self.finalize_expr(value)?,
+            TypedExprKind::TextScalars(value)|TypedExprKind::TextWords(value)|TypedExprKind::Histogram(value)|TypedExprKind::FileRead(value)|TypedExprKind::HttpGet(value)|TypedExprKind::SleepMs(value)|TypedExprKind::ArithEval(value)=>self.finalize_expr(value)?,
             TypedExprKind::CsvTyped{value,..}=>self.finalize_expr(value)?,
             TypedExprKind::RecordUpdate{record,value,..}=>{self.finalize_expr(record)?;self.finalize_expr(value)?;},
             TypedExprKind::Index{sequence,index}=>{self.finalize_expr(sequence)?;self.finalize_expr(index)?;},
