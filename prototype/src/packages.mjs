@@ -3,14 +3,15 @@ import {readFileSync,realpathSync,statSync} from 'node:fs';
 import {dirname,relative,resolve,isAbsolute} from 'node:path';
 import {createHash} from 'node:crypto';
 import {parse,RESERVED_USER_GLYPHS,CORE_GLYPHS} from './hcode.mjs';
-import {contractType,validatePurePackageV2} from './package-v2-types.mjs';
+import {contractType,validatePurePackageV2,validatePurePackageV3} from './package-v2-types.mjs';
+import {verifyGenericManifestOperation,normalizeBinders} from './package-v3-signatures.mjs';
 
 const IDENT=/^[A-Za-z_][A-Za-z0-9_]*$/;
 const PACKAGE=/^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$/;
 const VERSION=/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
 const HEX=/^[a-f0-9]{64}$/;
 const TYPES=new Set(['Number','String','Bool','Unit']);
-const KEYWORDS=new Set(['fn','let','return','true','false','if','else','while','and','or','not','use','as','import','export','lambda']);
+const KEYWORDS=new Set(['fn','let','return','true','false','if','else','while','and','or','not','use','as','import','export','lambda','forall']);
 const MAX_BYTES=1024*1024;
 const sha=buffer=>createHash('sha256').update(buffer).digest('hex');
 const must=(condition,message)=>{if(!condition)throw Error(`Invalid H-Code package: ${message}`);};
@@ -35,9 +36,10 @@ function signature(fn,op,key){
     must(fn.params[i].name===op.parameters[i].name,`${key}: function parameter name mismatch at ${i+1}`);
   }
   must(fn.returnType===op.returns,`${key}: return type mismatch`);
+  must(JSON.stringify(fn.typeParameters??[])===JSON.stringify(op.typeParameters??[]),`${key}: ∀ binder mismatch`);
 }
 function validateManifest(manifest,ast){
-  must(isRecord(manifest)&&[1,2].includes(manifest.format),'manifest format must be 1 or 2');
+  must(isRecord(manifest)&&[1,2,3].includes(manifest.format),'manifest format must be 1, 2 or 3');
   must(PACKAGE.test(manifest.name??''),'invalid package name');
   must(VERSION.test(manifest.version??''),'invalid semantic version');
   must(typeof manifest.source==='string'&&/^[a-zA-Z0-9_-]+\.hc$/.test(manifest.source),'source must be a local .hc filename');
@@ -58,15 +60,18 @@ function validateManifest(manifest,ast){
     must(op.glyph.normalize('NFC')===op.glyph&&op.glyph.normalize('NFKC')===op.glyph,'glyph is not stable under Unicode normalization');
     must(!glyphs.has(op.glyph),`duplicate glyph ${op.glyph}`);glyphs.add(op.glyph);
     must(Array.isArray(op.parameters)&&op.parameters.length<=32,'parameters must be an array (max 32)');
+    const binders=manifest.format===3?normalizeBinders(op.typeParameters??[]):[];
+    must(manifest.format===3||!(op.typeParameters?.length),'∀ requires manifest format 3');
     const params=new Set();
     for(const p of op.parameters){
       must(isRecord(p)&&IDENT.test(p.name??'')&&!KEYWORDS.has(p.name),`${op.name}: invalid typed parameter`);
       if(manifest.format===1)must(TYPES.has(p.type),`${op.name}: invalid typed parameter`);
-      else contractType(p.type,2);
+      else contractType(p.type,manifest.format,0,binders);
       must(!params.has(p.name),`${op.name}: duplicate parameter ${p.name}`);params.add(p.name);
     }
     if(manifest.format===1)must(TYPES.has(op.returns),`${op.name}: unsupported return type`);
-    else contractType(op.returns,2);
+    else contractType(op.returns,manifest.format,0,binders);
+    if(manifest.format===3)verifyGenericManifestOperation(op);
     must(Array.isArray(op.effects)&&op.effects.length===0,`${op.name}: M1 supports only pure operations (effects: [])`);
     must(typeof op.implementation==='string'&&IDENT.test(op.implementation)&&!KEYWORDS.has(op.implementation),`${op.name}: invalid implementation name`);
     const fn=functions.get(op.implementation);
@@ -74,6 +79,7 @@ function validateManifest(manifest,ast){
     signature(fn,op,`${manifest.name}::${op.name}`);
   }
   if(manifest.format===2)validatePurePackageV2(ast,manifest);
+  if(manifest.format===3)validatePurePackageV3(ast,manifest);
   return manifest;
 }
 
