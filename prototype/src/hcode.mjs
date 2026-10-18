@@ -660,7 +660,13 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
       });
     }
   }
-  for(const statement of ast.body)stmt(statement,root);
+  for(const statement of ast.body){
+    // The application runtime must not bypass source verification by defining
+    // universal functions outside an SHA-locked pure package.
+    if(statement.kind==='Function'&&statement.typeParameters?.length)
+      throw Error('∀ declarations require a verified pure package source');
+    stmt(statement,root);
+  }
   return {steps};
 }
 export function execute(source,options={}){

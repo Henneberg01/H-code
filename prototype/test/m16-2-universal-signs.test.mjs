@@ -48,6 +48,7 @@ test('∀ and forall are identical canonical parser tokens and reserved from use
   assert.equal(tokenize('forall')[0].type,'forall');
   assert.equal(RESERVED_USER_GLYPHS.has('∀'),true);
   assert.equal('∀'.normalize('NFKC'),'∀');
+  assert.throws(()=>stdout('∀T ƒ id(x:T)→T ↩ x;print(id(1));',new Map()),/verified pure package source/);
   for(const bad of ['∀T,T ƒ f(x:T)→T ↩ x;','∀Number ƒ f(x:Number)→Number ↩ x;',
                     '∀T ≔x←1;','∀T,U,V,W,X,Y,Z,P,Q ƒ f(x:T)→T ↩ x;'])
     assert.throws(()=>parse(bad),/binder|function|too many|Invalid/);
