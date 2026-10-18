@@ -112,8 +112,8 @@ test('the strict twenty-workload CI gate intentionally fails until all 20 pass',
   assert.match(child.stderr,/all 20 must be compiler-verified/);
   const report=JSON.parse(child.stdout);
   assert.equal(report.preregisteredTasks,20);
-  assert.equal(report.verifiedFullWorkloads,9);
-  assert.equal(report.unsupported,11);
+  assert.equal(report.verifiedFullWorkloads,10);
+  assert.equal(report.unsupported,10);
   assert.equal(report.globalMedianCodepointReduction,null);
   assert.equal(report.objectiveAchieved,false);
 });
