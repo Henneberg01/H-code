@@ -78,3 +78,18 @@ fn bad_condition_types_are_compile_time_errors_not_js_truthiness(){
         assert!(e.contains("TYPE"),"{source}: {e}");
     }
 }
+
+#[test]
+fn all_eight_original_m10_tasks_compile_and_run_with_frozen_m15_sign_sources(){
+    let root=std::path::Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
+    for (name,expected) in [
+        ("typed-function","42\n"),("chained-functions","42\n"),
+        ("recursive-fibonacci","13\n"),("counter-loop","0\n1\n2\n3\n"),
+        ("string-greeting","Hi world\n"),("boolean-check","true\n"),
+        ("recursive-factorial","120\n"),("conditional-branch","negative\n")
+    ]{
+        let path=root.join(format!("compact/benchmarks/m15/{name}.hc"));
+        let source=std::fs::read_to_string(&path).unwrap();
+        assert_eq!(output(&source).unwrap(),expected,"m15 {name}");
+    }
+}

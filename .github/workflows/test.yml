@@ -34,5 +34,7 @@ jobs:
         if: ${{ success() || failure() }}
       - run: npm run m14:measure
         if: ${{ success() || failure() }}
+      - run: npm run m15:measure
+        if: ${{ success() || failure() }}
       - run: npm run release:check
         if: ${{ success() || failure() }}
