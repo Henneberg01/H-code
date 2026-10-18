@@ -81,34 +81,39 @@ pub fn generate(name:&str,version:&str,source:&Path,lock:&Path,check_only:bool)-
     let mut positions=Vec::new();
     let mut glyphs=HashSet::new();
     for i in 0..tokens.len().saturating_sub(1){
-        if let (TokenKind::Glyph(c),TokenKind::Fn)=(&tokens[i].kind,&tokens[i+1].kind){
-            // The signature marker is directly before ƒ. Parsing the stripped
-            // source below establishes whether the remaining declaration is legal.
+        if let (TokenKind::Glyph(c),TokenKind::LeftParen)=(&tokens[i].kind,&tokens[i+1].kind){
+            // The user-owned glyph IS the function constructor/name.
+            // Example: ∀T ⥇(xs:⟦T⟧)→T ↩ xs⟦0⟧;
+            // Generate the private identifier only for the existing M16.2 checker.
             if !is_symbol(*c){return Err(fail("Invalid glyph"))}
             if !glyphs.insert(*c){return Err(fail(format!("Duplicate glyph {c}")))}
             if !matches!(tokens.get(i.wrapping_sub(1)).map(|t|&t.kind),Some(TokenKind::Identifier(_))|Some(TokenKind::Semicolon)|Some(TokenKind::RightBrace)) && i!=0 {
-                return Err(fail("Glyph marker must precede ƒ at a function boundary"));
+                return Err(fail("Glyph must declare a top-level function"));
             }
             positions.push((tokens[i].span.line,tokens[i].span.column,*c));
         }
     }
     if positions.is_empty()||positions.len()>100{return Err(fail("Expected 1..100 glyph-marked functions"))}
-    let mut output=authored.clone();
-    let mut lines:Vec<String>=output.split_inclusive('\n').map(str::to_string).collect();
-    for (line,column,c) in &positions{
+    // A private compiler identifier is generated from source order, not
+    // authored by the developer. The sign itself declares the function.
+    let mut lines:Vec<String>=authored.split_inclusive('\n').map(str::to_string).collect();
+    // Apply right-to-left so earlier byte/column offsets on the same line
+    // remain unchanged, even with multiple declarations on one line.
+    for (index,(line,column,c)) in positions.iter().enumerate().rev(){
         let original=lines.get_mut(line-1).ok_or_else(||fail("Invalid glyph source position"))?;
         let begin=original.char_indices().nth(column-1).map(|(x,_)|x).ok_or_else(||fail("Invalid glyph column"))?;
         if !original[begin..].starts_with(*c){return Err(fail("Glyph source position mismatch"))}
-        original.replace_range(begin..begin+c.len_utf8()," ");
+        original.replace_range(begin..begin+c.len_utf8(),&format!("ƒ g{}",index+1));
     }
-    output=lines.concat();
+    let output=lines.concat();
     let ast=parse(&output).map_err(|e|fail(e.to_string()))?;
     if ast.statements.len()!=positions.len(){return Err(fail("Every top-level function requires one glyph marker"))}
     let _checked=check(&ast,&PackageRegistry::default(),false).map_err(|e|fail(e.to_string()))?;
     let mut names=HashSet::new();
     let mut operations=Vec::new();
-    for (s,(_,_,glyph)) in ast.statements.iter().zip(&positions){
+    for (index,(s,(_,_,glyph))) in ast.statements.iter().zip(&positions).enumerate(){
         let StmtKind::Function{name:fn_name,type_parameters,parameters,returns,..}=&s.kind else {return Err(fail("Package can only contain functions"))};
+        if *fn_name!=format!("g{}",index+1){return Err(fail("Generated glyph/function order mismatch"))}
         if !names.insert(fn_name.clone()){return Err(fail("Duplicate exported function"))}
         let result=returns.as_deref().ok_or_else(||fail(format!("{fn_name}: return type required")))?;
         let params:Result<Vec<_>,String>=parameters.iter().map(|p|{
