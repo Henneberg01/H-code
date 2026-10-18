@@ -3,7 +3,8 @@
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {readFileSync,mkdtempSync,rmSync,statSync} from 'node:fs';
-import {join} from 'node:path';
+import {join,resolve} from 'node:path';
+import {fileURLToPath} from 'node:url';
 import {tmpdir} from 'node:os';
 import {spawn,spawnSync} from 'node:child_process';
 import {executeAsync} from '../prototype/src/hcode.mjs';
@@ -16,8 +17,8 @@ const gitBlob=b=>createHash('sha1').update('blob '+b.length+'\0').update(b).dige
 const sha256=b=>createHash('sha256').update(b).digest('hex');
 const FIXTURE_SHA='4f12a085d9730ac637444a06fff6f75481985efb';
 const REGISTRY_SHA='46653ef90ffb3e420fba4ddfbfac3c4cfd57f3b3';
-const HCODE_SHA='__PIN_HC_BLOB__';
-const TYPESCRIPT_SHA='__PIN_TS_BLOB__';
+const HCODE_SHA='9583fe5acf9d4a775ba7a4e86da46bd3b85b5cef';
+const TYPESCRIPT_SHA='1e9f968d900ed9ab77c703afad1fec104135a83d';
 const hcPath='compact/canonical20/programs/06-http-retries.hc';
 const tsPath='scripts/canonical20-http-oracle.ts';
 const fixture=JSON.parse(read('compact/canonical20/cases/06-http-retries.json'));
@@ -176,7 +177,7 @@ export async function verifyCanonical06(){
     };
   }finally{rmSync(tmp,{recursive:true,force:true});}
 }
-if(import.meta.url===new URL(process.argv[1], 'file://' + process.cwd() + '/').href){
+if(process.argv[1]&&resolve(fileURLToPath(import.meta.url))===resolve(process.argv[1])){
   verifyCanonical06().then(v=>console.log(JSON.stringify(v,null,2))).catch(e=>{
     console.error('Canonical06 full parity FAILED:',e.stack||e);
     process.exitCode=1;
