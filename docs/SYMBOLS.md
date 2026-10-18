@@ -140,3 +140,7 @@ Nested/combined applications: `∑(⟦-1,2,3,-2⟧⌕(>0)⇢(*2))` returns `10`.
 ## M15 — real control glyphs and delimiter elision
 
 The primary characters are `⊢` (`if`), `⊣` (`else`), `⟳` (`while`) and `⇒` (`=>`) for a **single-statement** branch/loop body. A semicolon is optional only at a real physical line break after a complete expression, a block/file end or before a reserved statement-opening token. Same-line adjacent ordinary function calls still require a separator. Compiler and reference interpreter implement identical AST scoping and branch behavior; see `docs/M15-SIGN-BLOCKS.md`. Draft branch, not released.
+
+## M16 — brugerdefinerede tegn i låste pakker
+
+Ikke-reserverede Unicode-symboler som `⊚` (typet sum) og `⊛` (typet transform) kan defineres i et **format v2** bibliotek som eksisterende H-Code-funktioner og bruges via `vec∷⊚(⟦2,3,5⟧)`. Der tilføjes ingen hardcodet betydning for `⊚` eller `⊛` til Rust lexerens kernetokens. Brugeren ejer betydningen i det eksakte versionslåste `.hc` bibliotek. Et manglende, tvetydigt eller reserveret tegn afvises. Se `docs/M16-USER-SIGNS.md`. `main` er ikke ændret.

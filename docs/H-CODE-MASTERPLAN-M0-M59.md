@@ -211,3 +211,7 @@ Run the separately frozen comparisons on Node22+: `npm run m14:measure`. Cargo, 
 ## 2026-10-18 — M15 sign blocks and delimiter-elision engineering
 
 M15 extends the original `M15 | Kort bloksyntaks og delimiter-regler` milestone without renaming it. A dedicated, stacked development branch `feat/m15-sign-blocks-delimiters` implements real `⊢`, `⊣`, `⟳`, `⇒` tokens plus deterministic optional statement terminators in both Rust/JS. Existing programs stay compatible. Eight **same-task** M10/TypeScript comparisons are independently version- and SHA-locked under `compact/benchmarks/m15`. `npm run m15:measure` must finish on compiled Rust before publication. The 20-case M58 target remains open; the M19 registry branch is independent.
+
+## M16 implementeringsarbejde — brugerejer-tegn i ægte programmer (18. oktober 2026)
+
+Eksperimentelt branch `feat/m16-typed-user-signs` viderefører M15-koden og indfører faktisk eksekverbar **format v2** pakkesyntaks med rekursive konkrete sekvens-kontrakter og verificeret SHA-256-lock. Her er egne glyffer `⊚` og `⊛` ikke kerneoperationer men navngivne, typede funktioner, som er **skrevet i almindelig H-Code** og statisk kontrolleret af Rust og JavaScript-referencefrontenden. Format v1 og eksisterende benchmarks bevares. Fuld CI-status på det eksakte PR SHA afgør om M16 kan godkendes; ægte polymorfisme (`∀T`) og Studio verified package discovery er særskilt uafsluttet arbejde. Se `docs/M16-USER-SIGNS.md`. 70 %-målet er ikke nytestet.

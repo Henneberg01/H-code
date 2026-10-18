@@ -129,3 +129,7 @@ print(n)
 ```
 
 `⊢` / `⊣` / `⟳` and `⇒` are real Rust+JS syntax with accessible ASCII aliases. `⇒` means exactly one scoped statement, and semicolons may be left out at parser-proven boundaries. **Feature branch only**; not merged into `main`. Frozen eight-task benchmark and compatibility notes: `docs/M15-SIGN-BLOCKS.md`.
+
+## M16 user-defined symbolic packages (development branch)
+
+A SHA-256-locked `format: 2` package can export actual, pure, typechecked H-Code functions as **user-owned signs** without compiler patches. The `vec.math@1.0.0` fixture defines `⊚` and `⊛` for concrete sequence types; `hcode.m16.lock.json` verifies its exact source and manifest. Full Rust and JS reference tests are under `compiler/tests/m16_packages_v2.rs` and `prototype/test/m16-packages-v2.test.mjs`. See `docs/M16-USER-SIGNS.md` for documented limitations and release criteria. This feature is not merged into main and cannot be claimed as a new 70% source-size result.
