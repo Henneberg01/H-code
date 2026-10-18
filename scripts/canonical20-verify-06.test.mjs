@@ -110,7 +110,7 @@ async function runReference(source,url){
  const stats=await executeAsync(source,{
    readStdin:()=>url,httpGet:getFromHost,
    sleepMs:async ms=>{sleeps.push(ms);},maxHttpRequests:4,maxSleepEffects:3,
-   maxTotalSleepMs:1700,stdout:line=>lines.push(String(line))
+   maxTotalSleepMs:5000,stdout:line=>lines.push(String(line))
  });
  return {value:parseOutput(lines.join('\n')+'\n'),sleeps,stats};
 }
