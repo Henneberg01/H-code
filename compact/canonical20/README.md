@@ -4,11 +4,11 @@
 
 Source registry: `compact/canonical20/workloads.json`; coverage checker: `npm run benchmark20:status` on Node22+. The registered source is anchored to Git blob SHA `46653ef90ffb3e420fba4ddfbfac3c4cfd57f3b3` from the original M19 preregistration. Rewriting the scope requires an explicit new reviewed registry version, not silent benchmark edits. All twenty IDs, category requirements and acceptance criteria are recorded so that skipped work cannot disappear from the denominator.
 
-**Current state on stacked PR #29 after the exact SHA-locked CSV proof: 5/20 functionally compiler-verified, 0/20 partial references, 15/20 unsupported (contingent on green CI and before integration to main).** The initial manifest JSON retains its original pre-implementation statuses and Git blob SHA; **separate SHA-locked proof harnesses derive full verification only when each task's actual Rust/JS/TypeScript execution passes**. Do not modify the twenty IDs or call a registry field a test.
+**Current state on `main` after PRs #30 and #31: 5/20 functionally compiler-verified, 0/20 partial references, 15/20 unsupported.** The initial manifest JSON retains its original pre-implementation statuses and Git blob SHA; **separate SHA-locked proof harnesses derive full verification only when each task's actual Rust/JS/TypeScript execution passes**. Do not modify the twenty IDs or call a registry field a test.
 
 Task **03 — Unicode token frequency** uses three real typed core signs: `⫶` splits Unicode scalars, `⟟` tokenizes NFC-normalized lowercased Unicode words and `⧉` counts/sorts typed values. The full immutable task includes 10 fixed Unicode examples, 28 unseen input strings, six Rust typecheck failures, five generic primitive programs, and rejection of excessive token counts; all three engines must agree. Full authored source is **437 H-Code vs 1,541 TypeScript codepoints = 71.64% fewer**; UTF-8 **499 vs 1,592 bytes = 68.66% fewer**. Generated JS is **8,970 bytes**. Neither the original task ID/acceptance nor its neighboring workloads were changed. See `compact/canonical20/PROOF-03.md`.
 
-Task **04 — typed CSV validation** introduces true core symbols `⧄` (opt-in local file reading) and `⧇` (typed pure CSV decoding), with Rust parser/checker/emitter, independent JS reference, SHA-locked four valid and six invalid CSV files, forty generated datasets, five bad-type programs and capability/path-traversal tests. The TS source is a **self-contained correctness oracle, not yet a fair idiomatic package baseline**; its handwritten parser must not be used to claim a verified source-compression percentage. See `compact/canonical20/PROOF-04.md`.
+Task **04 — typed CSV validation** introduces true core symbols `⧄` (opt-in local file reading) and `⧇` (typed pure CSV decoding), with Rust parser/checker/emitter, independent JS reference, SHA-locked four valid and six invalid CSV files, forty generated datasets, five bad-type programs and capability/path-traversal tests. The original standalone TS source is a **correctness oracle**, not the fair baseline. A separate **maintained-library TypeScript comparator** (draft PR #32) installs SHA-512-pinned csv-parse/Zod and measures **all 3,362 developer-authored TS codepoints versus 258 H-Code codepoints (92.33% fewer for *this one task*)**, plus each library's installed bytes separately. Neither figure is the global 20-task median. See `compact/canonical20/PROOF-04.md`.
 
 Task **05 — JSON transformation** now runs a complete, typed, nested JSON record transformation: true Rust H-Code compiler→JS, independent JavaScript H-Code interpreter and Node TypeScript runtime. The proof is **3 immutable positive fixtures + 12 generated positive variations + 11 invalid input cases**, with matching outputs and fail-closed malformed input rejection across all engines. `npm run benchmark20:verify05`; source and fixture Git blob SHAs are fixed. Its authored source is 594 H-Code vs 2,005 TS Unicode codepoints (70.37% fewer **on task 05 only**); 651 vs 2,007 UTF-8 bytes (67.56% fewer), generated JS 6,560 bytes tracked separately. See `compact/canonical20/PROOF-05.md`.
 
@@ -46,6 +46,8 @@ The next technical work should target real general-purpose I/O and validated CSV
 
 ```sh
 npm run benchmark20:verify04
+# after npm ci --prefix compact/canonical20/baselines/04-idiomatic-typescript:
+npm run benchmark20:csv-idiomatic
 npm run benchmark20:verify03
 npm run benchmark20:verify10
 npm run benchmark20:verify02
