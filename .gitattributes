@@ -4,3 +4,6 @@
 *.hcs text eol=lf
 *.ts text eol=lf
 *.json text eol=lf
+
+# Preserve BOM, LF, CRLF and literal newlines inside SHA-locked CSV files.
+data/canonical04/*.csv -text
