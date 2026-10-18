@@ -22,7 +22,7 @@ function loadPalette(){
  vm.runInNewContext(palette,{document:doc,el:()=>host,source,changed:()=>changed++,clearApproval:()=>cleared++});
  return {buttons:host.children,source,changes:()=>changed,approvalsCleared:()=>cleared};
 }
-const pairs=[['ƒ','fn'],['≔','let'],['↩','return'],['→','->'],['←','='],['⊤','true'],['⊥','false'],['∧','and'],['∨','or'],['¬','not'],['≡','=='],['≠','!='],['≤','<='],['≥','>='],['∷','::'],['▷','|>'],['∘','<<'],['◇','?'],['⟦','[['],['⟧',']]'],['⦃','{'],['⦄','}'],['·','.'],['⊞','<+'],['⤓','json_in'],['⤒','json_out'],['⌗','#'],['⧺','++'],['∑','@+'],['⌕','@?'],['⇢','@>'],['λ','lambda'],['⊢','if'],['⊣','else'],['⟳','while'],['⇒','=>']];
+const pairs=[['ƒ','fn'],['≔','let'],['↩','return'],['→','->'],['←','='],['⊤','true'],['⊥','false'],['∧','and'],['∨','or'],['¬','not'],['≡','=='],['≠','!='],['≤','<='],['≥','>='],['∷','::'],['▷','|>'],['∘','<<'],['◇','?'],['⟦','[['],['⟧',']]'],['⦃','{'],['⦄','}'],['·','.'],['⊞','<+'],['⤓','json_in'],['⤒','json_out'],['⫶','text_scalars'],['⟟','text_words'],['⧉','text_hist'],['⌗','#'],['⧺','++'],['∑','@+'],['⌕','@?'],['⇢','@>'],['λ','lambda'],['⊢','if'],['⊣','else'],['⟳','while'],['⇒','=>']];
 test('palette provides every existing language-level sign with correct accessible alias',()=>{
  const {buttons}=loadPalette();
  const found=buttons.map(b=>[b.children[0].textContent,b.children[1].textContent]);

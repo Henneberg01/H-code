@@ -159,3 +159,13 @@ Ikke-reserverede Unicode-symboler som `⊚` (typet sum) og `⊛` (typet transfor
 - Denne milestone giver ikke i sig selv JSON, DB, HTTP eller et komplet CRUD API. 20-programmers benchmark forbliver separat og ufuldstændigt.
 
 Se `docs/M12-SYMBOLIC-RECORDS.md` for kildefaste Rust/JS/TS-paritetstests, typeregel, negative tests og ærlige tegn/byte-målinger. PR er stacked på M19 og **ikke merged til main**.
+
+## M19.03 — generelle Unicode- og frekvenstegn (draft PR)
+
+- `⫶text` (`text_scalars`): Unicode-kodepunkter, ikke UTF-16-halvdele; `String → ⟦String⟧`.
+- `⟟text` (`text_words`): normaliser til NFC, Unicode-lowercase, NFC; hent Unicode-ord med `[\\p{L}\\p{N}][\\p{L}\\p{M}\\p{N}\\p{Pc}]*`. Ingen locale-baseret sortering eller påstand om fuld ICU/casefold.
+- `⧉list` (`text_hist`): frekvensmap over eksakte, statisk typede `⟦String⟧`, `⟦Number⟧`, `⟦Bool⟧`, resultat `⟦⦃count:Number,value:T⦄⟧`; deterministisk sorteret efter kodepunkter/tal/`false`-før-`true`.
+- Det er reelle AST- og checkeroperationer i Rust og JS, ikke tekstmakroer til opgave 03. Eksempel: `ƒ frequency(s:String)→String ↩ ⤒(⧉(⟟s));`.
+- 1 MiB input / histogram-stringbudget, 16.384 sekvenselementer, uparrede UTF-16-surrogater afvises. Records er immutable og prototypefrie. Core-symboler er reserveret, kan ikke skygge verificerede brugerpakker.
+- Original M19 benchmarkregistrering for opgave `03-text-frequency-counter` er SHA-frossen og skal forblive uændret. Se `compact/canonical20/PROOF-03.md` for fuldt bevis og begrænsninger, når CI består.
+
