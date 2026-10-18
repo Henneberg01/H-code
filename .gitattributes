@@ -1,5 +1,6 @@
 # Keep benchmark and H-Code source bytes identical on Windows and Linux.
 # SHA-locked source comparisons require LF, not platform-dependent CRLF.
 *.hc text eol=lf
+*.hcs text eol=lf
 *.ts text eol=lf
 *.json text eol=lf
