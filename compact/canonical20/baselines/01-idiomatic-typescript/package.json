@@ -1,0 +1,12 @@
+{
+  "name": "hcode-canonical01-idiomatic-ts-comparator",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@expr-eval/js": "3.7.0"
+  }
+}
