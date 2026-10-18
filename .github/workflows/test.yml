@@ -130,6 +130,9 @@ jobs:
       - name: M19.12 B1 native typed inbound HTTP serve symbol and independent JS parity
         run: npm run benchmark20:serve12b1
         if: ${{ success() || failure() }}
+      - name: M19.12 B2a typed durable HTTP state and independent JS parity (still not CRUD)
+        run: npm run benchmark20:state12b2a
+        if: ${{ success() || failure() }}
       - name: Canonical twenty source-locked readiness check
         run: npm run benchmark20:status
         if: ${{ success() || failure() }}

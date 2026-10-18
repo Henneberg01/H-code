@@ -102,6 +102,7 @@ pub enum TypedExprKind {
     FileWrite { filename:Box<TypedExpr>, content:Box<TypedExpr> },
     HttpGet(Box<TypedExpr>),
     HttpServe(Box<TypedExpr>),
+    HttpServeState {handler:Box<TypedExpr>,initial:Box<TypedExpr>},
     Sleep(Box<TypedExpr>),
     StdinText,
     ArithEval(Box<TypedExpr>),
@@ -501,6 +502,25 @@ impl Checker {
                 self.unify(&expected,&input.ty,value.span,"⤊ requires (Request)->Response handler")?;
                 (TypedExprKind::HttpServe(Box::new(input)),Type::Unit)
             }
+            ExprKind::HttpServeState{handler,initial}=>{
+                if !self.allow_print || self.active_function.is_some() || self.lambda_depth>0 {
+                    return Err(Diagnostic::new("EFFECT","⤊ persistent HTTP serve is only available in effectful top-level flow".into(),expr.span));
+                }
+                let checked_handler=self.expression(handler)?;
+                let checked_initial=self.expression(initial)?;
+                self.unify(&Type::String,&checked_initial.ty,initial.span,"⤊ initial state requires String")?;
+                let request=Type::Record(vec![
+                    ("body".into(),Type::String),("method".into(),Type::String),
+                    ("path".into(),Type::String)
+                ]);
+                let response=Type::Record(vec![
+                    ("body".into(),Type::String),("state".into(),Type::String),
+                    ("status".into(),Type::Number)
+                ]);
+                let expected=Type::Function(vec![request,Type::String],Box::new(response));
+                self.unify(&expected,&checked_handler.ty,handler.span,"⤊ state handler must accept (Request,String) and return {body,state,status}")?;
+                (TypedExprKind::HttpServeState{handler:Box::new(checked_handler),initial:Box::new(checked_initial)},Type::Unit)
+            }
             ExprKind::Sleep(value)=>{
                 if !self.allow_print || self.active_function.is_some() || self.lambda_depth>0 {
                     return Err(Diagnostic::new("EFFECT","⌛ delay is only available in effectful top-level program flow; pure packages and sync closures cannot wait".into(),expr.span));
@@ -842,6 +862,7 @@ impl Checker {
             TypedExprKind::TextScalars(value)|TypedExprKind::TextWords(value)|TypedExprKind::Histogram(value)|TypedExprKind::Markdown(value)|TypedExprKind::HttpServe(value)|TypedExprKind::FileRead(value)|TypedExprKind::HttpGet(value)|TypedExprKind::Sleep(value)|TypedExprKind::ArithEval(value)=>self.finalize_expr(value)?,
             TypedExprKind::CsvTyped{value,..}=>self.finalize_expr(value)?,
             TypedExprKind::FileWrite{filename,content}=>{self.finalize_expr(filename)?;self.finalize_expr(content)?;},
+            TypedExprKind::HttpServeState{handler,initial}=>{self.finalize_expr(handler)?;self.finalize_expr(initial)?;},
             TypedExprKind::RecordUpdate{record,value,..}=>{self.finalize_expr(record)?;self.finalize_expr(value)?;},
             TypedExprKind::Index{sequence,index}=>{self.finalize_expr(sequence)?;self.finalize_expr(index)?;},
             TypedExprKind::Length(value)=>self.finalize_expr(value)?,

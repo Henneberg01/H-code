@@ -250,7 +250,16 @@ impl Parser {
                 ExprKind::FileWrite{filename:Box::new(filename),content:Box::new(content)}
             }
             TokenKind::HttpGet=>{self.index+=1;ExprKind::HttpGet(Box::new(self.expression(8)?))}
-            TokenKind::HttpServe=>{self.index+=1;ExprKind::HttpServe(Box::new(self.expression(8)?))}
+            TokenKind::HttpServe=>{
+                self.index+=1;
+                if self.accept(&TokenKind::LeftParen).is_some(){
+                    let handler=self.expression(0)?;
+                    self.expect(&TokenKind::Comma)?;
+                    let initial=self.expression(0)?;
+                    self.expect(&TokenKind::RightParen)?;
+                    ExprKind::HttpServeState{handler:Box::new(handler),initial:Box::new(initial)}
+                } else {ExprKind::HttpServe(Box::new(self.expression(8)?))}
+            }
             TokenKind::Sleep=>{self.index+=1;ExprKind::Sleep(Box::new(self.expression(8)?))}
             TokenKind::CsvTyped=>{self.index+=1;let schema=self.type_name()?;ExprKind::CsvTyped{schema,value:Box::new(self.expression(8)?)}}
             TokenKind::TextScalars=>{self.index+=1;ExprKind::TextScalars(Box::new(self.expression(8)?))}
