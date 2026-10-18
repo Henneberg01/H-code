@@ -16,6 +16,7 @@ import {verifyCanonical06} from './canonical20-verify-06.mjs';
 import {verifyCanonical07} from './canonical20-verify-07.mjs';
 import {verifyCanonical08} from './canonical20-verify-08.mjs';
 import {verifyCanonical09} from './canonical20-verify-09.mjs';
+import {verifyCanonical11} from './canonical20-verify-11.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
 const registryBytes=readFileSync(join(root,'compact/canonical20/workloads.json'));
@@ -127,6 +128,11 @@ export function readiness(){
         // virtual-clock events, real Rust compilation, independent JS and TS.
         fullEvidence[w.id]=verifyCanonical09();
         verified++;
+      }else if(w.id==='11-markdown-processing'){
+        // Proof is derived exclusively from source-SHA-locked Markdown fixtures,
+        // real Rust codegen and independent JS/TS parsers. No registry edits.
+        fullEvidence[w.id]=verifyCanonical11();
+        verified++;
       }else{unsupported++;}
     }else if(w.status==='reference_partial'){
       if(w.evidence==='m10:fibonacci'){
@@ -175,7 +181,7 @@ export function readiness(){
     historicalM14IsGlobalMetric:false,
     evidenceByFullTask:fullEvidence,
     evidenceByPartialTask:evidence,
-    explanation:'Full verification is derived from frozen Rust/JS/TS proofs (including HTTP retry, parallel barrier, and bounded virtual-clock cache); original preregistration remains SHA-frozen and every unsupported task stays in the denominator. Correctness oracles are not automatically competitive TypeScript baselines.'
+    explanation:'Full verification is derived from frozen Rust/JS/TS proofs (including HTTP retry, parallel barrier, bounded virtual-clock cache and structural Markdown extraction); original preregistration remains SHA-frozen and every unsupported task stays in the denominator. Correctness oracles are not automatically competitive TypeScript baselines.'
   };
 }
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){
