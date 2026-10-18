@@ -395,6 +395,15 @@ impl Parser {
                 }
                 continue;
             }
+            // One glyph replaces immutable JS object spread + replacement.
+            if min_power==0 && self.accept(&TokenKind::RecordUpdate).is_some(){
+                let (name,_)=self.ident()?;
+                self.expect(&TokenKind::Colon)?;
+                let value=self.expression(0)?;
+                let span=left.span;
+                left=Expr{kind:ExprKind::RecordUpdate{record:Box::new(left),name,value:Box::new(value)},span};
+                continue;
+            }
             if min_power==0 && self.accept(&TokenKind::Choice).is_some(){
                 let yes=self.expression(0)?;
                 self.expect(&TokenKind::Colon)?;

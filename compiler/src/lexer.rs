@@ -15,7 +15,7 @@ pub struct Token { pub kind: TokenKind, pub span: Span }
 pub enum TokenKind {
     Fn, Let, Return, If, Else, While, Then, Forall, Use, Import, Export, As, True, False, And, Or, Not,
     Identifier(String), Number(String), String(String), Glyph(char),
-    LeftParen, RightParen, LeftBrace, RightBrace, RecOpen, RecClose, Field, Comma, Semicolon, Colon, DoubleColon, Pipe, Compose, Choice, Lambda, SeqOpen, SeqClose, SeqLength, SeqConcat, Sum, Filter, Map,
+    LeftParen, RightParen, LeftBrace, RightBrace, RecOpen, RecClose, Field, RecordUpdate, Comma, Semicolon, Colon, DoubleColon, Pipe, Compose, Choice, Lambda, SeqOpen, SeqClose, SeqLength, SeqConcat, Sum, Filter, Map,
     Assign, Arrow, Plus, Minus, Star, Slash, Percent,
     Equal, NotEqual, Less, Greater, LessEqual, GreaterEqual, Eof,
 }
@@ -137,7 +137,7 @@ pub fn lex(source: &str) -> Result<Vec<Token>, Diagnostic> {
             '≤'=>Some(TokenKind::LessEqual),'≥'=>Some(TokenKind::GreaterEqual),
             '∷'=>Some(TokenKind::DoubleColon),'▷'=>Some(TokenKind::Pipe),'∘'=>Some(TokenKind::Compose),'◇'=>Some(TokenKind::Choice),
             '⟦'=>Some(TokenKind::SeqOpen),'⟧'=>Some(TokenKind::SeqClose),
-            '⦃'=>Some(TokenKind::RecOpen),'⦄'=>Some(TokenKind::RecClose),'·'=>Some(TokenKind::Field),
+            '⦃'=>Some(TokenKind::RecOpen),'⦄'=>Some(TokenKind::RecClose),'·'=>Some(TokenKind::Field),'⊞'=>Some(TokenKind::RecordUpdate),
             '⌗'=>Some(TokenKind::SeqLength),'⧺'=>Some(TokenKind::SeqConcat),
             '∑'=>Some(TokenKind::Sum),'⌕'=>Some(TokenKind::Filter),'⇢'=>Some(TokenKind::Map),'λ'=>Some(TokenKind::Lambda),'∀'=>Some(TokenKind::Forall),
             _=>None,
@@ -149,6 +149,7 @@ pub fn lex(source: &str) -> Result<Vec<Token>, Diagnostic> {
             (':',Some(':'))=>Some(TokenKind::DoubleColon),
             ('|',Some('>'))=>Some(TokenKind::Pipe),
             ('<',Some('<'))=>Some(TokenKind::Compose),
+            ('<',Some('+'))=>Some(TokenKind::RecordUpdate),
             ('[',Some('['))=>Some(TokenKind::SeqOpen),
             (']',Some(']'))=>Some(TokenKind::SeqClose),
             ('+',Some('+'))=>Some(TokenKind::SeqConcat),
