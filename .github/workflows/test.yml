@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feat/m14-typed-lambda-glyph
+      - feat/m19-canonical-20-registry
 permissions:
   contents: read
 jobs:
@@ -32,6 +33,8 @@ jobs:
       - run: npm run m13:measure
         if: ${{ success() || failure() }}
       - run: npm run m14:measure
+        if: ${{ success() || failure() }}
+      - run: npm run benchmark20:status
         if: ${{ success() || failure() }}
       - run: npm run release:check
         if: ${{ success() || failure() }}
