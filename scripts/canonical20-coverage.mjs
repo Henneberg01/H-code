@@ -8,6 +8,7 @@ import {execute} from '../prototype/src/hcode.mjs';
 import {compareM14} from './m14-compare.mjs';
 import {verifyCanonical05} from './canonical20-verify-05.mjs';
 import {verifyCanonical02} from './canonical20-verify-02.mjs';
+import {verifyCanonical10} from './canonical20-verify-10.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
 const registryBytes=readFileSync(join(root,'compact/canonical20/workloads.json'));
@@ -97,8 +98,8 @@ export function readiness(){
         verified++;
       }else if(w.evidence==='m14:collections'){
         if(w.id!=='10-generic-collection-transforms')throw Error('Misassigned reference');
-        evidence[w.id]=collectionEvidence();
-        partial++;
+        fullEvidence[w.id]=verifyCanonical10();
+        verified++;
       }
       else throw Error('Unknown or fabricated partial evidence for '+w.id);
     }else{
@@ -130,7 +131,7 @@ export function readiness(){
     verifiedFullWorkloads:verified,partialReferenceEvidence:partial,unsupported,
     complete:false,globalMedianCodepointReduction:null,globalMedianUtf8Reduction:null,
     objectiveAchieved:false,compilerProvenanceValidated:false,
-    historicalM14MedianCodepointReductionPct:evidence['10-generic-collection-transforms'].historicalM14MedianUnicodeCodepointReductionPct,
+    historicalM14MedianCodepointReductionPct:fullEvidence['10-generic-collection-transforms'].historicalM14MedianCodepointReductionPct,
     historicalM14IsGlobalMetric:false,
     evidenceByFullTask:fullEvidence,
     evidenceByPartialTask:evidence,
