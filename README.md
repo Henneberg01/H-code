@@ -133,3 +133,7 @@ print(n)
 ## M16 user-defined symbolic packages (development branch)
 
 A SHA-256-locked `format: 2` package can export actual, pure, typechecked H-Code functions as **user-owned signs** without compiler patches. The `vec.math@1.0.0` fixture defines `⊚` and `⊛` for concrete sequence types; `hcode.m16.lock.json` verifies its exact source and manifest. Full Rust and JS reference tests are under `compiler/tests/m16_packages_v2.rs` and `prototype/test/m16-packages-v2.test.mjs`. See `docs/M16-USER-SIGNS.md` for documented limitations and release criteria. This feature is not merged into main and cannot be claimed as a new 70% source-size result.
+
+## M16.2 experimental ∀-quantified packages
+
+Actual Rust and JS reference frontends support the Unicode type binder `∀T` (secondary ASCII `forall T`) in SHA-locked **format 3** pure libraries. See `packages/poly.signs/lib.hc`, `packages/poly.signs/demo.hc` and `hcode.m16.2.lock.json`. Two user-owned signs `⥇` and `⥈` work for Number, String, Bool and nested typed lists using fresh type inference per call. No unchecked `Any`; old format 1/2 packages and fixed benchmark baselines remain unchanged. Full semantics, security constraints, pending release gates and source-size limitations: `docs/M16-2-UNIVERSAL-SIGNS.md`. Draft feature branch, not merged into main.

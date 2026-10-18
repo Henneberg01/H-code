@@ -215,3 +215,7 @@ M15 extends the original `M15 | Kort bloksyntaks og delimiter-regler` milestone 
 ## M16 implementeringsarbejde — brugerejer-tegn i ægte programmer (18. oktober 2026)
 
 Eksperimentelt branch `feat/m16-typed-user-signs` viderefører M15-koden og indfører faktisk eksekverbar **format v2** pakkesyntaks med rekursive konkrete sekvens-kontrakter og verificeret SHA-256-lock. Her er egne glyffer `⊚` og `⊛` ikke kerneoperationer men navngivne, typede funktioner, som er **skrevet i almindelig H-Code** og statisk kontrolleret af Rust og JavaScript-referencefrontenden. Format v1 og eksisterende benchmarks bevares. Fuld CI-status på det eksakte PR SHA afgør om M16 kan godkendes; ægte polymorfisme (`∀T`) og Studio verified package discovery er særskilt uafsluttet arbejde. Se `docs/M16-USER-SIGNS.md`. 70 %-målet er ikke nytestet.
+
+## M16.2 — typede kvantorer i H-Codes rigtige compiler (18. oktober 2026)
+
+For `feat/m16-2-universal-sign-types` er `∀T`/ASCII `forall T` en deklarationsbinder i både Rust- og JS-frontend. `Type::Generic` er rigid under kildekodekontrol og får frisk typeinstans for hvert `alias∷glyph`-kald. Format 3 SHA-256-låser actual `.hc` definitioner med generiske sekvenser og konkrete typede runtimegrænser. Eksisterende formater 1/2 og benchmarkkilder bevares. Højereordens generic manifests, Studio-discovery og metadata-generering er åbent arbejde. Fuld CI på eksakt slut-SHA kræves før release. Se `docs/M16-2-UNIVERSAL-SIGNS.md`.

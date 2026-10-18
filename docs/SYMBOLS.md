@@ -35,7 +35,7 @@
 | 29 | ⟳ | `while` | **M15 branch; CI pending** | Repeating Boolean-guarded statement/block |
 | 30 | ⇒ | `=>` | **M15 branch; CI pending** | Delimit exactly one statement as a scope-preserving control block |
 | 31 | ∅ | `none` | Reserved | Future Option/absence value |
-| 32 | ∀ | `for` | Reserved | Future iteration |
+| 32 | ∀ | `forall` | **M16.2 rank-1 generic binder (draft)** | Rigid universal type variable binding on SHA-verified pure functions |
 | 33 | ∈ | `in` | Reserved | Future membership separator |
 | 34 | ⊕ | `packageAlias::operation` | **Demo package** | `demo.math@1.0.0::add`, two Numbers to Number |
 | 35 | ▦ | `packageAlias::operation` | **Demo package** | `demo.math@1.0.0::repeat2`, String to String |
@@ -144,3 +144,7 @@ The primary characters are `⊢` (`if`), `⊣` (`else`), `⟳` (`while`) and `�
 ## M16 — brugerdefinerede tegn i låste pakker
 
 Ikke-reserverede Unicode-symboler som `⊚` (typet sum) og `⊛` (typet transform) kan defineres i et **format v2** bibliotek som eksisterende H-Code-funktioner og bruges via `vec∷⊚(⟦2,3,5⟧)`. Der tilføjes ingen hardcodet betydning for `⊚` eller `⊛` til Rust lexerens kernetokens. Brugeren ejer betydningen i det eksakte versionslåste `.hc` bibliotek. Et manglende, tvetydigt eller reserveret tegn afvises. Se `docs/M16-USER-SIGNS.md`. `main` er ikke ændret.
+
+## M16.2 — `∀` er nu en rigtig typedeklaration
+
+`∀T ƒ head(xs:⟦T⟧)→T ↩ xs⟦0⟧` deklarerer et **rigidly quantified** `T`, ikke fremtidig iteration. ASCII-tilgængelighed: `forall`. Format-3-biblioteker kan låse brugerens egne glyphs `⥇` / `⥈` til genbrugelig H-Code-kilde. Tegnene får frisk typeløsning ved **hvert kald**; der bruges ikke `Any` eller skjult JS/AI. Se `docs/M16-2-UNIVERSAL-SIGNS.md`. Kernen er endnu kun på draft-branch.
