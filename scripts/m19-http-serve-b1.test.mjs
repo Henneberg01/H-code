@@ -101,6 +101,9 @@ test('H-Code Rust→Node generated server and independent JS interpreter accept 
     }finally{await stop(app);}
   }finally{rmSync(b.dir,{recursive:true,force:true});}
 });
+test('B1 JS interpreter never re-registers a server on duplicate signs',()=>{
+  assert.throws(()=>execute(original+'\n⤊reply\n',{httpServe:()=>{}}),/only one server/);
+});
 test('⤊ and http_serve both fail closed without explicitly granted host',()=>{
   for(const text of [original,alias]){
     assert.throws(()=>execute(text),/HTTP server capability denied|httpServe/);
