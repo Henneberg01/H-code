@@ -48,7 +48,16 @@ export function executeHttpCasTransaction({store,handler,request,metadata,digest
     if(result.state===current.state&&!receipt)
       return __hc_cas_reply(result.status,result.body);
     const outcome=store.tryCommit({expectedRevision:current.revision,next:result.state,receipt});
-    if(outcome.committed)return __hc_cas_reply(result.status,result.body);
+    if(outcome.committed){
+      // Trusted-host fault injection only. No HTTP input or H-Code source can
+      // supply the hook. Crash AFTER durable commit, BEFORE HTTP reply.
+      if(requestId && process.env.HCODE_CAS_TEST_FAULTS==='1' &&
+         process.env.HCODE_CAS_KILL_AFTER_COMMIT_ID===requestId){
+        process.kill(process.pid,'SIGKILL');
+        throw Error('H-Code CAS injected SIGKILL failed');
+      }
+      return __hc_cas_reply(result.status,result.body);
+    }
     // Conflict: reread durable receipt/state and recompute from current state.
     // A duplicate request ID will take the replay path on the next iteration.
   }

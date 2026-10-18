@@ -55,3 +55,17 @@ test('B2c-3: injection denied outside trusted test configuration',()=>{
  try{assert.throws(()=>createHttpCasStateStore({root,initial:'0',faultHook:()=>{}}),/disabled/);}
  finally{rmSync(root,{recursive:true,force:true});}
 });
+
+test('B2c-3 C09: failure before directory fsync leaves an ambiguous committed receipt',t=>useFaults(()=>{
+ if(process.platform==='win32'){t.diagnostic('Directory fsync unavailable under NTFS host contract');return;}
+ const root=dir();let failing,reopened;
+ try{
+  failing=createHttpCasStateStore({root,initial:'0',
+    faultHook:phase=>{if(phase==='before-directory-fsync')throw Error('INJECTED directory sync');}});
+  assert.throws(()=>failing.tryCommit({expectedRevision:0,next:'1',receipt:receipt('dir_sync')}),/INJECTED/);
+  reopened=createHttpCasStateStore({root,initial:'0'});
+  assert.equal(reopened.read(),'1');
+  assert.deepEqual(reopened.receiptFor('dir_sync'),receipt('dir_sync'));
+  assert.equal(reopened.sequence(),1);
+ }finally{failing?.close();reopened?.close();rmSync(root,{recursive:true,force:true});}
+}));
