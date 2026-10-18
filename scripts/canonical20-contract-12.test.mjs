@@ -13,7 +13,7 @@ import {fileURLToPath} from 'node:url';
 const root=fileURLToPath(new URL('../',import.meta.url));
 const FROZEN=Object.freeze({
   registry:['compact/canonical20/workloads.json','46653ef90ffb3e420fba4ddfbfac3c4cfd57f3b3'],
-  ts:['compact/canonical20/programs/12-crud-api.ts','e82559240fa35f06d5576546ed0bff502d9f71c1'],
+  ts:['compact/canonical20/programs/12-crud-api.ts','6ac016aaf88620578cfc36a82b6f4a94b3b72c9e'],
   cases:['compact/canonical20/cases/12-crud-api.json','0383e7ed4c342cc39756822a2a6581d833c53a76']
 });
 const blob=b=>createHash('sha1').update('blob '+b.length+'\0').update(b).digest('hex');
