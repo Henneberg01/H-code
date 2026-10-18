@@ -4,10 +4,10 @@ export const CORE_GLYPHS = Object.freeze({
   '\u2190': '=', '\u22a4': 'true', '\u22a5': 'false',
   '\u2227': 'and', '\u2228': 'or', '\u00ac': 'not',
   '\u2261': '==', '\u2260': '!=', '\u2264': '<=', '\u2265': '>=',
-  '\u2237': '::', '\u25b7': '|>', '\u2218': '<<', '\u25c7': '?', '\u27e6': '[[', '\u27e7': ']]', '\u2317': '#', '\u29fa': '++', '\u2211': '@+', '\u2315': '@?', '\u21e2': '@>'
+  '\u2237': '::', '\u25b7': '|>', '\u2218': '<<', '\u25c7': '?', '\u27e6': '[[', '\u27e7': ']]', '\u2317': '#', '\u29fa': '++', '\u2211': '@+', '\u2315': '@?', '\u21e2': '@>', '\u03bb': 'lambda'
 });
 export const RESERVED_USER_GLYPHS = new Set(['\u2205', '\u2200', '\u2208', ...Object.keys(CORE_GLYPHS)]);
-const RESERVED = new Set(['fn','let','return','true','false','if','else','while','and','or','not','use','as']);
+const RESERVED = new Set(['fn','let','return','true','false','if','else','while','and','or','not','use','as','lambda']);
 const TWO = new Set(['==','!=','<=','>=','->','::','|>','<<','[[',']]','++','@+','@?','@>']);
 const ONE = new Set(['+','-','*','/','%','<','>','=','(',')','{','}',',',';',':','?','#']);
 const ILLEGAL = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]|\p{Default_Ignorable_Code_Point}/u;
@@ -181,6 +181,12 @@ class Parser {
     else if(this.accept('-'))left={kind:'Unary',operator:'-',value:this.expr(8)};
     else if(this.accept('#'))left={kind:'Length',value:this.expr(8)};
     else if(this.accept('@+'))left={kind:'Sum',value:this.expr(8)};
+    else if(this.accept('lambda')){
+      const parameter=this.expect('ident').value;
+      this.expect(':');
+      const body=this.expr(0);
+      left={kind:'Lambda',parameter,body};
+    }
     else if(this.at('number'))left={kind:'Literal',value:this.expect('number').value};
     else if(this.at('string'))left={kind:'Literal',value:this.expect('string').value};
     else if(this.accept('true'))left={kind:'Literal',value:true};
@@ -288,6 +294,7 @@ export function linkProgram(ast, registry=new Map()) {
     if(node.kind==='Index')return {...node,sequence:expression(node.sequence),index:expression(node.index)};
     if(node.kind==='Length')return {...node,value:expression(node.value)};
     if(node.kind==='Sum')return {...node,value:expression(node.value)};
+    if(node.kind==='Lambda')return {...node,body:expression(node.body)};
     if(node.kind==='Binary')return {...node,left:expression(node.left),right:expression(node.right)};
     if(node.kind==='Choice')return {...node,condition:expression(node.condition),whenTrue:expression(node.whenTrue),whenFalse:expression(node.whenFalse)};
     if(node.kind==='Call'){
@@ -401,6 +408,14 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
         return total;
       }
       case 'Identifier':return scope.get(node.name);
+      case 'Lambda':
+        return (...args)=>{
+          step();
+          if(args.length!==1)throw Error('λ expects exactly one argument');
+          const closureScope=new Scope(scope);
+          closureScope.define(node.parameter,args[0]);
+          return expr(node.body,closureScope);
+        };
       case 'OperationRef':{
         const fn=operations.get(node.id);
         if(!fn)throw Error(`Unlinked operation ${node.id}`);
