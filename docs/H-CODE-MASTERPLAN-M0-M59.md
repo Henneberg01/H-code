@@ -207,3 +207,7 @@ The same three M11 task IDs and **the same SHA-locked original TypeScript files*
 **Median M14 = 68.46% fewer Unicode code points; 55.09% fewer UTF-8 bytes** than these three TypeScript programs. This is still below 70% on map and filter and is **not the canonical 20-case study**.
 
 Run the separately frozen comparisons on Node22+: `npm run m14:measure`. Cargo, full Node/Studio CI, upstream PR integration, future M14 field selectors and generic manifest-v2 remain open. Do not mark M14, M13 or the 70% global hypothesis complete.
+
+## 2026-10-18 — M15 sign blocks and delimiter-elision engineering
+
+M15 extends the original `M15 | Kort bloksyntaks og delimiter-regler` milestone without renaming it. A dedicated, stacked development branch `feat/m15-sign-blocks-delimiters` implements real `⊢`, `⊣`, `⟳`, `⇒` tokens plus deterministic optional statement terminators in both Rust/JS. Existing programs stay compatible. Eight **same-task** M10/TypeScript comparisons are independently version- and SHA-locked under `compact/benchmarks/m15`. `npm run m15:measure` must finish on compiled Rust before publication. The 20-case M58 target remains open; the M19 registry branch is independent.

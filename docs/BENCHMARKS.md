@@ -75,3 +75,7 @@ Run `npm run compact:measure` for seven Unicode/ASCII **H-Code-only** fixture pa
 ## Correction: different benchmark corpora are NOT a before/after regression
 
 The formerly reported **26.73%/30.71%** reference-program reductions, initial M10 two-case **31.25%/47.86%**, and expanded M10 eight-case median **2.27%** came from **different program selections, baselines or execution levels**. They must not be described as repeated measurements of identical tests. Source pairs were not frozen for the two oldest results and cannot be reconciled as an exact before/after measurement. **Both original M10 task results are preserved unchanged** in the eight-case corpus. See `docs/BENCHMARK-PROVENANCE.md` for frozen Git blob SHAs and the test `scripts/test/compact-frozen-benchmark.test.mjs`. The universal 20-case, Rust-verified result is still pending.
+
+## M15 signed source-level comparison with the SAME eight M10 tasks
+
+The new M15 variants live in `compact/benchmarks/m15/` and preserve the complete original eight-task M10/TypeScript dataset. All 24 source Git blobs are pinned and `npm run m15:measure` compiles old and new H-Code with actual Rust and executes the unchanged Node22 TypeScript programs. Code point and UTF-8 distributions are separate. Do not mix this eight-task population with the distinct three-task M14 corpus or the unfinished canonical twenty-task study. See `docs/M15-SIGN-BLOCKS.md`.

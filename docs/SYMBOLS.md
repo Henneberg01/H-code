@@ -30,15 +30,19 @@
 | 24 | ⌕ | `@?` | **M13 core prototype; Rust tests pending** | Stable typed filtering by a unary H-Code predicate returning Bool |
 | 25 | ⇢ | `@>` | **M13 core prototype; Rust tests pending** | Stable generic transformation by a unary H-Code function, type-changing allowed |
 | 26 | λ | `lambda` | **M14 development branch; Rust tests pending** | Lexically scoped, first-class, typed unary H-Code function expression |
-| 27 | ∅ | `none` | Reserved | Future Option/absence value |
-| 28 | ∀ | `for` | Reserved | Future iteration |
-| 29 | ∈ | `in` | Reserved | Future membership separator |
-| 30 | ⊕ | `packageAlias::operation` | **Demo package** | `demo.math@1.0.0::add`, two Numbers to Number |
-| 31 | ▦ | `packageAlias::operation` | **Demo package** | `demo.math@1.0.0::repeat2`, String to String |
-| 32 | ⊙ | `packageAlias::operation` | **Demo package** | `demo.math@1.0.0::is_positive`, Number to Bool |
-| 33 | ⊗ | `packageAlias::operation` | **Demo package** | `demo.math@1.0.0::factorial`, Number to Number |
+| 27 | ⊢ | `if` | **M15 branch; CI pending** | Boolean guard for one of two control branches |
+| 28 | ⊣ | `else` | **M15 branch; CI pending** | Lazy alternative branch, nearest preceding unmatched if |
+| 29 | ⟳ | `while` | **M15 branch; CI pending** | Repeating Boolean-guarded statement/block |
+| 30 | ⇒ | `=>` | **M15 branch; CI pending** | Delimit exactly one statement as a scope-preserving control block |
+| 31 | ∅ | `none` | Reserved | Future Option/absence value |
+| 32 | ∀ | `for` | Reserved | Future iteration |
+| 33 | ∈ | `in` | Reserved | Future membership separator |
+| 34 | ⊕ | `packageAlias::operation` | **Demo package** | `demo.math@1.0.0::add`, two Numbers to Number |
+| 35 | ▦ | `packageAlias::operation` | **Demo package** | `demo.math@1.0.0::repeat2`, String to String |
+| 36 | ⊙ | `packageAlias::operation` | **Demo package** | `demo.math@1.0.0::is_positive`, Number to Bool |
+| 37 | ⊗ | `packageAlias::operation` | **Demo package** | `demo.math@1.0.0::factorial`, Number to Number |
 
-Note: The symbols in rows 30–33 have **no language-global meaning**. These bindings are examples provided by a specifically imported, versioned demonstration library. Any permitted nonreserved symbol can represent a different operation in a different package. Two packages exporting the same glyph require explicit qualified access.
+Note: The symbols in rows 34–37 have **no language-global meaning**. These bindings are examples provided by a specifically imported, versioned demonstration library. Any permitted nonreserved symbol can represent a different operation in a different package. Two packages exporting the same glyph require explicit qualified access.
 
 ## M1 behavior
 
@@ -132,3 +136,7 @@ Expected `20`, `22`.
 Nested/combined applications: `∑(⟦-1,2,3,-2⟧⌕(>0)⇢(*2))` returns `10`. `⌕`, `⇢`, `∑` remain independent, general M13 core operators.
 
 **Status:** on `feat/m14-typed-lambda-glyph`, authored Rust AST/typechecker/backend plus tested JS reference. **Cargo/complete CI not yet run**, `main` unchanged. Full semantics and independent matched-task benchmark in `docs/M14-SYMBOL-LAMBDAS.md`.
+
+## M15 — real control glyphs and delimiter elision
+
+The primary characters are `⊢` (`if`), `⊣` (`else`), `⟳` (`while`) and `⇒` (`=>`) for a **single-statement** branch/loop body. A semicolon is optional only at a real physical line break after a complete expression, a block/file end or before a reserved statement-opening token. Same-line adjacent ordinary function calls still require a separator. Compiler and reference interpreter implement identical AST scoping and branch behavior; see `docs/M15-SIGN-BLOCKS.md`. Draft branch, not released.

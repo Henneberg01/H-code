@@ -120,3 +120,12 @@ Expected output: `20`, `22`. Function sections capture their right operand once,
 In a frozen three-task comparison, interim median H-Code source size improved from 56.15% to **68.46% fewer Unicode code points** than the unchanged idiomatic TypeScript inputs. Byte-size reduction median **55.09%**. **This is not a 20-case study or proof of 70% across all programs.** Reproduce with `npm run m14:measure`, see `docs/M14-SYMBOL-LAMBDAS.md`.
 
 **Draft feature branch, not merged/released; cargo tests and full CI pending.**
+
+## M15 branch — sign-first control syntax and fewer delimiters
+
+```hcode
+≔n←0⟳(n<3)⇒n←n+1
+print(n)
+```
+
+`⊢` / `⊣` / `⟳` and `⇒` are real Rust+JS syntax with accessible ASCII aliases. `⇒` means exactly one scoped statement, and semicolons may be left out at parser-proven boundaries. **Feature branch only**; not merged into `main`. Frozen eight-task benchmark and compatibility notes: `docs/M15-SIGN-BLOCKS.md`.
