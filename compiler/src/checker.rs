@@ -9,10 +9,18 @@ pub enum Type {
     Number, String, Bool, Unit,
     Function(Vec<Type>,Box<Type>),
     Sequence(Box<Type>),
+    Generic(String), // Rigid ∀ binder, not a mutable inference variable
     Variable(u32),
     BuiltinPrint,
 }
 impl Type {
+    pub(crate) fn from_bound_name(name:&str,bound:&[String],span:Span)->Result<Type,Diagnostic>{
+        if let Some(inner)=name.strip_prefix('⟦').and_then(|s|s.strip_suffix('⟧')){
+            return Ok(Type::Sequence(Box::new(Self::from_bound_name(inner,bound,span)?)));
+        }
+        if bound.iter().any(|item|item==name){return Ok(Type::Generic(name.to_string()));}
+        Self::from_name(name,span)
+    }
     pub(crate) fn from_name(name:&str,span:Span)->Result<Type,Diagnostic>{
         if let Some(rest)=name.strip_prefix("⟦"){
             if let Some(inner)=rest.strip_suffix("⟧"){
@@ -169,17 +177,29 @@ impl Checker {
                 StmtKind::Export{declaration}=>declaration.as_ref(),
                 _=>outer
             };
-            let StmtKind::Function{name,parameters,returns,..}=&stmt.kind else {continue};
+            let StmtKind::Function{name,type_parameters,parameters,returns,..}=&stmt.kind else {continue};
+            // Quantification currently has source-verification semantics only
+            // inside locked pure packages. Public generic invocation is
+            // independently fresh-instantiated by ExprKind::Operation.
+            if !type_parameters.is_empty() && self.allow_print {
+                return Err(Diagnostic::new("TYPE","∀ declarations are only available in verified package source".into(),stmt.span));
+            }
             if self.scopes.len()==1 && self.imported.contains_key(name) {
                 return Err(Diagnostic::new("TYPE",format!("Function {name} conflicts with package alias"),stmt.span));
             }
             let mut args=Vec::new();
             for param in parameters {
                 args.push(match &param.annotation {
-                    Some(a)=>Type::from_name(a,param.span)?,None=>self.fresh()
+                    Some(a)=>Type::from_bound_name(a,type_parameters,param.span)?,
+                    None if !type_parameters.is_empty()=>return Err(Diagnostic::new("TYPE","∀ requires explicitly annotated parameters".into(),param.span)),
+                    None=>self.fresh()
                 });
             }
-            let result=match returns{Some(t)=>Type::from_name(t,stmt.span)?,None=>self.fresh()};
+            let result=match returns{
+                Some(t)=>Type::from_bound_name(t,type_parameters,stmt.span)?,
+                None if !type_parameters.is_empty()=>return Err(Diagnostic::new("TYPE","∀ requires explicit return type".into(),stmt.span)),
+                None=>self.fresh()
+            };
             self.declare(name,Type::Function(args,Box::new(result)),false,stmt.span)?;
         }
         Ok(())
@@ -293,6 +313,14 @@ impl Checker {
             }
         }
     }
+    fn instantiate_type(ty:&Type,bound:&HashMap<String,Type>)->Type{
+        match ty {
+            Type::Generic(name)=>bound.get(name).cloned().unwrap_or_else(||ty.clone()),
+            Type::Sequence(inner)=>Type::Sequence(Box::new(Self::instantiate_type(inner,bound))),
+            Type::Function(args,ret)=>Type::Function(args.iter().map(|t|Self::instantiate_type(t,bound)).collect(),Box::new(Self::instantiate_type(ret,bound))),
+            _=>ty.clone()
+        }
+    }
     fn expression(&mut self,expr:&Expr)->Result<TypedExpr,Diagnostic>{
         let (kind,ty)=match &expr.kind {
             ExprKind::Sequence(items)=>{
@@ -380,7 +408,15 @@ impl Checker {
             }
             ExprKind::Operation{alias,name_or_glyph,is_glyph}=>{
                 let op=self.operation(alias,name_or_glyph,*is_glyph,expr.span)?;
-                (TypedExprKind::OperationRef{id:op.id},Type::Function(op.parameters,Box::new(op.returns)))
+                // Fresh inference variables on EVERY use of a generic sign.
+                // A Number call must never constrain a later String call.
+                let mut substitutions=HashMap::new();
+                for name in &op.type_parameters {
+                    substitutions.insert(name.clone(),self.fresh());
+                }
+                let args=op.parameters.iter().map(|t|Self::instantiate_type(t,&substitutions)).collect();
+                let ret=Self::instantiate_type(&op.returns,&substitutions);
+                (TypedExprKind::OperationRef{id:op.id},Type::Function(args,Box::new(ret)))
             }
             ExprKind::Unary{op,operand}=>{
                 let inner=self.expression(operand)?;
