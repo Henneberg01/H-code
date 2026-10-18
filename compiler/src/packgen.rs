@@ -52,7 +52,7 @@ pub fn generate(name:&str,version:&str,source:&Path,lock:&Path,check_only:bool)-
     let package=canonical_dir(input.parent().ok_or_else(||fail("Missing source directory"))?)?;
     let expected=project.join("packages").join(name);
     if package!=expected{return Err(fail(format!("Source must be in packages/{name}/")))}
-    let lock_parent=canonical_dir(lock.parent().unwrap_or_else(||Path::new(".")))?;
+    let lock_parent=canonical_dir(lock.parent().filter(|p|!p.as_os_str().is_empty()).unwrap_or_else(||Path::new(".")))?;
     if lock_parent!=project || lock.file_name().and_then(|x|x.to_str()).is_none_or(|s|!s.starts_with("hcode.")||!s.ends_with(".lock.json")){
         return Err(fail("Lock must be a hcode.*.lock.json file in project root"));
     }
