@@ -48,6 +48,8 @@ fn generated_network_effect_issues_real_get_and_exposes_typed_response(){
         while start.elapsed()<Duration::from_secs(30) {
             match listener.accept(){
                 Ok((mut socket,_))=>{
+                    // Windows may inherit nonblocking mode from the listener.
+                    socket.set_nonblocking(false).unwrap();
                     socket.set_read_timeout(Some(Duration::from_secs(2))).unwrap();
                     let mut data=[0u8;1024];
                     let count=socket.read(&mut data).unwrap();
