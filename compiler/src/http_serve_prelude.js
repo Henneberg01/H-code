@@ -85,5 +85,16 @@ const __hc_http_serve = (handler,onClose=null) => {
   });
   process.on('SIGTERM',()=>server.close());
   process.on('SIGINT',()=>server.close());
+  // Windows forces unconditional termination on process.kill('SIGTERM').
+  // Explicit host-authorized IPC allows a clean close and releases the
+  // durable store lock consistently on Windows and POSIX.
+  if(process.env.HCODE_HTTP_HOST_IPC==='1' && typeof process.send==='function'){
+    process.on('message',message=>{
+      if(message && message.hcodeHostCommand==='close'){
+        server.close(()=>{if(process.connected)process.disconnect();});
+        server.closeIdleConnections?.();
+      }
+    });
+  }
   return null;
 };

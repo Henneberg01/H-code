@@ -26,8 +26,8 @@ function compile(text=source){
 }
 async function start(compiled,store){
   const child=spawn(process.execPath,[compiled],{
-    cwd:root,windowsHide:true,stdio:['ignore','pipe','pipe'],
-    env:{...process.env,HCODE_HTTP_LISTEN:'127.0.0.1:0',HCODE_HTTP_STATE_ROOT:store}
+    cwd:root,windowsHide:true,stdio:['ignore','pipe','pipe','ipc'],
+    env:{...process.env,HCODE_HTTP_LISTEN:'127.0.0.1:0',HCODE_HTTP_STATE_ROOT:store,HCODE_HTTP_HOST_IPC:'1'}
   });
   let stderr='';
   child.stderr.on('data',x=>{stderr+=x.toString('utf8');});
@@ -59,7 +59,8 @@ async function stop(app){
   await new Promise(resolve=>{
     const guard=setTimeout(()=>{app.child.kill('SIGKILL');resolve();},4500);
     app.child.once('exit',()=>{clearTimeout(guard);resolve();});
-    app.child.kill('SIGTERM');
+    if(app.child.connected)app.child.send({hcodeHostCommand:'close'});
+    else app.child.kill('SIGTERM');
   });
 }
 async function request(app,{method='POST',path='/inc',id='',body=''}={}){

@@ -26,8 +26,8 @@ function build(text=source){
   return {folder,output,js:readFileSync(output,'utf8')};
 }
 async function start(output,storage,extras={}){
-  const child=spawn(process.execPath,[output],{cwd:root,stdio:['ignore','pipe','pipe'],windowsHide:true,
-    env:{...process.env,HCODE_HTTP_LISTEN:'127.0.0.1:0',HCODE_HTTP_STATE_ROOT:storage,...extras}});
+  const child=spawn(process.execPath,[output],{cwd:root,stdio:['ignore','pipe','pipe','ipc'],windowsHide:true,
+    env:{...process.env,HCODE_HTTP_LISTEN:'127.0.0.1:0',HCODE_HTTP_STATE_ROOT:storage,HCODE_HTTP_HOST_IPC:'1',...extras}});
   let stderr='';
   child.stderr.on('data',p=>{stderr+=p.toString('utf8');});
   const port=await new Promise((resolve,reject)=>{
@@ -56,7 +56,8 @@ async function stop(app){
   await new Promise(resolve=>{
     const guard=setTimeout(()=>{app.child.kill('SIGKILL');resolve();},6000);
     app.child.once('exit',()=>{clearTimeout(guard);resolve();});
-    app.child.kill('SIGTERM');
+    if(app.child.connected)app.child.send({hcodeHostCommand:'close'});
+    else app.child.kill('SIGTERM');
   });
 }
 async function request(app,method,path){
