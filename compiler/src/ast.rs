@@ -45,6 +45,9 @@ pub enum ExprKind {
     String(String),
     Bool(bool),
     Sequence(Vec<Expr>),
+    // M12: record literals are real typed values, not opaque JS templates.
+    Record(Vec<(String,Expr)>),
+    Field { record: Box<Expr>, name: String },
     Index { sequence: Box<Expr>, index: Box<Expr> },
     Length(Box<Expr>),
     Sum(Box<Expr>),
