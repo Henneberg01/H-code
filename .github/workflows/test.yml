@@ -7,6 +7,7 @@ on:
       - feat/m15-sign-blocks-delimiters
       - feat/m16-typed-user-signs
       - feat/m16-2-universal-sign-types
+      - feat/m16-3-glyph-package-generator
 permissions:
   contents: read
 jobs:
@@ -18,6 +19,14 @@ jobs:
         with:
           node-version: '22'
       - uses: dtolnay/rust-toolchain@stable
+      - name: Generate typed packages from concise H-Code
+        run: cargo run --manifest-path compiler/Cargo.toml -- pack --name poly.auto --version 1.0.0 --source packages/poly.auto/signs.hcs --lock hcode.m16.3.lock.json
+      - name: Verify deterministic package output
+        run: cargo run --manifest-path compiler/Cargo.toml -- pack --name poly.auto --version 1.0.0 --source packages/poly.auto/signs.hcs --lock hcode.m16.3.lock.json --check
+      - name: Rust compiled generated package
+        run: cargo run --manifest-path compiler/Cargo.toml -- run packages/poly.auto/demo.hc --lock hcode.m16.3.lock.json
+      - name: JavaScript reference generated package
+        run: node prototype/bin/hcode.mjs run packages/poly.auto/demo.hc --lock hcode.m16.3.lock.json
       # Compile Rust early: JavaScript failures must not conceal compiler failures.
       # Keep test suites independent: one regression must not hide other failures.
       - run: cargo test --manifest-path compiler/Cargo.toml --no-fail-fast
