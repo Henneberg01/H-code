@@ -63,7 +63,7 @@ fn ident(v:&str)->bool {
     matches!(cs.next(),Some(c) if c.is_ascii_alphabetic()||c=='_') && cs.all(|c|c.is_ascii_alphanumeric()||c=='_')
 }
 fn keyword(v:&str)->bool {
-    matches!(v,"fn"|"let"|"return"|"true"|"false"|"if"|"else"|"while"|"and"|"or"|"not"|"use"|"import"|"export"|"as|"lambda")
+    matches!(v,"fn"|"let"|"return"|"true"|"false"|"if"|"else"|"while"|"and"|"or"|"not"|"use"|"import"|"export"|"as"|"lambda")
 }
 fn package_name(v:&str)->bool{
     !v.is_empty() && v.as_bytes()[0].is_ascii_lowercase() &&
