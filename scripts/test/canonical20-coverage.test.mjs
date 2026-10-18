@@ -16,9 +16,9 @@ test('all 20 canonical tasks remain registered in source order, including unsupp
 test('source-locked reference-only examples cannot be misrepresented as global 70% proof',{skip:!canRunTs},()=>{
   const r=readiness();
   assert.equal(r.preregisteredTasks,20);
-  assert.equal(r.verifiedFullWorkloads,9);
+  assert.equal(r.verifiedFullWorkloads,10);
   assert.equal(r.partialReferenceEvidence,0);
-  assert.equal(r.unsupported,11);
+  assert.equal(r.unsupported,10);
   assert.equal(r.complete,false);
   assert.equal(r.globalMedianCodepointReduction,null);
   assert.equal(r.objectiveAchieved,false);
@@ -71,6 +71,13 @@ test('source-locked reference-only examples cannot be misrepresented as global 7
   assert.equal(r.evidenceByFullTask['08-concurrent-requests'].frozenConcurrentCasesVerified,6);
   assert.equal(r.evidenceByFullTask['08-concurrent-requests'].generatedConcurrentVariantsVerified,8);
   assert.equal(r.evidenceByFullTask['08-concurrent-requests'].realThreeEndpointNoSerialBlockingVerified,true);
+  assert.equal(r.evidenceByFullTask['09-expiring-cache'].kind,'full-compiler-evidence');
+  assert.equal(r.evidenceByFullTask['09-expiring-cache'].frozenFakeClockTracesVerified,6);
+  assert.equal(r.evidenceByFullTask['09-expiring-cache'].generatedFakeClockStreamsVerified,15);
+  assert.equal(r.evidenceByFullTask['09-expiring-cache'].boundedEntries,8);
+  assert.equal(r.evidenceByFullTask['09-expiring-cache'].comparisonIsCorrectnessOracleNotCompetitiveBaseline,true);
+  assert.equal(r.evidenceByFullTask['09-expiring-cache'].hcodeUnicodeCodepoints,460);
+  assert.ok(r.evidenceByFullTask['09-expiring-cache'].compiledJavascriptUtf8Bytes>0);
   assert.equal(r.evidenceByFullTask['08-concurrent-requests'].compilerAndInterpreterInvalidSourceCasesRejected,4);
   assert.equal(r.evidenceByFullTask['08-concurrent-requests'].comparisonIsCorrectnessOracleNotCompetitiveBaseline,true);
   assert.ok(r.evidenceByFullTask['08-concurrent-requests'].compiledJavascriptUtf8Bytes>0);
@@ -92,7 +99,7 @@ test('registry cannot claim an unsupported case is fully verified without compil
   } finally { target.status=previous; }
 });
 
-// This starts all nine verified cross-runtime Rust/JS/TS proofs again in a new process.
+// This starts all ten verified cross-runtime Rust/JS/TS proofs again in a new process.
 // On Windows, independent child runtimes exceed 30s; extending the timeout does
 // not skip a single test or loosen the original 20-task strict rejection.
 test('the strict twenty-workload CI gate intentionally fails until all 20 pass',{skip:!canRunTs},()=>{
