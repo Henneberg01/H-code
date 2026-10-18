@@ -97,6 +97,7 @@ pub enum TypedExprKind {
     TextScalars(Box<TypedExpr>),
     TextWords(Box<TypedExpr>),
     Histogram(Box<TypedExpr>),
+    Markdown(Box<TypedExpr>),
     FileRead(Box<TypedExpr>),
     FileWrite { filename:Box<TypedExpr>, content:Box<TypedExpr> },
     HttpGet(Box<TypedExpr>),
@@ -511,6 +512,17 @@ impl Checker {
                 };
                 (typed,Type::Sequence(Box::new(Type::String)))
             }
+            ExprKind::Markdown(value)=>{
+                let input=self.expression(value)?;
+                self.unify(&Type::String,&input.ty,value.span,"≋ expects Markdown String input")?;
+                let row=Type::Record(vec![
+                  ("href".into(),Type::String),
+                  ("kind".into(),Type::String),
+                  ("level".into(),Type::Number),
+                  ("text".into(),Type::String)
+                ]);
+                (TypedExprKind::Markdown(Box::new(input)),Type::Sequence(Box::new(row)))
+            }
             ExprKind::Histogram(value)=>{
                 let checked=self.expression(value)?;
                 let element=self.fresh();
@@ -808,7 +820,7 @@ impl Checker {
             TypedExprKind::Record(fields)=>{for (_,value) in fields{self.finalize_expr(value)?;}},
             TypedExprKind::Field{record,..}=>self.finalize_expr(record)?,
             TypedExprKind::JsonRead{value,..}|TypedExprKind::JsonWrite{value,..}=>self.finalize_expr(value)?,
-            TypedExprKind::TextScalars(value)|TypedExprKind::TextWords(value)|TypedExprKind::Histogram(value)|TypedExprKind::FileRead(value)|TypedExprKind::HttpGet(value)|TypedExprKind::Sleep(value)|TypedExprKind::ArithEval(value)=>self.finalize_expr(value)?,
+            TypedExprKind::TextScalars(value)|TypedExprKind::TextWords(value)|TypedExprKind::Histogram(value)|TypedExprKind::Markdown(value)|TypedExprKind::FileRead(value)|TypedExprKind::HttpGet(value)|TypedExprKind::Sleep(value)|TypedExprKind::ArithEval(value)=>self.finalize_expr(value)?,
             TypedExprKind::CsvTyped{value,..}=>self.finalize_expr(value)?,
             TypedExprKind::FileWrite{filename,content}=>{self.finalize_expr(filename)?;self.finalize_expr(content)?;},
             TypedExprKind::RecordUpdate{record,value,..}=>{self.finalize_expr(record)?;self.finalize_expr(value)?;},

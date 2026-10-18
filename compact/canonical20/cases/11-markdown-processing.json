@@ -1,0 +1,164 @@
+{
+  "id": "11-markdown-processing",
+  "acceptance": "parse headings/links into deterministic structured output on an agreed fixture",
+  "originalRegistryGitBlobSha": "46653ef90ffb3e420fba4ddfbfac3c4cfd57f3b3",
+  "subset": "ATX 1..6, Setext, inline markdown links, http autolinks, simple blockquotes, escape sequences, code spans, fenced/indented code; not full CommonMark",
+  "cases": [
+    {
+      "id": "agreed-core",
+      "document": "# Welcome\nRead [Docs](https://example.com/docs) and [Source](./source.md).\n## Install ##\n### International — 東京\n",
+      "expected": [
+        {
+          "href": "",
+          "kind": "heading",
+          "level": 1,
+          "text": "Welcome"
+        },
+        {
+          "href": "https://example.com/docs",
+          "kind": "link",
+          "level": 0,
+          "text": "Docs"
+        },
+        {
+          "href": "./source.md",
+          "kind": "link",
+          "level": 0,
+          "text": "Source"
+        },
+        {
+          "href": "",
+          "kind": "heading",
+          "level": 2,
+          "text": "Install"
+        },
+        {
+          "href": "",
+          "kind": "heading",
+          "level": 3,
+          "text": "International — 東京"
+        }
+      ]
+    },
+    {
+      "id": "setext-and-nested-parens",
+      "document": "Welcome [Home](https://example.com/a(b))\n======\nSecond [guide](./v2/guide.md)\n----------\n",
+      "expected": [
+        {
+          "href": "",
+          "kind": "heading",
+          "level": 1,
+          "text": "Welcome [Home](https://example.com/a(b))"
+        },
+        {
+          "href": "https://example.com/a(b)",
+          "kind": "link",
+          "level": 0,
+          "text": "Home"
+        },
+        {
+          "href": "",
+          "kind": "heading",
+          "level": 2,
+          "text": "Second [guide](./v2/guide.md)"
+        },
+        {
+          "href": "./v2/guide.md",
+          "kind": "link",
+          "level": 0,
+          "text": "guide"
+        }
+      ]
+    },
+    {
+      "id": "ignored-code-and-images",
+      "document": "~~~md\n# hidden\n[skip](https://skip.invalid)\n~~~\n`[inline](bad)` [Visible](#part)\n![logo](logo.png) <https://example.org/x>\n",
+      "expected": [
+        {
+          "href": "#part",
+          "kind": "link",
+          "level": 0,
+          "text": "Visible"
+        },
+        {
+          "href": "https://example.org/x",
+          "kind": "link",
+          "level": 0,
+          "text": "https://example.org/x"
+        }
+      ]
+    },
+    {
+      "id": "blockquote-and-escaped",
+      "document": "> ## [Docs](./docs) and \\[literal]\n    [indented](skip)\nParagraph [A \\] B](ref(2).md)\n",
+      "expected": [
+        {
+          "href": "",
+          "kind": "heading",
+          "level": 2,
+          "text": "[Docs](./docs) and [literal]"
+        },
+        {
+          "href": "./docs",
+          "kind": "link",
+          "level": 0,
+          "text": "Docs"
+        },
+        {
+          "href": "ref(2).md",
+          "kind": "link",
+          "level": 0,
+          "text": "A ] B"
+        }
+      ]
+    },
+    {
+      "id": "unicode-bom-crlf",
+      "document": "﻿# Café 🧩\r\nGo to [東京](https://例え.テスト/道)\r\n\r\nHello\r\n---\r\n",
+      "expected": [
+        {
+          "href": "",
+          "kind": "heading",
+          "level": 1,
+          "text": "Café 🧩"
+        },
+        {
+          "href": "https://例え.テスト/道",
+          "kind": "link",
+          "level": 0,
+          "text": "東京"
+        },
+        {
+          "href": "",
+          "kind": "heading",
+          "level": 2,
+          "text": "Hello"
+        }
+      ]
+    },
+    {
+      "id": "empty-and-safety",
+      "document": "\n#\n## \n[reference]: https://example.net\nText [not a link](has space) plus [ok](<path with space.md>)\n",
+      "expected": [
+        {
+          "href": "",
+          "kind": "heading",
+          "level": 1,
+          "text": ""
+        },
+        {
+          "href": "",
+          "kind": "heading",
+          "level": 2,
+          "text": ""
+        },
+        {
+          "href": "path with space.md",
+          "kind": "link",
+          "level": 0,
+          "text": "ok"
+        }
+      ]
+    }
+  ]
+}

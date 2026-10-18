@@ -64,6 +64,7 @@ pub enum ExprKind {
     TextScalars(Box<Expr>),
     TextWords(Box<Expr>),
     Histogram(Box<Expr>),
+    Markdown(Box<Expr>),
     Index { sequence: Box<Expr>, index: Box<Expr> },
     Length(Box<Expr>),
     Sum(Box<Expr>),
