@@ -30,13 +30,13 @@ function parseJson(buffer,label){
   try{return JSON.parse(buffer.toString('utf8'));}catch{throw Error(`Invalid H-Code package: ${label} is not valid JSON`);}
 }
 function signature(fn,op,key){
+  must(JSON.stringify(fn.typeParameters??[])===JSON.stringify(op.typeParameters??[]),`${key}: ∀ binder mismatch`);
   must(fn.params.length===op.parameters.length,`${key}: mismatched argument count`);
   for(let i=0;i<op.parameters.length;i++){
     must(fn.params[i].type===op.parameters[i].type,`${key}: function parameter type mismatch at ${i+1}`);
     must(fn.params[i].name===op.parameters[i].name,`${key}: function parameter name mismatch at ${i+1}`);
   }
   must(fn.returnType===op.returns,`${key}: return type mismatch`);
-  must(JSON.stringify(fn.typeParameters??[])===JSON.stringify(op.typeParameters??[]),`${key}: ∀ binder mismatch`);
 }
 function validateManifest(manifest,ast){
   must(isRecord(manifest)&&[1,2,3].includes(manifest.format),'manifest format must be 1, 2 or 3');

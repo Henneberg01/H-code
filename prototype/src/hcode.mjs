@@ -344,7 +344,10 @@ export function linkProgram(ast, registry=new Map()) {
       if(new Set(types).size!==1)throw new HCodeError('Sequence elements must have matching types');
       return '⟦'+types[0]+'⟧';
     }
-    if(n.kind==='Call'&&n.callee.kind==='OperationRef')return byID.get(n.callee.id)?.returns??null;
+    if(n.kind==='Call'&&n.callee.kind==='OperationRef'){
+      const op=byID.get(n.callee.id);
+      return op?.typeParameters?.length?null:(op?.returns??null);
+    }
     return null;
   };
   function expression(node){
@@ -638,7 +641,9 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
         const specialized=pkg.manifest.format===3?specializeCall(operation,args,maxSequenceItems):null;
         for(let j=0;j<args.length;j++){
           const actual=runtimeType(args[j]),expected=operation.parameters[j].type;
-          if(pkg.manifest.format===2){
+          if(pkg.manifest.format===3){
+            // Arguments were freshly specialized against ∀T above.
+          }else if(pkg.manifest.format===2){
             try{requireType(args[j],expected);}
             catch(e){throw Error(`${id}: argument ${j+1} (${operation.parameters[j].name}) expects ${expected}: ${e.message}`);}
           }else if(actual!==expected)throw Error(`${id}: argument ${j+1} (${operation.parameters[j].name}) expects ${expected}, got ${actual}`);
