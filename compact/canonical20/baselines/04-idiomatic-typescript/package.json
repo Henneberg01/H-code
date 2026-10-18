@@ -1,0 +1,14 @@
+{
+  "name": "hcode-canonical04-idiomatic-typescript",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Standalone pinned idiomatic TypeScript baseline using maintained CSV and schema libraries",
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "csv-parse": "7.0.2",
+    "zod": "4.6.5"
+  }
+}
