@@ -167,6 +167,8 @@ test('canonical06 fixed and independent generated sequences run as real H-Code a
  try{
    const generated=join(tmp,'out.mjs'),emitted=build(join(root,data.hc.path),generated);
    assert.ok(emitted.bytes>0);
+   console.log('CANONICAL06_GENERATED_JS_BYTES='+emitted.bytes);
+   console.log('CANONICAL06_GENERATED_JS_SHA256='+emitted.sha256);
    assert.equal(data.ts.codepoints,3112,'oracle source baseline must remain unchanged');
    for(const c of fixture.cases)await compareEngines(c,data.hc.source,generated,c.expected);
    for(const c of variations)await compareEngines(c,data.hc.source,generated);
