@@ -4,11 +4,12 @@ export const CORE_GLYPHS = Object.freeze({
   '\u2190': '=', '\u22a4': 'true', '\u22a5': 'false',
   '\u2227': 'and', '\u2228': 'or', '\u00ac': 'not',
   '\u2261': '==', '\u2260': '!=', '\u2264': '<=', '\u2265': '>=',
+  '\u22a2': 'if', '\u22a3': 'else', '\u27f3': 'while', '\u21d2': '=>',
   '\u2237': '::', '\u25b7': '|>', '\u2218': '<<', '\u25c7': '?', '\u27e6': '[[', '\u27e7': ']]', '\u2317': '#', '\u29fa': '++', '\u2211': '@+', '\u2315': '@?', '\u21e2': '@>', '\u03bb': 'lambda'
 });
 export const RESERVED_USER_GLYPHS = new Set(['\u2205', '\u2200', '\u2208', ...Object.keys(CORE_GLYPHS)]);
 const RESERVED = new Set(['fn','let','return','true','false','if','else','while','and','or','not','use','as','lambda']);
-const TWO = new Set(['==','!=','<=','>=','->','::','|>','<<','[[',']]','++','@+','@?','@>']);
+const TWO = new Set(['==','!=','<=','>=','->','::','|>','<<','[[',']]','++','@+','@?','@>','=>']);
 const ONE = new Set(['+','-','*','/','%','<','>','=','(',')','{','}',',',';',':','?','#']);
 const ILLEGAL = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]|\p{Default_Ignorable_Code_Point}/u;
 const SYMBOL_CHARACTER = /^\p{S}$/u;
@@ -104,6 +105,21 @@ class Parser {
   expect(kind){const got=this.accept(kind);if(got)return got;const t=this.peek();throw new HCodeError(`Expected ${kind}; got ${t.type}`,t.line,t.column);}
   program(){const body=[];while(!this.at('eof'))body.push(this.stmt(true));return {kind:'Program',body};}
   block(){this.expect('{');const body=[];while(!this.at('}')){if(this.at('eof'))this.expect('}');body.push(this.stmt(false));}this.expect('}');return {kind:'Block',body};}
+  // M15: no separator needed at EOF, }, newline or a distinct statement keyword.
+  // An infix operator on the following line continues the existing expression.
+  statementEnd(){
+    if(this.accept(';'))return;
+    const next=this.peek(),previous=this.t[this.i-1];
+    const certain=new Set(['fn','let','return','if','while','use','import','export','else']);
+    if(['}','eof'].includes(next.type)||certain.has(next.type)||
+       (previous&&next.line>previous.line))return;
+    throw new HCodeError('Expected ; or an unambiguous statement boundary',next.line,next.column);
+  }
+  // The ⇒ sign produces exactly one ordinary Block AST statement.
+  controlBody(){
+    if(this.accept('=>'))return {kind:'Block',body:[this.stmt(false)]};
+    return this.block();
+  }
   typeName(){
     if(this.accept('[[')){
       const element=this.typeName();
@@ -117,16 +133,16 @@ class Parser {
       const t=this.expect('use');
       if(!topLevel)throw new HCodeError('Package imports must be top-level',t.line,t.column);
       const spec=this.expect('string').value;
-      this.expect('as');const alias=this.expect('ident').value;this.expect(';');
+      this.expect('as');const alias=this.expect('ident').value;this.statementEnd();
       return {kind:'Use',spec,alias,line:t.line,column:t.column};
     }
     if(this.accept('let')){
       const name=this.expect('ident').value;
       const annotation=this.accept(':')?this.typeName():null;
-      this.expect('=');const value=this.expr();this.expect(';');
+      this.expect('=');const value=this.expr();this.statementEnd();
       return annotation?{kind:'Let',name,annotation,value}:{kind:'Let',name,value};
     }
-    if(this.accept('return')){const value=this.expr();this.expect(';');return {kind:'Return',value};}
+    if(this.accept('return')){const value=this.expr();this.statementEnd();return {kind:'Return',value};}
     if(this.accept('fn')){
       const name=this.expect('ident').value;this.expect('(');const params=[];
       if(!this.at(')')){do{const p=this.expect('ident').value;let type=null;if(this.accept(':'))type=this.typeName();params.push({name:p,type});}while(this.accept(','));}
@@ -136,17 +152,17 @@ class Parser {
        else {
          this.expect('return');
          const value=this.expr();
-         this.expect(';');
+         this.statementEnd();
          body={kind:'Block',body:[{kind:'Return',value}]};
        }
        return {kind:'Function',name,params,returnType,body};
     }
-    if(this.accept('if')){this.expect('(');const condition=this.expr();this.expect(')');const then=this.block();const otherwise=this.accept('else')?this.block():null;return {kind:'If',condition,then,otherwise};}
-    if(this.accept('while')){this.expect('(');const condition=this.expr();this.expect(')');return {kind:'While',condition,body:this.block()};}
+    if(this.accept('if')){this.expect('(');const condition=this.expr();this.expect(')');const then=this.controlBody();const otherwise=this.accept('else')?this.controlBody():null;return {kind:'If',condition,then,otherwise};}
+    if(this.accept('while')){this.expect('(');const condition=this.expr();this.expect(')');return {kind:'While',condition,body:this.controlBody()};}
     if(this.at('ident')&&this.peek(1).type==='='){
-      const name=this.expect('ident').value;this.expect('=');const value=this.expr();this.expect(';');return {kind:'Assign',name,value};
+      const name=this.expect('ident').value;this.expect('=');const value=this.expr();this.statementEnd();return {kind:'Assign',name,value};
     }
-    const value=this.expr();this.expect(';');return {kind:'ExpressionStatement',value};
+    const value=this.expr();this.statementEnd();return {kind:'ExpressionStatement',value};
   }
   pipeTarget(){
     const token=this.peek();

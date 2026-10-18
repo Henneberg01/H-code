@@ -34,6 +34,26 @@ impl Parser {
         self.expect(&TokenKind::RightBrace)?;
         Ok(body)
     }
+    // M15 checks source spans rather than manufacturing newline tokens in expressions.
+    fn statement_end(&mut self)->Result<(),Diagnostic>{
+        if self.accept(&TokenKind::Semicolon).is_some(){return Ok(());}
+        let next=self.peek();
+        let certain=matches!(next.kind,
+            TokenKind::Eof|TokenKind::RightBrace|TokenKind::Fn|TokenKind::Let|
+            TokenKind::Return|TokenKind::If|TokenKind::While|TokenKind::Use|
+            TokenKind::Import|TokenKind::Export|TokenKind::Else);
+        let previous=self.index.checked_sub(1).and_then(|i|self.tokens.get(i));
+        if certain || previous.is_some_and(|t|next.span.line>t.span.line){return Ok(());}
+        Err(Diagnostic::new("PARSE",
+            "Expected ; or an unambiguous statement boundary".into(),next.span))
+    }
+    // Single statement ⇒ lowers to the same AST list used by { statement }.
+    fn control_body(&mut self)->Result<Vec<Stmt>,Diagnostic>{
+        if self.accept(&TokenKind::Then).is_some(){
+            return Ok(vec![self.statement(false)?]);
+        }
+        self.block()
+    }
     fn type_name(&mut self)->Result<String,Diagnostic>{
         if self.accept(&TokenKind::SeqOpen).is_some(){
             let inner=self.type_name()?;
@@ -51,7 +71,7 @@ impl Parser {
                     TokenKind::String(s)=>s,_=>unreachable!()};
                 self.expect(&TokenKind::As)?;
                 let (alias,_)=self.ident()?;
-                self.expect(&TokenKind::Semicolon)?;
+                self.statement_end()?;
                 StmtKind::Use{package,alias}
             }
             TokenKind::Import=>{
@@ -60,7 +80,7 @@ impl Parser {
                 let source=match self.expect(&TokenKind::String(String::new()))?.kind{TokenKind::String(s)=>s,_=>unreachable!()};
                 self.expect(&TokenKind::As)?;
                 let (alias,_)=self.ident()?;
-                self.expect(&TokenKind::Semicolon)?;
+                self.statement_end()?;
                 StmtKind::Import{source,alias}
             }
             TokenKind::Export=>{
@@ -73,7 +93,7 @@ impl Parser {
                 self.index+=1;let (name,_)=self.ident()?;
                 let annotation=if self.accept(&TokenKind::Colon).is_some(){Some(self.type_name()?)}else{None};
                 self.expect(&TokenKind::Assign)?;
-                let value=self.expression(0)?;self.expect(&TokenKind::Semicolon)?;
+                let value=self.expression(0)?;self.statement_end()?;
                 StmtKind::Let{name,annotation,value}
             }
             TokenKind::Fn=>{
@@ -93,38 +113,38 @@ impl Parser {
                 let body=if self.at(&TokenKind::LeftBrace) {self.block()?} else {
                     let ret=self.expect(&TokenKind::Return)?;
                     let value=self.expression(0)?;
-                    self.expect(&TokenKind::Semicolon)?;
+                    self.statement_end()?;
                     vec![Stmt{kind:StmtKind::Return(value),span:ret.span}]
                 };
                 StmtKind::Function{name,parameters,returns,body}
             }
             TokenKind::Return=>{
                 self.index+=1;let value=self.expression(0)?;
-                self.expect(&TokenKind::Semicolon)?;StmtKind::Return(value)
+                self.statement_end()?;StmtKind::Return(value)
             }
             TokenKind::If=>{
                 self.index+=1;self.expect(&TokenKind::LeftParen)?;
                 let condition=self.expression(0)?;
                 self.expect(&TokenKind::RightParen)?;
-                let then_body=self.block()?;
-                let else_body=if self.accept(&TokenKind::Else).is_some(){Some(self.block()?)}else{None};
+                let then_body=self.control_body()?;
+                let else_body=if self.accept(&TokenKind::Else).is_some(){Some(self.control_body()?)}else{None};
                 StmtKind::If{condition,then_body,else_body}
             }
             TokenKind::While=>{
                 self.index+=1;self.expect(&TokenKind::LeftParen)?;
                 let condition=self.expression(0)?;
                 self.expect(&TokenKind::RightParen)?;
-                let body=self.block()?;
+                let body=self.control_body()?;
                 StmtKind::While{condition,body}
             }
             TokenKind::Identifier(_) if self.lookahead(1).kind == TokenKind::Assign=>{
                 let (name,_)=self.ident()?;self.expect(&TokenKind::Assign)?;
-                let value=self.expression(0)?;self.expect(&TokenKind::Semicolon)?;
+                let value=self.expression(0)?;self.statement_end()?;
                 StmtKind::Assign{name,value}
             }
             _=>{
                 let value=self.expression(0)?;
-                self.expect(&TokenKind::Semicolon)?;
+                self.statement_end()?;
                 StmtKind::Expression(value)
             }
         };

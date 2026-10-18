@@ -13,7 +13,7 @@ pub struct Token { pub kind: TokenKind, pub span: Span }
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum TokenKind {
-    Fn, Let, Return, If, Else, While, Use, Import, Export, As, True, False, And, Or, Not,
+    Fn, Let, Return, If, Else, While, Then, Use, Import, Export, As, True, False, And, Or, Not,
     Identifier(String), Number(String), String(String), Glyph(char),
     LeftParen, RightParen, LeftBrace, RightBrace, Comma, Semicolon, Colon, DoubleColon, Pipe, Compose, Choice, Lambda, SeqOpen, SeqClose, SeqLength, SeqConcat, Sum, Filter, Map,
     Assign, Arrow, Plus, Minus, Star, Slash, Percent,
@@ -129,6 +129,7 @@ pub fn lex(source: &str) -> Result<Vec<Token>, Diagnostic> {
         }
         let core = match c {
             'ƒ'=>Some(TokenKind::Fn),'≔'=>Some(TokenKind::Let),'↩'=>Some(TokenKind::Return),
+            '⊢'=>Some(TokenKind::If),'⊣'=>Some(TokenKind::Else),'⟳'=>Some(TokenKind::While),'⇒'=>Some(TokenKind::Then),
             '→'=>Some(TokenKind::Arrow),'←'=>Some(TokenKind::Assign),
             '⊤'=>Some(TokenKind::True),'⊥'=>Some(TokenKind::False),
             '∧'=>Some(TokenKind::And),'∨'=>Some(TokenKind::Or),'¬'=>Some(TokenKind::Not),
@@ -143,6 +144,7 @@ pub fn lex(source: &str) -> Result<Vec<Token>, Diagnostic> {
         if let Some(kind)=core { advance(&mut pos,&mut line,&mut column); result.push(Token{kind,span}); continue; }
         let pair = match (c,next) {
             ('-',Some('>'))=>Some(TokenKind::Arrow),
+            ('=',Some('>'))=>Some(TokenKind::Then),
             (':',Some(':'))=>Some(TokenKind::DoubleColon),
             ('|',Some('>'))=>Some(TokenKind::Pipe),
             ('<',Some('<'))=>Some(TokenKind::Compose),
