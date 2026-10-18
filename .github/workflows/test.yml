@@ -6,6 +6,7 @@ on:
       - feat/m14-typed-lambda-glyph
       - feat/m15-sign-blocks-delimiters
       - feat/m16-typed-user-signs
+      - feat/m16-2-universal-sign-types
 permissions:
   contents: read
 jobs:
