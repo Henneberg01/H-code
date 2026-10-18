@@ -68,9 +68,8 @@ test('failed atomic host write causes no replay or silent overwrite',async()=>{
 
 test('two separate Node processes race for one output inode: exactly one atomic success',async()=>{
  const {spawn} = await import('node:child_process');
- const {pathToFileURL} = await import('node:url');
  const dir=mkdtempSync(join(tmpdir(),'hcode-m19-write-race-'));
- const url=pathToFileURL(new URL('../../runtime/file-write.mjs',import.meta.url).pathname).href;
+ const url=new URL('../../runtime/file-write.mjs',import.meta.url).href;
  const script='import {createFileWriteCapability} from '+JSON.stringify(url)+';'+
    'const w=createFileWriteCapability({root:process.env.HCODE_FILE_WRITE_ROOT});'+
    'try{w.write("raced.txt",process.env.HCODE_RACE_CONTENT);process.stdout.write("OK");}'+
