@@ -13,11 +13,11 @@ export const CORE_GLYPHS = Object.freeze({
   '\u2983':'record-open', '\u2984':'record-close', '\u00b7':'field', '\u229e':'record-update',
   '\u2913':'json-read', '\u2912':'json-write',
   '\u2af6':'text-scalars', '\u27df':'text-words', '\u29c9':'histogram', '\u224b':'markdown-tokens',
-  '\u29c4':'file-read', '\u29c5':'file-write', '\u290b':'http-get', '\u231b':'sleep-ms', '\u29c7':'csv-typed',
+  '\u29c4':'file-read', '\u29c5':'file-write', '\u290b':'http-get', '\u290a':'http-serve', '\u231b':'sleep-ms', '\u29c7':'csv-typed',
   '\u2328':'stdin-text', '\u2a5a':'arith-eval', '\u2317': '#', '\u29fa': '++', '\u2211': '@+', '\u2315': '@?', '\u21e2': '@>', '\u03bb': 'lambda', '\u2200': 'forall'
 });
 export const RESERVED_USER_GLYPHS = new Set(['\u2205', '\u2200', '\u2208', ...Object.keys(CORE_GLYPHS)]);
-const RESERVED = new Set(['fn','let','return','true','false','if','else','while','and','or','not','use','as','lambda','forall','json_in','json_out','text_scalars','text_words','text_hist','markdown_tokens','file_read','file_write','http_get','sleep_ms','csv_typed','stdin_text','arith_eval']);
+const RESERVED = new Set(['fn','let','return','true','false','if','else','while','and','or','not','use','as','lambda','forall','json_in','json_out','text_scalars','text_words','text_hist','markdown_tokens','file_read','file_write','http_get','http_serve','sleep_ms','csv_typed','stdin_text','arith_eval']);
 const TWO = new Set(['==','!=','<=','>=','->','::','|>','<<','[[',']]','++','@+','@?','@>','=>','<+']);
 const ONE = new Set(['+','-','*','/','%','<','>','=','(',')','{','}',',',';',':','?','#','.']);
 const ILLEGAL = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]|\p{Default_Ignorable_Code_Point}/u;
@@ -102,7 +102,7 @@ export function tokenize(source) {
     }
     if(letter(c)){
       let word='';while(alnum(peek()))word+=advance();
-      emit(word==='json_in'?'json-read':word==='json_out'?'json-write':word==='text_scalars'?'text-scalars':word==='text_words'?'text-words':word==='text_hist'?'histogram':word==='markdown_tokens'?'markdown-tokens':word==='file_read'?'file-read':word==='file_write'?'file-write':word==='http_get'?'http-get':word==='sleep_ms'?'sleep-ms':word==='csv_typed'?'csv-typed':word==='stdin_text'?'stdin-text':word==='arith_eval'?'arith-eval':(RESERVED.has(word)?word:'ident'),word,ln,col);continue;
+      emit(word==='json_in'?'json-read':word==='json_out'?'json-write':word==='text_scalars'?'text-scalars':word==='text_words'?'text-words':word==='text_hist'?'histogram':word==='markdown_tokens'?'markdown-tokens':word==='file_read'?'file-read':word==='file_write'?'file-write':word==='http_get'?'http-get':word==='http_serve'?'http-serve':word==='sleep_ms'?'sleep-ms':word==='csv_typed'?'csv-typed':word==='stdin_text'?'stdin-text':word==='arith_eval'?'arith-eval':(RESERVED.has(word)?word:'ident'),word,ln,col);continue;
     }
     if(Object.hasOwn(CORE_GLYPHS,c)){
       advance();const alias=CORE_GLYPHS[c];emit(alias,alias,ln,col);continue;
@@ -270,6 +270,7 @@ class Parser {
       this.expect(')');left={kind:'FileWrite',filename,content};
     }
     else if(this.accept('http-get'))left={kind:'HttpGet',value:this.expr(8)};
+    else if(this.accept('http-serve'))left={kind:'HttpServe',value:this.expr(8)};
     else if(this.accept('sleep-ms'))left={kind:'Sleep',value:this.expr(8)};
     else if(this.accept('csv-typed')){
       const schema=this.typeName();
@@ -446,7 +447,7 @@ export function linkProgram(ast, registry=new Map()) {
     if(node.kind==='Sequence')return {...node,items:node.items.map(expression)};
     if(node.kind==='Record')return {...node,fields:node.fields.map(f=>({name:f.name,value:expression(f.value)}))};
     if(node.kind==='Field')return {...node,record:expression(node.record)};
-    if(node.kind==='JsonRead'||node.kind==='JsonWrite'||node.kind==='TextScalars'||node.kind==='TextWords'||node.kind==='Histogram'||node.kind==='Markdown'||node.kind==='FileRead'||node.kind==='HttpGet'||node.kind==='Sleep'||node.kind==='CsvTyped'||node.kind==='ArithEval')return {...node,value:expression(node.value)};
+    if(node.kind==='JsonRead'||node.kind==='JsonWrite'||node.kind==='TextScalars'||node.kind==='TextWords'||node.kind==='Histogram'||node.kind==='Markdown'||node.kind==='FileRead'||node.kind==='HttpGet'||node.kind==='HttpServe'||node.kind==='Sleep'||node.kind==='CsvTyped'||node.kind==='ArithEval')return {...node,value:expression(node.value)};
     if(node.kind==='FileWrite')return {...node,filename:expression(node.filename),content:expression(node.content)};
     if(node.kind==='RecordUpdate')return {...node,record:expression(node.record),value:expression(node.value)};
     if(node.kind==='Index')return {...node,sequence:expression(node.sequence),index:expression(node.index)};
@@ -494,7 +495,7 @@ class Scope {
 class ReturnSignal{constructor(value){this.value=value;}}
 const runtimeType=value=>value===null?'Unit':typeof value==='number'?'Number':typeof value==='string'?'String':typeof value==='boolean'?'Bool':'unsupported';
 
-export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=16384,registry=new Map(),readFile=null,readStdin=null,httpEffects=null,sleepEffects=null,fileEffects=null}={}){
+export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=16384,registry=new Map(),readFile=null,readStdin=null,httpEffects=null,httpServe=null,sleepEffects=null,fileEffects=null}={}){
   const root=new Scope(),operations=new Map(),operationSpecs=new Map(),loadedLibraries=new Set();let steps=0,stdinConsumed=false,httpIndex=0,sleepIndex=0,fileIndex=0,pureDepth=0,functionDepth=0;
   const step=()=>{if(++steps>maxSteps)throw Error('Execution step limit exceeded');};
   root.define('print',(...args)=>{stdout(args.map(x=>x===null?'none':String(x)).join(' '));return null;});
@@ -711,6 +712,17 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
         return data;
       }
       case 'ArithEval':return safeArithmetic(expr(node.value,scope));
+      case 'HttpServe':{
+        if(pureDepth>0 || functionDepth>0)
+          throw Error('⤊ HTTP serve effect denied in pure package or handler function');
+        if(typeof httpServe!=='function')
+          throw Error('⤊ HTTP server capability denied: inject trusted httpServe host');
+        const handler=expr(node.value,scope);
+        if(typeof handler!=='function')
+          throw TypeError('⤊ requires a typed H-Code request-handler function');
+        httpServe(handler);
+        return null;
+      }
       case 'HttpGet':{
         if(pureDepth>0||functionDepth>0)throw Error('⤋ HTTP effect denied in verified pure package or sync closure');
         if(!Array.isArray(httpEffects))

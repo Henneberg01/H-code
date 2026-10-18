@@ -56,6 +56,8 @@ pub enum ExprKind {
     FileWrite { filename:Box<Expr>, content:Box<Expr> },
     // M19.06: effectful, implicitly-awaited GET; symbol ⤋.
     HttpGet(Box<Expr>),
+    // M19.12 B1: inbound loopback server effect with typed pure handler.
+    HttpServe(Box<Expr>),
     // Intrinsic bounded asynchronous delay (milliseconds).
     Sleep(Box<Expr>),
     StdinText,
