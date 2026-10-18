@@ -8,7 +8,12 @@ import {execute} from '../prototype/src/hcode.mjs';
 import {compareM14} from './m14-compare.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
-export const registry=JSON.parse(readFileSync(join(root,'compact/canonical20/workloads.json'),'utf8'));
+const registryBytes=readFileSync(join(root,'compact/canonical20/workloads.json'));
+export const registry=JSON.parse(registryBytes.toString('utf8'));
+// Git blob SHA1 of the actual, preregistered 20-workload registry from M19 PR #15.
+// A renamed task, weaker acceptance contract, or altered status MUST be reviewed
+// as a new registry version, not silently reinterpreted as a 70% improvement.
+export const PREREGISTERED_GIT_BLOB_SHA='46653ef90ffb3e420fba4ddfbfac3c4cfd57f3b3';
 const canonicalIds=[
  '01-calculator-cli','02-fibonacci-recursion','03-text-frequency-counter','04-csv-validation',
  '05-json-transformation','06-http-retries','07-file-conversion','08-concurrent-requests',
@@ -53,9 +58,13 @@ function collectionEvidence(){
     throw Error('M14 collection partial proof unavailable');
   }
   return {kind:'reference-only',source:baseline.corpusId,subcasesVerified:3,compilerEvidence:false,
+    historicalM14MedianUnicodeCodepointReductionPct:baseline.medianCodepointReductionVsTypeScript,
+    historicalM14MedianUtf8ReductionPct:baseline.medianUtf8ReductionVsTypeScript,
     note:'partial workload evidence only, not full acceptance for a general collection library'};
 }
 export function readiness(){
+  if(gitBlob(registryBytes)!==PREREGISTERED_GIT_BLOB_SHA)
+    throw Error('Canonical twenty preregistration SHA changed; update the registry version through a reviewed milestone, never silently change the denominator');
   if(registry.schemaVersion!==1||registry.id!=='HCODE-CANONICAL20-2026-10-18-PREREG-1')
     throw Error('Unexpected canonical-20 registry version');
   if(registry.workloads.length!==20)throw Error('Never cherry-pick or omit canonical workloads');
@@ -81,11 +90,31 @@ export function readiness(){
       throw Error('Unsupported readiness state / no compiler evidence checker: '+w.status);
     }
   }
+  // Counts describe unmet workload requirements, NOT confirmed compiler features.
+  // This exposes reusable language/runtime bottlenecks without cherry-picking
+  // the benchmark or promising that a glyph alone can solve I/O/security.
+  const capabilityDemand=new Map();
+  for(const task of registry.workloads){
+    if(task.status==='verified')continue;
+    for(const capability of new Set(task.requiredCapabilities)){
+      const old=capabilityDemand.get(capability)??[];
+      old.push(task.id);
+      capabilityDemand.set(capability,old);
+    }
+  }
+  const requestedByUnverifiedTasks=[...capabilityDemand]
+    .map(([capability,taskIds])=>({capability,workloads:taskIds.length,taskIds}))
+    .sort((a,b)=>b.workloads-a.workloads||a.capability.localeCompare(b.capability,'en'));
   return {
     id:registry.id,preregisteredTasks:20,strictTargetPercent:70,
+    immutableRegistryGitBlobSha:PREREGISTERED_GIT_BLOB_SHA,
+    capabilityDemandIsNotCompilerCoverage:true,
+    requestedByUnverifiedTasks,
     verifiedFullWorkloads:0,partialReferenceEvidence:partial,unsupported,
     complete:false,globalMedianCodepointReduction:null,globalMedianUtf8Reduction:null,
     objectiveAchieved:false,compilerProvenanceValidated:false,
+    historicalM14MedianCodepointReductionPct:evidence['10-generic-collection-transforms'].historicalM14MedianUnicodeCodepointReductionPct,
+    historicalM14IsGlobalMetric:false,
     evidenceByPartialTask:evidence,
     explanation:'20-workload goal remains incomplete; no missing task is excluded from denominator.'
   };
