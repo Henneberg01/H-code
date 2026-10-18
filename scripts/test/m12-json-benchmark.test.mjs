@@ -11,7 +11,9 @@ test('the native ⤓⤒ JSON case is actually output-matched and independently h
   assert.equal(p.hcode.unicodeCodepoints,93);
   assert.equal(p.typescript.unicodeCodepoints,637);
   assert.equal(p.unicodeCodepointSavingsPercent,85.4);
-  assert.equal(p.generatedJsRuntimeBytesMeasured,false);
+  assert.equal(p.generatedJsRuntimeBytesMeasured,true);
+  assert.ok(p.generatedJsRuntime.utf8Bytes>0);
+  assert.match(p.generatedJsRuntime.sha256,/^[a-f0-9]{64}$/);
   assert.equal(p.globalTwentyWorkloadCodepointMedian,null);
   assert.equal(p.seventyPercentGlobalGoalVerified,false);
   assert.equal(p.historicM14ThreeCaseMedianCodepointSavings,68.46);
