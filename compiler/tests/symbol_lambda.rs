@@ -23,8 +23,8 @@ fn run(source:&str)->Result<String,String>{
 fn sign_and_ascii_lambda_have_equivalent_static_type_inference_and_generated_js(){
     let sign="print((λx:x+1)(41));";
     let ascii="print((lambda x:x+1)(41));";
-    assert_eq!(lex("λ")[0].kind,TokenKind::Lambda);
-    assert_eq!(lex("lambda")[0].kind,TokenKind::Lambda);
+    assert_eq!(lex("λ").unwrap()[0].kind,TokenKind::Lambda);
+    assert_eq!(lex("lambda").unwrap()[0].kind,TokenKind::Lambda);
     assert_eq!(compile(sign).unwrap(),compile(ascii).unwrap());
     assert_eq!(run(sign).unwrap(),"42\n");
 }

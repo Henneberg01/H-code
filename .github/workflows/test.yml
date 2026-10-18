@@ -16,12 +16,22 @@ jobs:
           node-version: '22'
       - uses: dtolnay/rust-toolchain@stable
       # Compile Rust early: JavaScript failures must not conceal compiler failures.
+      # Keep test suites independent: one regression must not hide other failures.
       - run: cargo test --manifest-path compiler/Cargo.toml
+        if: ${{ success() || failure() }}
       - run: npm test
+        if: ${{ success() || failure() }}
       - run: npm run studio:test
+        if: ${{ success() || failure() }}
       - run: npm run phase1:test
+        if: ${{ success() || failure() }}
       - run: npm run compact:test
+        if: ${{ success() || failure() }}
       - run: npm run compact:ts-parity
+        if: ${{ success() || failure() }}
       - run: npm run m13:measure
+        if: ${{ success() || failure() }}
       - run: npm run m14:measure
+        if: ${{ success() || failure() }}
       - run: npm run release:check
+        if: ${{ success() || failure() }}

@@ -30,9 +30,9 @@ fn canonical_sum_filter_map_are_real_ast_tokens_and_emit_identical_js(){
         let right=lex(ascii).unwrap();
         assert_eq!(left[0].kind,right[0].kind);
     }
-    assert!(matches!(lex("∑")[0].kind,TokenKind::Sum));
-    assert!(matches!(lex("⌕")[0].kind,TokenKind::Filter));
-    assert!(matches!(lex("⇢")[0].kind,TokenKind::Map));
+    assert!(matches!(lex("∑").unwrap()[0].kind,TokenKind::Sum));
+    assert!(matches!(lex("⌕").unwrap()[0].kind,TokenKind::Filter));
+    assert!(matches!(lex("⇢").unwrap()[0].kind,TokenKind::Map));
     let unicode="ƒ twice(n)↩n*2;print(∑(⟦2,3⟧⇢twice));";
     let fallback="fn twice(n) return n*2;print(@+([[2,3]] @> twice));";
     assert_eq!(compile(unicode).unwrap(),compile(fallback).unwrap());
