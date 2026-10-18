@@ -7,7 +7,8 @@ export const CORE_GLYPHS = Object.freeze({
   '\u2261': '==', '\u2260': '!=', '\u2264': '<=', '\u2265': '>=',
   '\u22a2': 'if', '\u22a3': 'else', '\u27f3': 'while', '\u21d2': '=>',
   '\u2237': '::', '\u25b7': '|>', '\u2218': '<<', '\u25c7': '?', '\u27e6': '[[', '\u27e7': ']]',
-  '\u2983':'record-open', '\u2984':'record-close', '\u00b7':'field', '\u229e':'record-update', '\u2317': '#', '\u29fa': '++', '\u2211': '@+', '\u2315': '@?', '\u21e2': '@>', '\u03bb': 'lambda', '\u2200': 'forall'
+  '\u2983':'record-open', '\u2984':'record-close', '\u00b7':'field', '\u229e':'record-update',
+  '\u2913':'json-read', '\u2912':'json-write', '\u2317': '#', '\u29fa': '++', '\u2211': '@+', '\u2315': '@?', '\u21e2': '@>', '\u03bb': 'lambda', '\u2200': 'forall'
 });
 export const RESERVED_USER_GLYPHS = new Set(['\u2205', '\u2200', '\u2208', ...Object.keys(CORE_GLYPHS)]);
 const RESERVED = new Set(['fn','let','return','true','false','if','else','while','and','or','not','use','as','lambda','forall']);
@@ -246,6 +247,11 @@ class Parser {
       const body=this.expr(0);
       left={kind:'Lambda',parameter,body};
     }
+    else if(this.accept('json-read')){
+      const schema=this.typeName();
+      left={kind:'JsonRead',schema,value:this.expr(8)};
+    }
+    else if(this.accept('json-write'))left={kind:'JsonWrite',value:this.expr(8)};
     else if(this.at('number'))left={kind:'Literal',value:this.expect('number').value};
     else if(this.at('string'))left={kind:'Literal',value:this.expect('string').value};
     else if(this.accept('true'))left={kind:'Literal',value:true};
@@ -401,6 +407,7 @@ export function linkProgram(ast, registry=new Map()) {
     if(node.kind==='Sequence')return {...node,items:node.items.map(expression)};
     if(node.kind==='Record')return {...node,fields:node.fields.map(f=>({name:f.name,value:expression(f.value)}))};
     if(node.kind==='Field')return {...node,record:expression(node.record)};
+    if(node.kind==='JsonRead'||node.kind==='JsonWrite')return {...node,value:expression(node.value)};
     if(node.kind==='RecordUpdate')return {...node,record:expression(node.record),value:expression(node.value)};
     if(node.kind==='Index')return {...node,sequence:expression(node.sequence),index:expression(node.index)};
     if(node.kind==='Length')return {...node,value:expression(node.value)};
@@ -525,9 +532,79 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
     for(const item of v)element=unifySequenceTypes(element,seqElementType(item));
     return v;
   };
+  const JSON_MAX_BYTES=1048576,JSON_MAX_DEPTH=32;
+  const jsonBytes=s=>new TextEncoder().encode(s).length;
+  const verifyJsonSchema=(annotation,depth=0)=>{
+    if(depth>JSON_MAX_DEPTH)throw Error('JSON schema nesting depth exceeded');
+    if(['Number','String','Bool'].includes(annotation))return;
+    if(annotation.startsWith('⟦')&&annotation.endsWith('⟧'))
+      return verifyJsonSchema(annotation.slice(1,-1),depth+1);
+    if(annotation.startsWith('⦃')&&annotation.endsWith('⦄')){
+      for(const [,ty] of recordAnnotationFields(annotation))verifyJsonSchema(ty,depth+1);
+      return;
+    }
+    throw Error('⤓ schema must be a concrete JSON-compatible type');
+  };
+  const jsonReadCheck=(value,schema,depth=0)=>{
+    step();if(depth>JSON_MAX_DEPTH)throw Error('JSON nesting depth exceeded');
+    if(schema==='Number'){if(typeof value!=='number'||!Number.isFinite(value))throw Error('JSON Number type mismatch');return value;}
+    if(schema==='String'){if(typeof value!=='string')throw Error('JSON String type mismatch');return value;}
+    if(schema==='Bool'){if(typeof value!=='boolean')throw Error('JSON Bool type mismatch');return value;}
+    if(schema.startsWith('⟦')&&schema.endsWith('⟧')){
+      if(!Array.isArray(value))throw Error('JSON Sequence type mismatch');
+      if(value.length>maxSequenceItems)throw Error('JSON Sequence length exceeded');
+      return Object.freeze(value.map(item=>jsonReadCheck(item,schema.slice(1,-1),depth+1)));
+    }
+    if(schema.startsWith('⦃')&&schema.endsWith('⦄')){
+      if(value===null||typeof value!=='object'||Array.isArray(value))throw Error('JSON Record type mismatch');
+      const proto=Object.getPrototypeOf(value);
+      if(proto!==null&&proto!==Object.prototype)throw Error('JSON Record prototype mismatch');
+      const fields=recordAnnotationFields(schema).sort((a,b)=>a[0].localeCompare(b[0],'en'));
+      if(Object.keys(value).length!==fields.length)throw Error('JSON Record shape mismatch');
+      const out=Object.create(null);
+      for(const [key,type] of fields){
+        if(!Object.hasOwn(value,key))throw Error('JSON Record missing field '+key);
+        out[key]=jsonReadCheck(value[key],type,depth+1);
+      }
+      return Object.freeze(out);
+    }
+    throw Error('Invalid internal JSON schema');
+  };
+  const jsonWriteCheck=(value,depth=0)=>{
+    step();if(depth>JSON_MAX_DEPTH)throw Error('JSON nesting depth exceeded');
+    if(typeof value==='string'||typeof value==='boolean')return value;
+    if(typeof value==='number'&&Number.isFinite(value))return value;
+    if(Array.isArray(value)){
+      if(value.length>maxSequenceItems)throw Error('JSON Sequence length exceeded');
+      validateSequence(value);
+      return Object.freeze(value.map(item=>jsonWriteCheck(item,depth+1)));
+    }
+    if(value!==null&&typeof value==='object'&&Object.getPrototypeOf(value)===null){
+      const keys=Object.keys(value).sort();
+      if(keys.length>64)throw Error('JSON Record field limit exceeded');
+      const out=Object.create(null);
+      for(const key of keys)out[key]=jsonWriteCheck(value[key],depth+1);
+      return Object.freeze(out);
+    }
+    throw Error('⤒ requires typed JSON-compatible data');
+  };
   function expr(node,scope,expectedType=null,deferredEmpty=false){
     step();
     switch(node.kind){
+      case 'JsonRead':{
+        verifyJsonSchema(node.schema);
+        const text=expr(node.value,scope);
+        if(typeof text!=='string')throw Error('⤓ expects JSON String');
+        if(jsonBytes(text)>JSON_MAX_BYTES)throw Error('JSON input size exceeded');
+        let value;try{value=JSON.parse(text);}catch{throw Error('Invalid JSON text');}
+        return jsonReadCheck(value,node.schema);
+      }
+      case 'JsonWrite':{
+        const value=jsonWriteCheck(expr(node.value,scope));
+        const text=JSON.stringify(value);
+        if(jsonBytes(text)>JSON_MAX_BYTES)throw Error('JSON output size exceeded');
+        return text;
+      }
       case 'Literal':return node.value;
       case 'Record':{
         if(node.fields.length>64)throw Error('Record field limit exceeded');
