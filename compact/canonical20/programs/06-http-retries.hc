@@ -1,0 +1,33 @@
+// Canonical06: bounded HTTP retries authored in H-Code, no retry macro.
+≔u←⌨
+≔n←0
+≔done←⊥
+≔ok←⊥
+≔status←0
+≔body←""
+≔reason←""
+≔backoff←100
+⟳(n<4∧¬done){
+ n←n+1
+ ≔r←⤋u
+ status←r·status
+ body←r·body
+ ≔retry←status≡429∨status≡500∨status≡502∨status≡503∨status≡504
+ ≔wait←0
+ ≔decision←""
+ ⊢(r·ok){ok←⊤;done←⊤;decision←"success"}
+ ⊣⇒⊢(status≡0){
+   ⊢(n≡4){done←⊤;reason←"network";decision←"network-exhausted"}
+   ⊣{decision←"network-retry";wait←backoff}
+ }
+ ⊣⇒⊢(¬retry){done←⊤;reason←"http";decision←"http-error"}
+ ⊣⇒⊢(n≡4){done←⊤;reason←"exhausted";decision←"exhausted"}
+ ⊣{decision←"retry";wait←backoff;⊢(r·retryAfter>wait)⇒wait←r·retryAfter}
+ ⊢(wait>1000)⇒wait←1000
+ print(n,status,decision,wait)
+ ⊢(wait>0)⇒⌛wait
+ backoff←backoff*2
+}
+print(ok,status)
+print(body)
+print(reason)
