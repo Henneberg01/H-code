@@ -1,0 +1,132 @@
+{
+  "id": "04-csv-validation",
+  "acceptance": "parse quoted CSV, reject malformed rows and validate column types deterministically",
+  "canonicalRegistryGitBlobSha": "46653ef90ffb3e420fba4ddfbfac3c4cfd57f3b3",
+  "dataRoot": "data",
+  "ioPolicy": "opt-in HCODE_ALLOW_FILE_READ=1, project-local data subtree only, no symlinks",
+  "csvPolicy": "RFC4180-style quoted fields, double-doublequote escapes; supports LF and CRLF; lone CR outside quotes rejected",
+  "schema": [
+    [
+      "active",
+      "Bool"
+    ],
+    [
+      "age",
+      "Number"
+    ],
+    [
+      "name",
+      "String"
+    ],
+    [
+      "note",
+      "String"
+    ]
+  ],
+  "expectedHeaderSet": [
+    "active",
+    "age",
+    "name",
+    "note"
+  ],
+  "typePolicy": "String exact UTF-8, Number strict finite decimal/exponent, Bool only lowercase true/false",
+  "positiveFiles": [
+    {
+      "id": "users",
+      "path": "canonical04/users.csv",
+      "blobSha": "8d4ca2f03483dd1bc5f3b6980076d30cc2688d21",
+      "utf8Bytes": 141,
+      "expected": "[{\"active\":true,\"age\":36,\"name\":\"Ada, Lovelace\",\"note\":\"Math & notes\"},{\"active\":false,\"age\":41,\"name\":\"Turing \\\"Alan\\\"\",\"note\":\"Quote \\\"nested\\\"\"},{\"active\":true,\"age\":22,\"name\":\"東京\",\"note\":\"Line one\\nLine two\"}]"
+    },
+    {
+      "id": "bom-crlf",
+      "path": "canonical04/bom-crlf.csv",
+      "blobSha": "acfc6fe0c66b23349d1f2b3cac2427deb82f982b",
+      "utf8Bytes": 111,
+      "expected": "[{\"active\":true,\"age\":0,\"name\":\"Ada, Lovelace\",\"note\":\"Line one\\r\\nLine two\"},{\"active\":false,\"age\":18,\"name\":\"O’Neil\",\"note\":\"escaped \\\"quote\\\"\"}]"
+    },
+    {
+      "id": "header-only",
+      "path": "canonical04/header-only.csv",
+      "blobSha": "8553dbcfb5cdac4a27a35af6b35fa1300dd8b595",
+      "utf8Bytes": 21,
+      "expected": "[]"
+    },
+    {
+      "id": "unicode",
+      "path": "canonical04/unicode.csv",
+      "blobSha": "5432d032076cec6a18fd7f0e4756e442a4980d99",
+      "utf8Bytes": 72,
+      "expected": "[{\"active\":true,\"age\":22,\"name\":\"東京\",\"note\":\"海,洋\"},{\"active\":false,\"age\":1,\"name\":\"🥇\",\"note\":\"emoji 🦊\"}]"
+    }
+  ],
+  "negativeFiles": [
+    {
+      "id": "bad-quote",
+      "path": "canonical04/bad-quote.csv",
+      "blobSha": "9962e1364667f312e425e8f7bb0a2da7388ad036",
+      "utf8Bytes": 43
+    },
+    {
+      "id": "bad-number",
+      "path": "canonical04/bad-number.csv",
+      "blobSha": "f4917a5038d6fb8a43e65f6f6ba5cbb3dc611af8",
+      "utf8Bytes": 38
+    },
+    {
+      "id": "bad-bool",
+      "path": "canonical04/bad-bool.csv",
+      "blobSha": "ee0a0c75a5f193288fad1a0f6308091f073a7200",
+      "utf8Bytes": 36
+    },
+    {
+      "id": "bad-header",
+      "path": "canonical04/bad-header.csv",
+      "blobSha": "36d4a3f85a2013143f693649711c8693727fa9ca",
+      "utf8Bytes": 36
+    },
+    {
+      "id": "bad-row",
+      "path": "canonical04/bad-row.csv",
+      "blobSha": "ab6aa088e1c1127f1cb42da001edf85811ef9bf4",
+      "utf8Bytes": 32
+    },
+    {
+      "id": "bad-empty",
+      "path": "canonical04/bad-empty.csv",
+      "blobSha": "105648db68f00222f43d09b1e1dccbb9f257433c",
+      "utf8Bytes": 37
+    }
+  ],
+  "sourceTypeFailures": [
+    {
+      "id": "file-path-wrong-type",
+      "source": "print(⧄42);"
+    },
+    {
+      "id": "csv-data-wrong-type",
+      "source": "print(⧇⦃a:Number⦄42);"
+    },
+    {
+      "id": "csv-schema-must-be-record",
+      "source": "print(⧇⟦Number⟧\"x\");"
+    },
+    {
+      "id": "csv-schema-invalid-field-type",
+      "source": "print(⧇⦃a:Unit⦄\"x\");"
+    },
+    {
+      "id": "csv-schema-duplicate-name",
+      "source": "print(⧇⦃a:Number,a:String⦄\"x\");"
+    }
+  ],
+  "capabilityFailures": [
+    "file-read-unapproved",
+    "path-traversal",
+    "absolute-path",
+    "symlink-file",
+    "overlarge-file"
+  ],
+  "originalTaskCount": 20,
+  "globalGoalKnown": false
+}
