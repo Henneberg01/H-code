@@ -11,7 +11,7 @@ import {execute} from '../prototype/src/hcode.mjs';
 const root=fileURLToPath(new URL('../',import.meta.url));
 const locks=Object.freeze({
  registry:['compact/canonical20/workloads.json','46653ef90ffb3e420fba4ddfbfac3c4cfd57f3b3'],
- hc:['compact/canonical20/programs/09-expiring-cache.hc','b3909631e73e27146e847d28e75931447cb177e8'],
+ hc:['compact/canonical20/programs/09-expiring-cache.hc','c77479b480904950a1c059f5d920e4a78d31ed62'],
  ts:['compact/canonical20/programs/09-expiring-cache.ts','f52e8006de9a1be27c44a48c1e17646df6fac4a1'],
  fixtures:['compact/canonical20/cases/09-expiring-cache.json','1f03ef7b2b58cc760991f7e6585c7f92ef795954']
 });
