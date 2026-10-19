@@ -1,0 +1,31 @@
+name: H-Code native symbolic sort and output effects
+on:
+  pull_request:
+    branches: [main, 'feat/m19-canonical15-*']
+  push:
+    branches: ['feat/m19-canonical15-*']
+permissions:
+  contents: read
+jobs:
+  symbols:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Rust native symbols, typechecker and conditional linking
+        run: cargo test --manifest-path compiler/Cargo.toml --test m19_symbol_sort
+      - name: Whole Rust suite must remain compatible with the new glyph grammar
+        run: cargo test --manifest-path compiler/Cargo.toml --no-fail-fast
+      - name: Independent symbol semantics and compiled ESM parity
+        run: node --test scripts/m19-symbol-sort.test.mjs
+      - name: Project-wide symbol-first source gate and unchanged candidate provenance
+        run: node --test scripts/hcode-symbol-first-audit.test.mjs
+      - name: Frozen original H-Code versus symbol-first candidate and independently authored TypeScript on real SQLite
+        run: node --experimental-sqlite --experimental-strip-types --test scripts/m19-sign-first-dashboard.test.mjs

@@ -51,9 +51,24 @@ fn generated_network_effect_issues_real_get_and_exposes_typed_response(){
                     // Windows may inherit nonblocking mode from the listener.
                     socket.set_nonblocking(false).unwrap();
                     socket.set_read_timeout(Some(Duration::from_secs(2))).unwrap();
-                    let mut data=[0u8;1024];
-                    let count=socket.read(&mut data).unwrap();
-                    assert!(String::from_utf8_lossy(&data[..count]).starts_with("GET /case HTTP/1.1"));
+                    // TCP is a byte stream. Windows is permitted to split a
+                    // correct HTTP request across multiple read() calls.
+                    // Validate the entire bounded request header, not the
+                    // first arbitrarily-sized network packet.
+                    let mut header=Vec::new();
+                    let mut chunk=[0u8;1024];
+                    let deadline=Instant::now();
+                    while !header.windows(4).any(|w|w==b"\r\n\r\n") {
+                        assert!(header.len()<8192 &&
+                                deadline.elapsed()<Duration::from_secs(5),
+                                "HTTP fixture header exceeded its safety budget");
+                        let n=socket.read(&mut chunk).expect("Read HTTP request");
+                        assert!(n>0,"HTTP client closed before a complete request");
+                        header.extend_from_slice(&chunk[..n]);
+                    }
+                    let request=String::from_utf8_lossy(&header);
+                    assert!(request.starts_with("GET /case HTTP/1.1\r\n"),
+                            "Unexpected HTTP request line: {:?}",request.lines().next());
                     socket.write_all(b"HTTP/1.1 429 Too Many Requests\r\nRetry-After: 1\r\nContent-Length: 4\r\nConnection: close\r\n\r\nbusy").unwrap();
                     return true;
                 }

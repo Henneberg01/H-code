@@ -19,10 +19,12 @@ fn all_reference_examples_execute_as_compiled_js(){
  let vec_registry=load_lockfile(&base.join("hcode.m16.lock.json")).unwrap();
  let empty=PackageRegistry::default();
   let mut count=0;
+  let mut saw_sign_first_ranking=false;
   for entry in fs::read_dir(base.join("examples")).unwrap() {
     let path=entry.unwrap().path();
     if path.extension().and_then(|s|s.to_str())!=Some("hc"){continue;}
     let file=path.file_name().unwrap().to_str().unwrap();
+    if file=="symbol-first-ranking.hc" {saw_sign_first_ranking=true;}
     let source=fs::read_to_string(&path).unwrap();
     let selected=match file {
         "user_symbols.hc"=>&registry,
@@ -39,7 +41,8 @@ fn all_reference_examples_execute_as_compiled_js(){
     assert_eq!(got,String::from_utf8_lossy(&output.stdout).replace("\r\n","\n"),"{file}");
     count+=1;
   }
-  assert_eq!(count,12);
+  assert!(saw_sign_first_ranking,"Native symbolic ranking example must execute in both engines");
+  assert!(count>=13,"All 12 original and new H-Code examples must run in Rust/JS parity");
 }
 #[test]
 fn glyph_and_ascii_compilation_agree(){
