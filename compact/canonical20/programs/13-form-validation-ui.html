@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>H-Code native browser form — Canonical13 candidate</title>
+</head>
+<body>
+  <main>
+    <h1>Email validation using real H-Code symbols</h1>
+    <form id="contact-form" action="/submit" method="post" novalidate>
+      <label for="email">Email address <span aria-hidden="true">*</span></label>
+      <input id="email" name="email" type="email" required
+             autocomplete="email" aria-invalid="false"
+             aria-describedby="email-error">
+      <p id="email-error" role="alert" aria-live="polite"></p>
+      <p>Current input: <output id="email-preview" for="email"></output></p>
+      <button type="submit">Submit</button>
+    </form>
+  </main>
+  <!-- Generated from 13-form-validation-ui.hc using the actual Rust compiler. -->
+  <script type="module" src="./13-form-validation-ui.mjs"></script>
+</body>
+</html>
