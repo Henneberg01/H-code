@@ -61,7 +61,7 @@ export function verifyCanonical13(){
  // independent headless browser HTTP/DOM tests prove it really runs Chrome.
  if(process.platform==='win32'){
   let executable=false;
-  try{executable=/chrome\\.exe$/i.test(chromium)&&statSync(chromium).isFile();}
+  try{executable=/chrome\.exe$/i.test(chromium)&&statSync(chromium).isFile();}
   catch{}
   if(!executable)throw Error('Canonical13 requires a working chrome.exe path in HCODE_CHROME');
  }else{
