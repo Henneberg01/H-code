@@ -4,6 +4,7 @@ import {resolve,sep,isAbsolute} from 'node:path';
 const __hc_file_limit=1048576;
 function __hc_csv_read_file(name){
   __hc_tick();
+  if(__hc_cas_reducer_active)throw Error('↧ key effect denied: file read');
   if(process.env.HCODE_ALLOW_FILE_READ!=='1')throw Error('H-Code file-read capability denied');
   if(typeof name!=='string'||name.length===0||name.length>1024||
      isAbsolute(name)||name.includes('\\')||name.includes(':')||name.includes('\0'))

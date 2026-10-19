@@ -42,3 +42,40 @@ fn typed_general_sort_can_rank_strings_and_records_by_numbers(){
  assert!(js.contains("↧ key must return a finite Number"));
  assert!(js.contains("__hc_sort_desc"));
 }
+
+#[test]
+fn sort_callbacks_are_statically_checked_for_transitive_effects(){
+ for source in [
+  r#"ƒ noisy(n:Number)→Number { ⎙(n); ↩n } ⎙(⤒(⟦1,2⟧↧noisy));"#,
+  r#"ƒ noisy(n:Number)→Number { ⎙(n); ↩n } ƒ key(n:Number)→Number ↩noisy(n); ⎙(⤒(⟦1,2⟧↧key));"#,
+  r#"≔counter←0 ƒ bump(n:Number)→Number { counter←counter+1; ↩n } ⎙(⤒(⟦1,2⟧↧bump));"#,
+  r#"≔nums←⟦1,2⟧↧λn:⌗(⫶⌨);"#,
+  r#"≔nums←⟦1,2⟧↧λn:⌗(⫶(⧄"secret"));"#,
+  r#"≔nums←⟦1,2⟧↧λn:⎙(n);"#
+ ]{
+  let e=compile(source,true).expect_err("↧ selectors must never execute I/O or mutate captures");
+  assert!(e.contains("EFFECT")&&e.contains("↧"),"{source}: {e}");
+ }
+}
+#[test]
+fn pure_named_sort_functions_and_operator_sections_are_still_valid(){
+ for source in [
+  r#"ƒ score(n:Number)→Number ↩ n*2; ⎙(⤒(⟦3,1,2⟧↧score));"#,
+  r#"≔key←λn:n*2; ⎙(⤒(⟦3,1,2⟧↧key));"#,
+  r#"ƒ mul(n:Number)→Number ↩ n*2; ƒ score(n:Number)→Number ↩ mul(n); ⎙(⤒(⟦3,1,2⟧↧score));"#,
+  r#"⎙(⤒(⟦3,1,2⟧↧(*2)));"#,
+  r#"≔empty:⟦Number⟧←⟦⟧; ⎙(⤒(empty↧λn:n));"#
+ ]{
+  let js=compile(source,true).expect("Pure generic ↧ key should typecheck");
+  assert!(js.contains("__hc_sort_desc("));
+  assert!(js.contains("__hc_cas_reducer_active=true;"));
+ }
+}
+
+#[test]
+fn generated_hcode_assignment_checks_effect_guard_for_dynamic_callbacks(){
+ let program=r#"≔counter←0; ƒ dirty(n:Number)→Number {counter←counter+1; ↩n} ≔alias←dirty; ⎙(⤒(⟦1,2⟧↧alias));"#;
+ let js=compile(program,true).expect("First-class alias must remain a valid typed callable");
+ assert!(js.contains("__hc_cas_reducer_active=true;"));
+ assert!(js.contains("if(__hc_cas_reducer_active)throw Error('↧ key mutation denied');"));
+}
