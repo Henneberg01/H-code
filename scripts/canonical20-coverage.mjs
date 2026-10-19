@@ -20,6 +20,7 @@ import {verifyCanonical11} from './canonical20-verify-11.mjs';
 import {verifyCanonical12} from './canonical20-verify-12.mjs';
 import {verifyCanonical13} from './canonical20-verify-13.mjs';
 import {verifyCanonical14} from './canonical20-verify-14.mjs';
+import {verifyCanonical15} from './canonical20-verify-15.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
 const registryBytes=readFileSync(join(root,'compact/canonical20/workloads.json'));
@@ -154,6 +155,11 @@ export function readiness(){
         // and compare persisted accessible DOM across real Chrome restarts.
         fullEvidence[w.id]=verifyCanonical14();
         verified++;
+      }else if(w.id==='15-db-dashboard'){
+        // No registry edits: derive proof from immutable original contract,
+        // typed SQL-free H-Code Rust/JS, independent TS and real Chromium.
+        fullEvidence[w.id]=verifyCanonical15();
+        verified++;
       }else{unsupported++;}
     }else if(w.status==='reference_partial'){
       if(w.evidence==='m10:fibonacci'){
@@ -202,7 +208,7 @@ export function readiness(){
     historicalM14IsGlobalMetric:false,
     evidenceByFullTask:fullEvidence,
     evidenceByPartialTask:evidence,
-    explanation:'Full verification is derived from frozen Rust/JS/TS proofs (including CRUD HTTP/disk parity with immutable six-case acceptance); original preregistration remains SHA-frozen and unsupported tasks stay in the denominator. Correctness oracles are not automatically competitive TypeScript baselines.'
+    explanation:'Full verification is derived from frozen Rust/JS/TS proofs (including CRUD HTTP/disk parity with immutable six-case acceptance); original preregistration remains SHA-frozen and unsupported tasks stay in the denominator. Correctness oracles are not automatically competitive TypeScript baselines. Canonical15 is verified via real SQL-free SQLite and Chromium on SHA-locked authored sources. No global twenty-workload 70% median has been computed.'
   };
 }
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){
