@@ -239,6 +239,17 @@ pub fn check(program:&Program, registry:&PackageRegistry, allow_print:bool)->Res
     };
     if allow_print {
         checker.declare("print",Type::BuiltinPrint,false,Span::new(1,1))?;
+        // Browser DOM capabilities are typed, general-purpose and denied to
+        // pure signed packages and replayable CAS HTTP reducers.
+        let str_=Type::String;
+        let unit=Type::Unit;
+        let bool_=Type::Bool;
+        checker.declare("dom_value",Type::Function(vec![str_.clone()],Box::new(str_.clone())),false,Span::new(1,1))?;
+        checker.declare("dom_text",Type::Function(vec![str_.clone(),str_.clone()],Box::new(unit.clone())),false,Span::new(1,1))?;
+        checker.declare("dom_valid",Type::Function(vec![str_.clone()],Box::new(bool_.clone())),false,Span::new(1,1))?;
+        checker.declare("dom_on",Type::Function(vec![str_.clone(),str_.clone(),
+            Type::Function(vec![str_.clone()],Box::new(bool_.clone()))],Box::new(unit.clone())),false,Span::new(1,1))?;
+        checker.declare("dom_attr",Type::Function(vec![str_.clone(),str_.clone(),str_],Box::new(unit)),false,Span::new(1,1))?;
     }
     checker.imports(program,registry)?;
     checker.predeclare(&program.statements)?;
