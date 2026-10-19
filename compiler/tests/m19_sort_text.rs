@@ -19,7 +19,7 @@ fn ascending_unicode_sort_is_native_glyph_and_ascii_alias(){
  let js=compile(glyph,true).unwrap();
  assert_eq!(js,compile(&alias,true).unwrap());
  assert!(js.contains("const __hc_sort_text="));
- assert!(js.contains("const __hc_compare="));
+ assert!(js.contains("const __hc_compare = "));
  assert!(!js.contains("__hc_sort_region"));
  assert!(!js.contains("node:sqlite"));
 }
@@ -38,7 +38,7 @@ fn sort_key_type_and_security_are_checked_by_rust(){
 fn runtime_remains_conditional_for_old_hcode_programs(){
  let js=compile("⎙(⤒(⟦3,1,2⟧↧λn:n));",true).unwrap();
  assert!(!js.contains("const __hc_sort_text="));
- assert!(!js.contains("const __hc_compare="));
+ assert!(!js.contains("const __hc_compare = "));
  let minimal=compile("⎙(42);",true).unwrap();
  assert!(!minimal.contains("__hc_sort_text"));
 }
