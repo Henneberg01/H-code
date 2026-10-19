@@ -13,6 +13,7 @@ export const CORE_GLYPHS = Object.freeze({
   '\u2983':'record-open', '\u2984':'record-close', '\u00b7':'field', '\u229e':'record-update',
   '\u2913':'json-read', '\u2914':'json-valid', '\u2912':'json-write',
   '⟐':'dom_value', '⟑':'dom_text', '⟒':'dom_valid', '⟓':'dom_on', '⟔':'dom_attr',
+  '⟕':'store_get', '⟖':'store_put', '⟗':'store_del',
   '\u2af6':'text-scalars', '\u27df':'text-words', '\u29c9':'histogram', '\u224b':'markdown-tokens',
   '\u29c4':'file-read', '\u29c5':'file-write', '\u290b':'http-get', '\u290a':'http-serve', '\u231b':'sleep-ms', '\u29c7':'csv-typed',
   '\u2328':'stdin-text', '\u2a5a':'arith-eval', '\u2317': '#', '\u29fa': '++', '\u2211': '@+', '\u2315': '@?', '\u21e2': '@>', '\u03bb': 'lambda', '\u2200': 'forall'
@@ -107,7 +108,7 @@ export function tokenize(source) {
     }
     if(Object.hasOwn(CORE_GLYPHS,c)){
       advance();const alias=CORE_GLYPHS[c];
-      emit(alias.startsWith('dom_')?'ident':alias,alias,ln,col);continue;
+      emit(alias.startsWith('dom_')||alias.startsWith('store_')?'ident':alias,alias,ln,col);continue;
     }
     const two=c+(peek(1)??'');
     if(TWO.has(two)){advance();advance();emit(two==='<+'?'record-update':two,two,ln,col);continue;}
@@ -500,7 +501,7 @@ export function linkProgram(ast, registry=new Map()) {
 class Scope {
   constructor(parent=null){this.parent=parent;this.values=new Map();this.annotations=new Map();this.returnType=parent?.returnType??null;this.genericBindings=parent?.genericBindings??new Map();}
   define(name,value,type=null){
-    if(this.parent&&['dom_value','dom_text','dom_valid','dom_on','dom_attr'].includes(name))
+    if(this.parent&&['dom_value','dom_text','dom_valid','dom_on','dom_attr','store_get','store_put','store_del'].includes(name))
       throw Error('Reserved core browser DOM capability cannot be shadowed');
     if(this.values.has(name))throw Error(`Duplicate name ${name}`);
     this.values.set(name,value);this.annotations.set(name,type);
@@ -512,7 +513,7 @@ class Scope {
 class ReturnSignal{constructor(value){this.value=value;}}
 const runtimeType=value=>value===null?'Unit':typeof value==='number'?'Number':typeof value==='string'?'String':typeof value==='boolean'?'Bool':'unsupported';
 
-export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=16384,registry=new Map(),readFile=null,readStdin=null,httpEffects=null,httpServe=null,httpServeState=null,sleepEffects=null,fileEffects=null,domHost=null}={}){
+export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=16384,registry=new Map(),readFile=null,readStdin=null,httpEffects=null,httpServe=null,httpServeState=null,sleepEffects=null,fileEffects=null,domHost=null,storageHost=null}={}){
   const root=new Scope(),operations=new Map(),operationSpecs=new Map(),loadedLibraries=new Set();let steps=0,stdinConsumed=false,httpIndex=0,sleepIndex=0,fileIndex=0,pureDepth=0,functionDepth=0,httpServerRegistered=false;
   const step=()=>{if(++steps>maxSteps)throw Error('Execution step limit exceeded');};
   root.define('print',(...args)=>{if(pureDepth>0)throw Error('CAS reducer effect denied: print');stdout(args.map(x=>x===null?'none':String(x)).join(' '));return null;});
@@ -577,6 +578,39 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
       if(!accepted&&event?.cancelable&&typeof event.preventDefault==='function')event.preventDefault();
     },{passive:false});
     domListeners++;
+    return null;
+  });
+
+  // M19.14 B1: explicit host-injected same-origin storage capability.
+  // The reference interpreter cannot silently read Node filesystem or global state.
+  const storeKey=key=>{
+    step();
+    if(pureDepth>0)throw Error('Browser storage effect denied in CAS reducer');
+    if(typeof key!=='string'||!/^hcode:[a-z][a-z0-9._-]{0,63}$/.test(key))
+      throw TypeError('Storage key must be a namespaced hcode: String');
+    if(!storageHost||typeof storageHost.getItem!=='function'||
+       typeof storageHost.setItem!=='function'||typeof storageHost.removeItem!=='function')
+      throw Error('Browser storage capability unavailable');
+    return key;
+  };
+  const storeText=value=>{
+    if(typeof value!=='string'||!value.isWellFormed()||
+       new TextEncoder().encode(value).length>65536)
+      throw TypeError('Storage value must be well-formed String of at most 65536 UTF-8 bytes');
+    return value;
+  };
+  root.define('store_get',key=>{
+    const value=storageHost.getItem(storeKey(key));
+    if(value===null)return '';
+    return storeText(value);
+  });
+  root.define('store_put',(key,value)=>{
+    const name=storeKey(key);
+    storageHost.setItem(name,storeText(value));
+    return null;
+  });
+  root.define('store_del',key=>{
+    storageHost.removeItem(storeKey(key));
     return null;
   });
 

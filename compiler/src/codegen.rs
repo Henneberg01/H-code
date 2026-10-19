@@ -94,7 +94,7 @@ impl Emitter {
     },
     TypedExprKind::Bool(b)=>b.to_string(),TypedExprKind::Identifier(s)=>
       if matches!(e.ty,Type::BuiltinPrint) {"__hc_print".into()}
-      else if matches!(s.as_str(),"dom_value"|"dom_text"|"dom_valid"|"dom_on"|"dom_attr")
+      else if matches!(s.as_str(),"dom_value"|"dom_text"|"dom_valid"|"dom_on"|"dom_attr"|"store_get"|"store_put"|"store_del")
         {format!("__hc_{s}")}else{name(s)},
    TypedExprKind::OperationRef{id}=>format!("__hc_operations[{}]",q(id)),
    TypedExprKind::Unary{op,operand}=>format!("({}{})",match op{UnaryOp::Not=>"!",UnaryOp::Negate=>"-"},self.expr(operand)),
@@ -800,6 +800,10 @@ const __hc_hist = input => {
  if ["__hc_dom_value","__hc_dom_text","__hc_dom_valid","__hc_dom_on","__hc_dom_attr"]
        .iter().any(|symbol|application.contains(symbol)) {
    output.push_str(include_str!("browser_dom_prelude.js"));
+ }
+ if ["__hc_store_get","__hc_store_put","__hc_store_del"]
+       .iter().any(|symbol|application.contains(symbol)) {
+   output.push_str(include_str!("browser_storage_prelude.js"));
  }
  output.push_str(&application);Ok(output)
 }
