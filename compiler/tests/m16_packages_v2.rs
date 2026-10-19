@@ -18,14 +18,24 @@ fn run(source:&str,reg:&PackageRegistry)->Result<String,String>{
     Ok(String::from_utf8_lossy(&child.stdout).replace("\r\n","\n"))
 }
 
-// Rust test fixtures are read while Windows AV/indexers may briefly lock
-// their files. Retry only Windows ERROR_SHARING_VIOLATION (32), with a bounded
-// delay; never retry hash/contract failures or alter production package loading.
+// Windows AV/indexers may briefly lock fixtures (OS32) or cause a
+// transient PATH_NOT_FOUND (OS3) while a verified source/directory exist.
+// Retry *only* those bounded test-fixture races, never real missing files,
+// permissions, SHA contract checks or production package I/O.
+fn transient_fixture_copy_error(error:&std::io::Error,source:&Path,destination:&Path,attempt:u64)->bool{
+    if !cfg!(windows)||attempt>=11{return false;}
+    match error.raw_os_error(){
+        Some(32)=>true,
+        Some(3)=>source.is_file() &&
+                 destination.parent().is_some_and(|parent|parent.is_dir()),
+        _=>false
+    }
+}
 fn copy_fixture(source:&Path,destination:&Path){
     for attempt in 0..12_u64 {
         match fs::copy(source,destination) {
             Ok(_) => return,
-            Err(e) if cfg!(windows) && e.raw_os_error()==Some(32) && attempt<11 => {
+            Err(e) if transient_fixture_copy_error(&e,source,destination,attempt) => {
                 std::thread::sleep(Duration::from_millis(25*(attempt+1)));
             },
             Err(e) => panic!("Cannot copy M16 fixture {} -> {}: {e}",
@@ -33,6 +43,23 @@ fn copy_fixture(source:&Path,destination:&Path){
         }
     }
     unreachable!("copy either succeeded or returned a permanent failure")
+}
+#[test]
+fn fixture_copy_must_never_mask_real_missing_paths_or_nontransient_errors(){
+    let real_source=root().join("packages/vec.math/manifest.json");
+    let missing_source=root().join("packages/vec.math/absent-expected-fixture.json");
+    let destination=std::env::temp_dir().join("unused-fixture-test.json");
+    let path_not_found=std::io::Error::from_raw_os_error(3);
+    let permissions=std::io::Error::from_raw_os_error(5);
+    assert!(!transient_fixture_copy_error(&path_not_found,&missing_source,&destination,0));
+    assert!(!transient_fixture_copy_error(&permissions,&real_source,&destination,0));
+    assert!(!transient_fixture_copy_error(&path_not_found,&real_source,&destination,11));
+    #[cfg(windows)]
+    {
+        assert!(real_source.is_file());
+        assert!(destination.parent().unwrap().is_dir());
+        assert!(transient_fixture_copy_error(&path_not_found,&real_source,&destination,0));
+    }
 }
 struct Fixture{path:PathBuf,lock:Value}
 impl Drop for Fixture{fn drop(&mut self){let _=fs::remove_dir_all(&self.path);}}

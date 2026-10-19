@@ -16,9 +16,9 @@ test('all 20 canonical tasks remain registered in source order, including unsupp
 test('source-locked reference-only examples cannot be misrepresented as global 70% proof',{skip:!canRunTs},()=>{
   const r=readiness();
   assert.equal(r.preregisteredTasks,20);
-  assert.equal(r.verifiedFullWorkloads,14);
+  assert.equal(r.verifiedFullWorkloads,15);
   assert.equal(r.partialReferenceEvidence,0);
-  assert.equal(r.unsupported,6);
+  assert.equal(r.unsupported,5);
   assert.equal(r.complete,false);
   assert.equal(r.globalMedianCodepointReduction,null);
   assert.equal(r.objectiveAchieved,false);
@@ -109,6 +109,20 @@ test('source-locked reference-only examples cannot be misrepresented as global 7
   assert.equal(r.evidenceByFullTask['14-todo-app'].fullBrowserRestartsVerified,2);
   assert.equal(r.evidenceByFullTask['14-todo-app'].hcodeUnicodeCodepoints,1456);
   assert.equal(r.evidenceByFullTask['14-todo-app'].codepointReductionVsIdiomaticTypeScriptPct,27.16);
+  assert.equal(r.evidenceByFullTask['15-db-dashboard'].kind,'full-compiler-evidence');
+  assert.equal(r.evidenceByFullTask['15-db-dashboard'].fullOriginalAcceptancePreserved,true);
+  assert.equal(r.evidenceByFullTask['15-db-dashboard'].actualBrowserChromium,true);
+  assert.equal(r.evidenceByFullTask['15-db-dashboard'].SQLFreeHCodeAuthoredBackend,true);
+  assert.equal(r.evidenceByFullTask['15-db-dashboard'].nativeRustCompiler,true);
+  assert.equal(r.evidenceByFullTask['15-db-dashboard'].independentHCodeJSInterpreter,true);
+  assert.equal(r.evidenceByFullTask['15-db-dashboard'].independentIdiomaticTypeScript,true);
+  assert.equal(r.evidenceByFullTask['15-db-dashboard'].fiveOriginalScenariosVerified,5);
+  assert.equal(r.evidenceByFullTask['15-db-dashboard'].hcodeUnicodeCodepoints,1266);
+  assert.equal(r.evidenceByFullTask['15-db-dashboard'].hcodeUtf8Bytes,1444);
+  assert.equal(r.evidenceByFullTask['15-db-dashboard'].idiomaticTypeScriptUnicodeCodepoints,5488);
+  assert.equal(r.evidenceByFullTask['15-db-dashboard'].codepointReductionVsIdiomaticTypeScriptPct,76.93);
+  assert.equal(r.evidenceByFullTask['15-db-dashboard'].utf8ReductionVsIdiomaticTypeScriptPct,73.69);
+  assert.equal(r.evidenceByFullTask['15-db-dashboard'].globallyVerified70Percent,false);
   assert.ok(r.evidenceByFullTask['14-todo-app'].compiledBrowserJavascriptUtf8Bytes>0);
   assert.ok(r.evidenceByFullTask['13-form-validation-ui'].compiledBrowserJavascriptUtf8Bytes>0);
   assert.ok(r.evidenceByFullTask['12-crud-api'].compiledJavascriptUtf8Bytes>0);
@@ -148,8 +162,8 @@ test('the strict twenty-workload CI gate intentionally fails until all 20 pass',
   assert.match(child.stderr,/all 20 must be compiler-verified/);
   const report=JSON.parse(child.stdout);
   assert.equal(report.preregisteredTasks,20);
-  assert.equal(report.verifiedFullWorkloads,14);
-  assert.equal(report.unsupported,6);
+  assert.equal(report.verifiedFullWorkloads,15);
+  assert.equal(report.unsupported,5);
   assert.equal(report.globalMedianCodepointReduction,null);
   assert.equal(report.objectiveAchieved,false);
 });

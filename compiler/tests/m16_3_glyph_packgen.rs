@@ -1,6 +1,20 @@
-use std::{fs,path::{Path,PathBuf},process::Command,time::{SystemTime,UNIX_EPOCH}};
+use std::{fs,path::{Path,PathBuf},process::Command,time::{Duration,SystemTime,UNIX_EPOCH}};
 use hcode_compiler::packages::load_lockfile;
 use serde_json::Value;
+// Antivirus and indexing on Windows may temporarily hold signed glyph fixtures.
+// Retry only Windows ERROR_SHARING_VIOLATION (32); all other errors fail
+// immediately. This helper changes test I/O only, never package verification.
+fn copy_fixture(from:&Path,to:&Path)->std::io::Result<u64>{
+ for attempt in 0..12u64 {
+  match fs::copy(from,to) {
+   Ok(bytes)=>return Ok(bytes),
+   Err(e) if cfg!(windows) && e.raw_os_error()==Some(32) && attempt<11=>
+    std::thread::sleep(Duration::from_millis(25*(attempt+1))),
+   Err(e)=>return Err(e)
+  }
+ }
+ unreachable!("12th attempt returns success or error")
+}
 fn root()->PathBuf{Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap().to_path_buf()}
 struct Workspace(PathBuf);
 impl Workspace{
@@ -8,8 +22,8 @@ impl Workspace{
   let n=SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();
   let root=std::env::temp_dir().join(format!("hcode-m163-{}-{n}",std::process::id()));
   fs::create_dir_all(root.join("packages/poly.auto")).unwrap();
-  fs::copy(root_source(),root.join("packages/poly.auto/signs.hcs")).unwrap();
-  fs::copy(Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap().join("packages/poly.auto/demo.hc"),root.join("packages/poly.auto/demo.hc")).unwrap();
+  copy_fixture(&root_source(),&root.join("packages/poly.auto/signs.hcs")).unwrap();
+  copy_fixture(&Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap().join("packages/poly.auto/demo.hc"),&root.join("packages/poly.auto/demo.hc")).unwrap();
   Self(root)
  }
  fn run(&self,extra:&[&str])->std::process::Output{
@@ -125,4 +139,14 @@ fn direct_glyphs_on_one_line_generate_distinct_private_symbols(){
  let registry=load_lockfile(&w.lock()).unwrap();
  let p=registry.packages.get("poly.auto@1.0.0").unwrap();
  assert_eq!(p.operations.len(),2);
+}
+
+#[test]
+fn missing_fixture_still_fails_closed_without_retrying_unrelated_errors(){
+ let w=Workspace::new();
+ let bad=w.0.join("absent-source.hcs");
+ let dest=w.0.join("must-not-exist.hcs");
+ let error=copy_fixture(&bad,&dest).unwrap_err();
+ assert_eq!(error.kind(),std::io::ErrorKind::NotFound);
+ assert!(!dest.exists());
 }
