@@ -176,11 +176,18 @@ jobs:
       - name: M19.13 browser DOM language glyphs - Rust generated and JS reference
         run: npm run m19:browser-dom
         if: ${{ success() || failure() }}
+      - uses: browser-actions/setup-chrome@v2
+        id: chrome
+        if: ${{ success() || failure() }}
       - name: Canonical twenty source-locked readiness check
         run: npm run benchmark20:status
         if: ${{ success() || failure() }}
+        env:
+          HCODE_CHROME: ${{ steps.chrome.outputs.chrome-path }}
       - name: Canonical twenty anti-cherrypick tests
         run: npm run benchmark20:test
         if: ${{ success() || failure() }}
+        env:
+          HCODE_CHROME: ${{ steps.chrome.outputs.chrome-path }}
       - run: npm run release:check
         if: ${{ success() || failure() }}
