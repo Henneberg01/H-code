@@ -37,3 +37,54 @@ jobs:
         run: npm run m19:browser-storage-real
         env:
           HCODE_CHROME: ${{ steps.chrome.outputs.chrome-path }}
+
+  todo-ui:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Rust typechecked developer-authored H-Code todo and DOM list
+        run: cargo test --manifest-path compiler/Cargo.toml --test m19_todo_ui
+      - name: Todo add complete remove source in independent JS and Rust-compiled ESM
+        run: npm run m19:todo-ui
+
+  todo-browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: browser-actions/setup-chrome@v2
+        id: chrome
+      - name: Three actual Chromium lifetimes with independent idiomatic TS todo competitor
+        run: npm run m19:todo-chrome
+        env:
+          HCODE_CHROME: ${{ steps.chrome.outputs.chrome-path }}
+
+  canonical14-proof:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: browser-actions/setup-chrome@v2
+        id: chrome
+      - name: Frozen Canonical14 Rust reference TS and real browser acceptance
+        run: npm run benchmark20:verify14
+        env:
+          HCODE_CHROME: ${{ steps.chrome.outputs.chrome-path }}

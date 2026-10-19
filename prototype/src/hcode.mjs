@@ -12,7 +12,7 @@ export const CORE_GLYPHS = Object.freeze({
   '\u2237': '::', '\u25b7': '|>', '\u2218': '<<', '\u25c7': '?', '\u27e6': '[[', '\u27e7': ']]',
   '\u2983':'record-open', '\u2984':'record-close', '\u00b7':'field', '\u229e':'record-update',
   '\u2913':'json-read', '\u2914':'json-valid', '\u2912':'json-write',
-  '⟐':'dom_value', '⟑':'dom_text', '⟒':'dom_valid', '⟓':'dom_on', '⟔':'dom_attr',
+  '⟐':'dom_value', '⟑':'dom_text', '⟒':'dom_valid', '⟓':'dom_on', '⟔':'dom_attr', '⟘':'dom_list',
   '⟕':'store_get', '⟖':'store_put', '⟗':'store_del',
   '\u2af6':'text-scalars', '\u27df':'text-words', '\u29c9':'histogram', '\u224b':'markdown-tokens',
   '\u29c4':'file-read', '\u29c5':'file-write', '\u290b':'http-get', '\u290a':'http-serve', '\u231b':'sleep-ms', '\u29c7':'csv-typed',
@@ -501,7 +501,7 @@ export function linkProgram(ast, registry=new Map()) {
 class Scope {
   constructor(parent=null){this.parent=parent;this.values=new Map();this.annotations=new Map();this.returnType=parent?.returnType??null;this.genericBindings=parent?.genericBindings??new Map();}
   define(name,value,type=null){
-    if(this.parent&&['dom_value','dom_text','dom_valid','dom_on','dom_attr','store_get','store_put','store_del'].includes(name))
+    if(this.parent&&['dom_value','dom_text','dom_valid','dom_on','dom_attr','dom_list','store_get','store_put','store_del'].includes(name))
       throw Error('Reserved core browser DOM capability cannot be shadowed');
     if(this.values.has(name))throw Error(`Duplicate name ${name}`);
     this.values.set(name,value);this.annotations.set(name,type);
@@ -560,6 +560,24 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
       throw TypeError('DOM attribute not in safe accessibility/data allowlist');
     if(typeof el.setAttribute!=='function')throw TypeError('DOM attribute setter unavailable');
     el.setAttribute(attribute,domBounded(value,2048));
+    return null;
+  });
+  root.define('dom_list',(selector,labels)=>{
+    const element=domTarget(selector);
+    if(typeof element.tagName!=='string'||
+       !['UL','OL'].includes(element.tagName.toUpperCase()))
+      throw TypeError('DOM list target must be ul or ol');
+    if(!Array.isArray(labels)||labels.length>1024)
+      throw TypeError('DOM list requires at most 1024 String items');
+    if(typeof element.replaceChildren!=='function'||
+       !domHost||typeof domHost.createElement!=='function')
+      throw TypeError('DOM list host lacks safe element APIs');
+    const children=labels.map(label=>{
+      const li=domHost.createElement('li');
+      li.textContent=domBounded(label,2048);
+      return li;
+    });
+    element.replaceChildren(...children);
     return null;
   });
   let domListeners=0;

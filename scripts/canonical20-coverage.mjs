@@ -19,6 +19,7 @@ import {verifyCanonical09} from './canonical20-verify-09.mjs';
 import {verifyCanonical11} from './canonical20-verify-11.mjs';
 import {verifyCanonical12} from './canonical20-verify-12.mjs';
 import {verifyCanonical13} from './canonical20-verify-13.mjs';
+import {verifyCanonical14} from './canonical20-verify-14.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
 const registryBytes=readFileSync(join(root,'compact/canonical20/workloads.json'));
@@ -146,6 +147,12 @@ export function readiness(){
         // independent idiomatic TS must match actual Chrome event/DOM traces.
         // SHA locks preserve original acceptance and both authored sources.
         fullEvidence[w.id]=verifyCanonical13();
+        verified++;
+      }else if(w.id==='14-todo-app'){
+        // Never infer a green todo from a manifest label: actually compile
+        // developer-authored H-Code, run independent JS and idiomatic TS,
+        // and compare persisted accessible DOM across real Chrome restarts.
+        fullEvidence[w.id]=verifyCanonical14();
         verified++;
       }else{unsupported++;}
     }else if(w.status==='reference_partial'){

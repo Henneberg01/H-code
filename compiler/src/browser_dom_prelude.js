@@ -64,3 +64,22 @@ const __hc_dom_on=(selector,eventName,handler)=>{
   __hc_dom_listener_count++;
   return null;
 };
+
+const __hc_dom_list=(selector,labels)=>{
+  const element=__hc_dom_target(selector);
+  if(typeof element.tagName!=='string'||
+     !['UL','OL'].includes(element.tagName.toUpperCase()))
+    throw TypeError('DOM list target must be ul or ol');
+  if(!Array.isArray(labels)||labels.length>1024)
+    throw TypeError('DOM list requires at most 1024 String items');
+  if(typeof element.replaceChildren!=='function'||
+     typeof document.createElement!=='function')
+    throw TypeError('DOM list host lacks safe element APIs');
+  const children=labels.map(label=>{
+    const li=document.createElement('li');
+    li.textContent=__hc_dom_bounded(label,2048);
+    return li;
+  });
+  element.replaceChildren(...children);
+  return null;
+};

@@ -61,7 +61,10 @@
     "m19:browser-compare": "node --test scripts/m19-browser-ui-compare.test.mjs",
     "m19:browser-storage": "node --test scripts/m19-browser-storage.test.mjs",
     "m19:browser-storage-real": "node --test scripts/m19-browser-storage-real.test.mjs",
-    "benchmark20:verify13": "node scripts/canonical20-verify-13.mjs"
+    "m19:todo-ui": "node --test scripts/m19-todo-ui.test.mjs",
+    "m19:todo-chrome": "node --test scripts/m19-todo-browser-compare.test.mjs",
+    "benchmark20:verify13": "node scripts/canonical20-verify-13.mjs",
+    "benchmark20:verify14": "node scripts/canonical20-verify-14.mjs"
   },
   "engines": {
     "node": ">=20"
