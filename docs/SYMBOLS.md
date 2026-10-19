@@ -189,10 +189,11 @@ Studio's sign palette inserts the actual glyphs, with accessible alternate spell
 
 ### M19 sort-key effect isolation (candidate)
 
-The `↧` key function must be statically known and effect-free. Rust traverses
-key selectors, including transitive named H-Code function calls, before
-emitting ESM and rejects print/DOM/storage/file/database/network or mutable
-capture access. The independent H-Code interpreter also activates its
+The `↧` key must be effect-free. Rust statically audits inline lambdas,
+sections and transitively referenced **named** H-Code functions; dynamically
+supplied typed function variables remain first-class and are restricted by
+runtime effect isolation instead of being rejected outright. Observable
+print/DOM/storage/file/database/network or mutable capture effects are denied. The independent H-Code interpreter also activates its
 runtime purity boundary when evaluating keys, before host effects can run.
 Compiled ESM uses the same effect isolation with a protected, restored guard
 for every key, including exceptions. This is a language-wide semantic rule,

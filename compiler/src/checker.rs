@@ -248,11 +248,15 @@ fn check_sort_key_purity(program:&Program)->Result<(),Diagnostic>{
             let mut visiting=Vec::new();
             match &right.kind {
                 ExprKind::Identifier(name)=>{
-                    let def=functions.get(name).ok_or_else(denied)?;
-                    let StmtKind::Function{body,..}=&def.kind else{return Err(denied());};
-                    visiting.push(name.clone());
-                    for stmt in body{
-                        cas_pure_statement(stmt,functions,&mut visiting).map_err(|_|denied())?;
+                    // Named H-Code functions are checked transitively. A typed
+                    // function variable may be dynamically supplied: preserve the
+                    // language contract and enforce purity at the runtime boundary.
+                    if let Some(def)=functions.get(name){
+                        let StmtKind::Function{body,..}=&def.kind else{return Err(denied());};
+                        visiting.push(name.clone());
+                        for stmt in body{
+                            cas_pure_statement(stmt,functions,&mut visiting).map_err(|_|denied())?;
+                        }
                     }
                 },
                 ExprKind::Lambda{..}|ExprKind::Section{..}|ExprKind::Operation{..}=>{

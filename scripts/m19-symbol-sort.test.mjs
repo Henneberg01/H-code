@@ -72,3 +72,8 @@ test('↧ retains numeric sorting with pure named H-Code functions',()=>{
  const source='ƒ score(n:Number)→Number ↩n*2; ⎙(⤒(⟦3,1,2⟧↧score));';
  assert.deepEqual(runReference(source),['[3,2,1]']);
 });
+
+test('typed callback variables remain first-class, not rejected by the purity checker',()=>{
+ const source='≔key←λn:n*2; ⎙(⤒(⟦3,1,2⟧↧key));';
+ assert.deepEqual(runReference(source),['[3,2,1]']);
+});

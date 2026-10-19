@@ -61,6 +61,7 @@ fn sort_callbacks_are_statically_checked_for_transitive_effects(){
 fn pure_named_sort_functions_and_operator_sections_are_still_valid(){
  for source in [
   r#"ƒ score(n:Number)→Number ↩ n*2; ⎙(⤒(⟦3,1,2⟧↧score));"#,
+  r#"≔key←λn:n*2; ⎙(⤒(⟦3,1,2⟧↧key));"#,
   r#"ƒ mul(n:Number)→Number ↩ n*2; ƒ score(n:Number)→Number ↩ mul(n); ⎙(⤒(⟦3,1,2⟧↧score));"#,
   r#"⎙(⤒(⟦3,1,2⟧↧(*2)));"#,
   r#"≔empty:⟦Number⟧←⟦⟧; ⎙(⤒(empty↧λn:n));"#
