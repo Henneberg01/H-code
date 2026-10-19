@@ -1,0 +1,27 @@
+name: H-Code M19.15 B5 SQL-free full dashboard real Chromium
+on:
+  push:
+    branches: ['feat/m19-canonical15-b5-*']
+  pull_request:
+    branches: [main,'feat/m19-canonical15-b4-*']
+permissions:
+  contents: read
+jobs:
+  sqlfree-chromium:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest,windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: dtolnay/rust-toolchain@stable
+      - id: chrome
+        uses: browser-actions/setup-chrome@v2
+      - name: Real Chrome same SQLite file and immutable TypeScript parity — SQL-free H-Code
+        env:
+          HCODE_CHROME: ${{ steps.chrome.outputs.chrome-path }}
+        run: node --experimental-sqlite --experimental-strip-types --test scripts/m19-sqlfree-chromium-parity.test.mjs
