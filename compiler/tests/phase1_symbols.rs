@@ -79,6 +79,17 @@ fn package_digest_and_nfkc_unstable_symbol_cannot_enter_registry(){
  let msg=f.reg().unwrap_err();
  assert!(msg.contains("Invalid, reserved or duplicate glyph"),"{msg}");
 }
+#[test]
+fn native_json_valid_glyph_cannot_be_shadowed_by_a_package(){
+ let mut f=TempPackage::new();
+ let path=f.dir.join("packages/demo.math/manifest.json");
+ let mut manifest:Value=serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+ manifest["operations"][0]["glyph"]=json!("⤔");
+ fs::write(&path,serde_json::to_vec(&manifest).unwrap()).unwrap();
+ f.refresh();
+ let err=f.reg().unwrap_err();
+ assert!(err.contains("Invalid, reserved or duplicate glyph"),"{err}");
+}
 
 #[test]
 fn ambiguous_imports_need_a_qualified_symbol_even_in_rust_frontend(){
