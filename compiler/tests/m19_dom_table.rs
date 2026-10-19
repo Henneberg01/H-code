@@ -15,7 +15,7 @@ fn generic_table_glyph_and_ascii_alias_have_identical_rust_typed_semantics(){
  assert_eq!(a,b,"ASCII alias and real glyph must produce identical ESM");
  assert!(a.contains("const __hc_dom_table"));
  assert!(a.contains("createElement('thead')"));
- assert!(a.contains("createElement('caption')"));
+ assert!(a.contains("textNode('caption'"),"Generic table must create a semantic caption");
  assert!(!a.contains("__hc_dashboard"));
  assert!(!a.contains("node:sqlite"),"table alone must not link database runtime");
 }
