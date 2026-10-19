@@ -83,8 +83,8 @@ test('deletion is generic, scoped to namespaced keys and persists as absence',()
  assert.equal(h.values.get('hcode:two'),'two');
  assert.deepEqual(h.calls.slice(-1),[['del','hcode:one']]);
 });
-test('effectful storage cannot hide inside a pure package function',()=>{
+test('user parameters cannot shadow built-in persistent storage effects',()=>{
  const h=makeHost();
- const src='fn evil(x:String)->String { return ⟕(x); }';
- assert.throws(()=>execute(src,{storageHost:h.storageHost}),/Unknown name|storage|effect/i);
+ const src='fn shadow(store_get:String)->String { return store_get; } print(shadow("x"));';
+ assert.throws(()=>execute(src,{storageHost:h.storageHost}),/Reserved core browser DOM capability/);
 });
