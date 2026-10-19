@@ -1,0 +1,33 @@
+export ƒ summarize(values:⟦Number⟧)→⦃count:Number,maximum:Number,mean:Number,minimum:Number,total:Number⦄{
+ ≔count←⌗values
+ ≔total←0
+ ≔minimum←count>0◇values⟦0⟧:0
+ ≔maximum←minimum
+ ≔i←0
+ ⟳(i<count){
+  ≔value←values⟦i⟧
+  total←total+value
+  minimum←value<minimum◇value:minimum
+  maximum←value>maximum◇value:maximum
+  i←i+1
+ }
+ ↩⦃count:count,maximum:maximum,mean:count>0◇total/count:0,minimum:minimum,total:total⦄
+}
+export ƒ positiveSummary(values:⟦Number⟧)→⦃count:Number,maximum:Number,mean:Number,minimum:Number,total:Number⦄{
+ ≔count←0
+ ≔total←0
+ ≔minimum←0
+ ≔maximum←0
+ ≔i←0
+ ⟳(i<⌗values){
+  ≔value←values⟦i⟧
+  ⊢(value>0){
+   minimum←count≡0∨value<minimum◇value:minimum
+   maximum←count≡0∨value>maximum◇value:maximum
+   total←total+value
+   count←count+1
+  }
+  i←i+1
+ }
+ ↩⦃count:count,maximum:maximum,mean:count>0◇total/count:0,minimum:minimum,total:total⦄
+}

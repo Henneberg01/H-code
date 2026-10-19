@@ -1,0 +1,70 @@
+{
+  "schema": 1,
+  "id": "JFH-CODE-CANONICAL18-BASELINE-2026-10-19-v1",
+  "workloadId": "18-refactor-task",
+  "establishedOn": "2026-10-19",
+  "preexistingConcreteFixture": false,
+  "prerequisiteCommit": "aa3c2768d56ec05dea29867274c96a80bc7ed32c",
+  "registry": {
+    "path": "compact/canonical20/workloads.json",
+    "gitBlobSha": "46653ef90ffb3e420fba4ddfbfac3c4cfd57f3b3"
+  },
+  "contract": {
+    "path": "compact/canonical20/refactor18/CONTRACT.md",
+    "gitBlobSha": "1461641f4bd0d66b61e8d344446258aeabc9cfb5"
+  },
+  "cases": {
+    "path": "compact/canonical20/refactor18/cases.json",
+    "gitBlobSha": "626cbf4192f0c66045e777ae0e759c50f4ffe1d1"
+  },
+  "attributes": {
+    "path": "compact/canonical20/refactor18/.gitattributes",
+    "gitBlobSha": "fcadb2cf97913f58a2523f535336e725c6b59d1f"
+  },
+  "fixedCases": 12,
+  "nativeTestFiles": 2,
+  "nativeAssertions": 72,
+  "typeScriptTests": 24,
+  "files": [
+    {
+      "path": "compact/canonical20/refactor18/baseline/hcode/report.hc",
+      "gitBlobSha": "1224aa4d8e9a41917c1968064f94e73c37216822"
+    },
+    {
+      "path": "compact/canonical20/refactor18/baseline/hcode/report.test.hc",
+      "gitBlobSha": "c70c3e0a48407b55156b5ee0b615761261593a7c"
+    },
+    {
+      "path": "compact/canonical20/refactor18/baseline/hcode/statistics.hc",
+      "gitBlobSha": "eb8f7091b6ee6d8efcdcfa50bc4d610de0ba8fb8"
+    },
+    {
+      "path": "compact/canonical20/refactor18/baseline/hcode/statistics.test.hc",
+      "gitBlobSha": "b32f818cdb248ef1d8928881f2ad6fa8d966dca2"
+    },
+    {
+      "path": "compact/canonical20/refactor18/baseline/typescript/fixtures.ts",
+      "gitBlobSha": "333a0d51699e77cc5f5404d9bdf4f98f7f2776bc"
+    },
+    {
+      "path": "compact/canonical20/refactor18/baseline/typescript/report.test.ts",
+      "gitBlobSha": "b2e3945555e98ed884380ec48c76ff76e5b18855"
+    },
+    {
+      "path": "compact/canonical20/refactor18/baseline/typescript/report.ts",
+      "gitBlobSha": "0b2eb763c97bcded413f2441cbef9fad78f43d91"
+    },
+    {
+      "path": "compact/canonical20/refactor18/baseline/typescript/statistics.test.ts",
+      "gitBlobSha": "59712c88b4eab3cb94c0f671878f60f35f923324"
+    },
+    {
+      "path": "compact/canonical20/refactor18/baseline/typescript/statistics.ts",
+      "gitBlobSha": "2e049932971e48575d691c60e052a2a667497954"
+    },
+    {
+      "path": "compact/canonical20/refactor18/baseline/typescript/types.ts",
+      "gitBlobSha": "a354f29a04a8401a2d85d652784ddca95c05cb7f"
+    }
+  ]
+}
