@@ -55,7 +55,8 @@
     "benchmark20:verify12-js": "node --test scripts/canonical20-verify-12-js-reference.test.mjs",
     "benchmark20:verify12-three": "node --test scripts/canonical20-verify-12-three-engines.test.mjs",
     "benchmark20:measure12": "node --test scripts/canonical20-measure-12.test.mjs",
-    "benchmark20:idiomatic12": "node --test scripts/canonical20-idiomatic-12.test.mjs"
+    "benchmark20:idiomatic12": "node --test scripts/canonical20-idiomatic-12.test.mjs",
+    "m19:browser-dom": "node --test scripts/m19-browser-dom.test.mjs"
   },
   "engines": {
     "node": ">=20"
