@@ -18,6 +18,7 @@ import {verifyCanonical08} from './canonical20-verify-08.mjs';
 import {verifyCanonical09} from './canonical20-verify-09.mjs';
 import {verifyCanonical11} from './canonical20-verify-11.mjs';
 import {verifyCanonical12} from './canonical20-verify-12.mjs';
+import {verifyCanonical13} from './canonical20-verify-13.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
 const registryBytes=readFileSync(join(root,'compact/canonical20/workloads.json'));
@@ -139,6 +140,12 @@ export function readiness(){
         // JS reference and frozen TS oracle must ALL pass the same original
         // HTTP cases and durable state comparisons; no CRUD-specific macro.
         fullEvidence[w.id]=verifyCanonical12();
+        verified++;
+      }else if(w.id==='13-form-validation-ui'){
+        // Native Rust/browser ESM, independent JS H-Code interpreter and
+        // independent idiomatic TS must match actual Chrome event/DOM traces.
+        // SHA locks preserve original acceptance and both authored sources.
+        fullEvidence[w.id]=verifyCanonical13();
         verified++;
       }else{unsupported++;}
     }else if(w.status==='reference_partial'){

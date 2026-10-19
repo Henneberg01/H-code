@@ -16,9 +16,9 @@ test('all 20 canonical tasks remain registered in source order, including unsupp
 test('source-locked reference-only examples cannot be misrepresented as global 70% proof',{skip:!canRunTs},()=>{
   const r=readiness();
   assert.equal(r.preregisteredTasks,20);
-  assert.equal(r.verifiedFullWorkloads,12);
+  assert.equal(r.verifiedFullWorkloads,13);
   assert.equal(r.partialReferenceEvidence,0);
-  assert.equal(r.unsupported,8);
+  assert.equal(r.unsupported,7);
   assert.equal(r.complete,false);
   assert.equal(r.globalMedianCodepointReduction,null);
   assert.equal(r.objectiveAchieved,false);
@@ -43,7 +43,7 @@ test('source-locked reference-only examples cannot be misrepresented as global 7
   assert.equal(r.immutableRegistryGitBlobSha,PREREGISTERED_GIT_BLOB_SHA);
   assert.equal(r.capabilityDemandIsNotCompilerCoverage,true);
   assert.deepEqual(r.requestedByUnverifiedTasks.slice(0,2).map(x=>[x.capability,x.workloads]),
-    [['multi-file-project',3],['dom',2]]);
+    [['multi-file-project',3],['test-runner',2]]);
   assert.equal(r.requestedByUnverifiedTasks
     .find(x=>x.capability==='http-server')?.workloads,1);
   assert.equal(r.evidenceByFullTask['04-csv-validation'].kind,'full-compiler-evidence');
@@ -92,6 +92,15 @@ test('source-locked reference-only examples cannot be misrepresented as global 7
   assert.equal(r.evidenceByFullTask['12-crud-api'].persistentStateAndReplayVerified,true);
   assert.equal(r.evidenceByFullTask['12-crud-api'].comparisonIsCorrectnessOracleNotCompetitiveBaseline,true);
   assert.equal(r.evidenceByFullTask['12-crud-api'].hcodeUnicodeCodepoints,3098);
+  assert.equal(r.evidenceByFullTask['13-form-validation-ui'].kind,'full-compiler-evidence');
+  assert.equal(r.evidenceByFullTask['13-form-validation-ui'].actualBrowserChromium,true);
+  assert.equal(r.evidenceByFullTask['13-form-validation-ui'].independentHCodeJSReference,true);
+  assert.equal(r.evidenceByFullTask['13-form-validation-ui'].independentIdiomaticTypeScript,true);
+  assert.equal(r.evidenceByFullTask['13-form-validation-ui'].browserHtml5ScenariosVerified,9);
+  assert.equal(r.evidenceByFullTask['13-form-validation-ui'].exactDOMTraceParity,true);
+  assert.equal(r.evidenceByFullTask['13-form-validation-ui'].codepointReductionVsIdiomaticTypeScriptPct,40.71);
+  assert.equal(r.evidenceByFullTask['13-form-validation-ui'].hcodeUnicodeCodepoints,418);
+  assert.ok(r.evidenceByFullTask['13-form-validation-ui'].compiledBrowserJavascriptUtf8Bytes>0);
   assert.ok(r.evidenceByFullTask['12-crud-api'].compiledJavascriptUtf8Bytes>0);
   assert.ok(r.evidenceByFullTask['11-markdown-processing'].compiledJavascriptUtf8Bytes>0);
   assert.ok(r.evidenceByFullTask['09-expiring-cache'].compiledJavascriptUtf8Bytes>0);
@@ -129,8 +138,8 @@ test('the strict twenty-workload CI gate intentionally fails until all 20 pass',
   assert.match(child.stderr,/all 20 must be compiler-verified/);
   const report=JSON.parse(child.stdout);
   assert.equal(report.preregisteredTasks,20);
-  assert.equal(report.verifiedFullWorkloads,12);
-  assert.equal(report.unsupported,8);
+  assert.equal(report.verifiedFullWorkloads,13);
+  assert.equal(report.unsupported,7);
   assert.equal(report.globalMedianCodepointReduction,null);
   assert.equal(report.objectiveAchieved,false);
 });

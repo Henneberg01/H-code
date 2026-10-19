@@ -2,7 +2,7 @@ name: H-Code M19.13 fast browser DOM conformance
 on:
   push:
     branches:
-      - feat/m19-canonical13-b1-browser-dom
+      - 'feat/m19-canonical13-*'
 permissions:
   contents: read
 jobs:
@@ -35,5 +35,28 @@ jobs:
         id: chrome
       - name: Real Chromium HTML5 controls, keyboard-compatible events and screen-reader feedback
         run: npm run m19:browser-real
+        env:
+          HCODE_CHROME: ${{ steps.chrome.outputs.chrome-path }}
+      - name: Independent idiomatic TypeScript versus generated H-Code on same real DOM events
+        run: npm run m19:browser-compare
+        env:
+          HCODE_CHROME: ${{ steps.chrome.outputs.chrome-path }}
+
+  canonical13-proof:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: browser-actions/setup-chrome@v2
+        id: chrome
+      - name: Source locked Canonical13 native Rust JS and real Chromium proof
+        run: npm run benchmark20:verify13
         env:
           HCODE_CHROME: ${{ steps.chrome.outputs.chrome-path }}

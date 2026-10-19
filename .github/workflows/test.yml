@@ -38,6 +38,13 @@ jobs:
         with:
           node-version: '22'
       - uses: dtolnay/rust-toolchain@stable
+      # phase1:test includes canonical20 coverage tests, so Chromium must be
+      # available BEFORE the phase1, compact and source-locked test steps.
+      - uses: browser-actions/setup-chrome@v2
+        id: chrome
+      - name: Export actual Chrome executable for all nested coverage subprocesses
+        shell: bash
+        run: echo "HCODE_CHROME=${{ steps.chrome.outputs.chrome-path }}" >> "$GITHUB_ENV"
       - name: Generate typed packages from concise H-Code
         run: cargo run --manifest-path compiler/Cargo.toml -- pack --name poly.auto --version 1.0.0 --source packages/poly.auto/signs.hcs --lock hcode.m16.3.lock.json
       - name: Verify deterministic package output
@@ -179,8 +186,12 @@ jobs:
       - name: Canonical twenty source-locked readiness check
         run: npm run benchmark20:status
         if: ${{ success() || failure() }}
+        env:
+          HCODE_CHROME: ${{ steps.chrome.outputs.chrome-path }}
       - name: Canonical twenty anti-cherrypick tests
         run: npm run benchmark20:test
         if: ${{ success() || failure() }}
+        env:
+          HCODE_CHROME: ${{ steps.chrome.outputs.chrome-path }}
       - run: npm run release:check
         if: ${{ success() || failure() }}

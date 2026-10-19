@@ -11,3 +11,8 @@ data/canonical04/*.csv -text
 # Canonical07 exact-byte fixtures contain BOM, LF and literal CRLF.
 # Never allow Windows core.autocrlf to rewrite a frozen evidence source.
 compact/canonical20/cases/07-*.csv -text
+
+# M19.13 real-Chromium DOM fixture and probe are Git-blob-SHA-locked.
+# Force LF on Windows too, without rewriting unrelated historical fixtures.
+compact/canonical20/programs/13-form-validation-ui.html text eol=lf
+scripts/m19-browser-ui-probe.js text eol=lf
