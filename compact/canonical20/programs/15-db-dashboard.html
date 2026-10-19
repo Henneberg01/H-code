@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>H-Code SQLite dashboard — Canonical15</title>
+<style>
+:root{color-scheme:light; font-family:system-ui,sans-serif;line-height:1.5;background:#f5f7fa;color:#17243b}
+*{box-sizing:border-box}body{margin:0 auto;max-width:60rem;padding:2rem 1.25rem}
+header{margin-bottom:1.5rem}h1{font-size:2rem;margin:0 0 .35rem}p{margin:.6rem 0}
+form{display:flex;gap:1rem;align-items:flex-end;flex-wrap:wrap;padding:1rem;border:1px solid #ccd2db;background:white;border-radius:12px}
+label{display:flex;flex-direction:column;gap:.3rem;font-weight:600}input,button{font:inherit;padding:.5rem .7rem;min-height:44px}
+button{background:#193868;color:white;border:0;border-radius:7px;cursor:pointer}
+section{margin-top:1.5rem;background:white;border:1px solid #ccd2db;border-radius:12px;padding:1.1rem;overflow-x:auto}
+table{border-collapse:collapse;width:100%;text-align:left}
+caption{font-weight:650;text-align:left;padding:.4rem .4rem 1rem}
+th,td{border-bottom:1px solid #dbe2ed;padding:.65rem .5rem}
+th[scope=col]{background:#edf2f9}th[scope=row]{font-weight:600;overflow-wrap:anywhere}
+#summary{font-weight:700}#empty{color:#4a5970}
+@media(max-width:520px){body{padding:1rem .7rem}h1{font-size:1.5rem}table{font-size:.92rem}}
+</style>
+</head>
+<body>
+<main>
+<header><h1>H-Code SQLite dashboard</h1>
+<p>Real orders queried, grouped and sorted by H-Code symbols.</p></header>
+<form method="GET" action="/dashboard" aria-label="Select date range">
+<label>From <input type="date" required name="from" value="__FROM__"></label>
+<label>To (exclusive) <input type="date" required name="to" value="__TO__"></label>
+<button type="submit">Update</button>
+</form>
+<input id="payload" type="hidden" value="__PAYLOAD__">
+<section aria-label="Revenue report">
+<p id="summary" role="status" aria-live="polite"></p>
+<p id="empty"></p>
+<table id="results" aria-describedby="summary"></table>
+</section>
+<output id="hcode-db-proof" hidden></output>
+<script type="module" src="/hcode-ui.mjs"></script>
+<script defer src="/probe.js"></script>
+</main>
+</body>
+</html>
