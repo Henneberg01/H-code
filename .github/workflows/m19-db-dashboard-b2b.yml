@@ -1,0 +1,23 @@
+name: H-Code M19.15 B2b real SQLite authored aggregation
+on:
+  push:
+    branches: ['feat/m19-canonical15-*']
+  pull_request:
+    branches: [main,'feat/m19-canonical15-*']
+permissions:
+  contents: read
+jobs:
+  aggregation:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Developer-authored H-Code SQLite aggregation parity
+        run: node --experimental-sqlite --experimental-strip-types --test scripts/m19-db-dashboard-b2b.test.mjs

@@ -12,7 +12,7 @@ export const CORE_GLYPHS = Object.freeze({
   '\u2237': '::', '\u25b7': '|>', '\u2218': '<<', '\u25c7': '?', '\u27e6': '[[', '\u27e7': ']]',
   '\u2983':'record-open', '\u2984':'record-close', '\u00b7':'field', '\u229e':'record-update',
   '\u2913':'json-read', '\u2914':'json-valid', '\u2912':'json-write',
-  '⟐':'dom_value', '⟑':'dom_text', '⟒':'dom_valid', '⟓':'dom_on', '⟔':'dom_attr', '⟘':'dom_list',
+  '⟐':'dom_value', '⟑':'dom_text', '⟒':'dom_valid', '⟓':'dom_on', '⟔':'dom_attr', '⟘':'dom_list', '⟙':'dom_table',
   '⟕':'store_get', '⟖':'store_put', '⟗':'store_del',
   '\u2af6':'text-scalars', '\u27df':'text-words', '\u29c9':'histogram', '\u224b':'markdown-tokens',
   '\u29c4':'file-read', '\u29c5':'file-write', '\u29c8':'db-rows', '\u290b':'http-get', '\u290a':'http-serve', '\u231b':'sleep-ms', '\u29c7':'csv-typed',
@@ -510,7 +510,7 @@ export function linkProgram(ast, registry=new Map()) {
 class Scope {
   constructor(parent=null){this.parent=parent;this.values=new Map();this.annotations=new Map();this.returnType=parent?.returnType??null;this.genericBindings=parent?.genericBindings??new Map();}
   define(name,value,type=null){
-    if(this.parent&&['dom_value','dom_text','dom_valid','dom_on','dom_attr','dom_list','store_get','store_put','store_del'].includes(name))
+    if(this.parent&&['dom_value','dom_text','dom_valid','dom_on','dom_attr','dom_list','dom_table','store_get','store_put','store_del'].includes(name))
       throw Error('Reserved core browser DOM capability cannot be shadowed');
     if(this.values.has(name))throw Error(`Duplicate name ${name}`);
     this.values.set(name,value);this.annotations.set(name,type);
@@ -589,6 +589,58 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
     element.replaceChildren(...children);
     return null;
   });
+  // Independent reference implementation of the general semantic HTML table
+  // effect. Captions, headers, rows and hostile text are developer-provided,
+  // never interpreted as HTML or as a special sales/dashboard macro.
+  root.define('dom_table',(selector,caption,headers,rows)=>{
+    const target=domTarget(selector);
+    if(typeof target.tagName!=='string'||target.tagName.toUpperCase()!=='TABLE')
+      throw TypeError('DOM table target must be table');
+    if(!domHost||typeof domHost.createElement!=='function'||
+       typeof target.replaceChildren!=='function')
+      throw TypeError('DOM table host lacks safe element APIs');
+    const title=domBounded(caption,2048);
+    if(!Array.isArray(headers)||headers.length<1||headers.length>16||
+       !Array.isArray(rows)||rows.length>1000)
+      throw TypeError('DOM table requires 1..16 headers and at most 1000 rows');
+    let bytes=new TextEncoder().encode(title).length;
+    const columns=headers.map(h=>{const value=domBounded(h,2048);
+      bytes+=new TextEncoder().encode(value).length;return value;});
+    const data=rows.map(row=>{
+      step();
+      if(!Array.isArray(row)||row.length!==columns.length)
+        throw TypeError('DOM table rows must be rectangular String sequences');
+      return row.map(cell=>{const value=domBounded(cell,2048);
+        bytes+=new TextEncoder().encode(value).length;
+        if(bytes>262144)throw RangeError('DOM table text budget exceeded');
+        return value;});
+    });
+    if(bytes>262144)throw RangeError('DOM table text budget exceeded');
+    const cell=(tag,value,scope)=>{
+      const element=domHost.createElement(tag);
+      element.textContent=value;
+      if(scope){
+        if(typeof element.setAttribute!=='function')
+          throw TypeError('DOM table header lacks attribute API');
+        element.setAttribute('scope',scope);
+      }
+      return element;
+    };
+    const captionElement=cell('caption',title);
+    const head=domHost.createElement('thead'),body=domHost.createElement('tbody');
+    const headerRow=domHost.createElement('tr');
+    headerRow.replaceChildren(...columns.map(c=>cell('th',c,'col')));
+    head.replaceChildren(headerRow);
+    const rowElements=data.map(values=>{
+      const tr=domHost.createElement('tr');
+      tr.replaceChildren(...values.map((value,i)=>cell(i===0?'th':'td',value,i===0?'row':null)));
+      return tr;
+    });
+    body.replaceChildren(...rowElements);
+    target.replaceChildren(captionElement,head,body);
+    return null;
+  });
+
   let domListeners=0;
   root.define('dom_on',(selector,eventName,handler)=>{
     const el=domTarget(selector);

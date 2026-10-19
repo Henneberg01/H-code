@@ -83,3 +83,61 @@ const __hc_dom_list=(selector,labels)=>{
   element.replaceChildren(...children);
   return null;
 };
+
+
+// General-purpose accessible table rendering. All values are inserted through
+// textContent, never innerHTML or source interpolation. Validation is atomic:
+// an invalid table must not modify the already-rendered DOM.
+const __hc_dom_table=(selector,caption,headers,rows)=>{
+  const target=__hc_dom_target(selector);
+  if(typeof target.tagName!=='string'||target.tagName.toUpperCase()!=='TABLE')
+    throw TypeError('DOM table target must be table');
+  if(typeof target.replaceChildren!=='function'||typeof document.createElement!=='function')
+    throw TypeError('DOM table host lacks safe element APIs');
+  const title=__hc_dom_bounded(caption,2048);
+  if(!Array.isArray(headers)||headers.length<1||headers.length>16||
+     !Array.isArray(rows)||rows.length>1000)
+    throw TypeError('DOM table requires 1..16 headers and at most 1000 rows');
+  let bytes=new TextEncoder().encode(title).length;
+  const columns=headers.map(h=>{
+    const label=__hc_dom_bounded(h,2048);
+    bytes+=new TextEncoder().encode(label).length;
+    return label;
+  });
+  const matrix=rows.map(row=>{
+    __hc_tick();
+    if(!Array.isArray(row)||row.length!==columns.length)
+      throw TypeError('DOM table rows must be rectangular String sequences');
+    return row.map(cell=>{
+      const label=__hc_dom_bounded(cell,2048);
+      bytes+=new TextEncoder().encode(label).length;
+      if(bytes>262144)throw RangeError('DOM table text budget exceeded');
+      return label;
+    });
+  });
+  if(bytes>262144)throw RangeError('DOM table text budget exceeded');
+  const textNode=(tag,value,scope)=>{
+    const node=document.createElement(tag);
+    node.textContent=value;
+    if(scope){
+      if(typeof node.setAttribute!=='function')
+        throw TypeError('DOM table header lacks attribute API');
+      node.setAttribute('scope',scope);
+    }
+    return node;
+  };
+  const captionNode=textNode('caption',title);
+  const head=document.createElement('thead');
+  const body=document.createElement('tbody');
+  const headRow=document.createElement('tr');
+  headRow.replaceChildren(...columns.map(c=>textNode('th',c,'col')));
+  head.replaceChildren(headRow);
+  const rowNodes=matrix.map(row=>{
+    const tr=document.createElement('tr');
+    tr.replaceChildren(...row.map((value,i)=>textNode(i===0?'th':'td',value,i===0?'row':null)));
+    return tr;
+  });
+  body.replaceChildren(...rowNodes);
+  target.replaceChildren(captionNode,head,body);
+  return null;
+};

@@ -252,6 +252,12 @@ pub fn check(program:&Program, registry:&PackageRegistry, allow_print:bool)->Res
             Type::Function(vec![str_.clone()],Box::new(bool_.clone()))],Box::new(unit.clone())),false,Span::new(1,1))?;
         checker.declare("dom_attr",Type::Function(vec![str_.clone(),str_.clone(),str_.clone()],Box::new(unit.clone())),false,Span::new(1,1))?;
         checker.declare("dom_list",Type::Function(vec![str_.clone(),Type::Sequence(Box::new(str_.clone()))],Box::new(unit.clone())),false,Span::new(1,1))?;
+        // Generic table rendering: caption, column labels, rectangular text rows.
+        checker.declare("dom_table",Type::Function(vec![
+            str_.clone(),str_.clone(),
+            Type::Sequence(Box::new(str_.clone())),
+            Type::Sequence(Box::new(Type::Sequence(Box::new(str_.clone()))))
+        ],Box::new(unit.clone())),false,Span::new(1,1))?;
         // Same-origin browser persistence is a separate, opt-in, effectful
         // language capability. It is NOT a todo-list or object-store macro.
         checker.declare("store_get",Type::Function(vec![str_.clone()],Box::new(str_.clone())),false,Span::new(1,1))?;
@@ -327,7 +333,7 @@ impl Checker {
     fn push(&mut self){self.scopes.push(HashMap::new());}
     fn pop(&mut self){self.scopes.pop();}
     fn declare(&mut self,name:&str,ty:Type,assignable:bool,span:Span)->Result<(),Diagnostic>{
-        if matches!(name,"dom_value"|"dom_text"|"dom_valid"|"dom_on"|"dom_attr"|"dom_list"|"store_get"|"store_put"|"store_del") &&
+        if matches!(name,"dom_value"|"dom_text"|"dom_valid"|"dom_on"|"dom_attr"|"dom_list"|"dom_table"|"store_get"|"store_put"|"store_del") &&
            (!self.allow_print || self.scopes.len()>1) {
             return Err(Diagnostic::new("TYPE","Reserved core browser DOM capability cannot be shadowed".into(),span));
         }
