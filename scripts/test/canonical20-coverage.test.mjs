@@ -16,9 +16,9 @@ test('all 20 canonical tasks remain registered in source order, including unsupp
 test('source-locked reference-only examples cannot be misrepresented as global 70% proof',{skip:!canRunTs},()=>{
   const r=readiness();
   assert.equal(r.preregisteredTasks,20);
-  assert.equal(r.verifiedFullWorkloads,13);
+  assert.equal(r.verifiedFullWorkloads,14);
   assert.equal(r.partialReferenceEvidence,0);
-  assert.equal(r.unsupported,7);
+  assert.equal(r.unsupported,6);
   assert.equal(r.complete,false);
   assert.equal(r.globalMedianCodepointReduction,null);
   assert.equal(r.objectiveAchieved,false);
@@ -100,6 +100,16 @@ test('source-locked reference-only examples cannot be misrepresented as global 7
   assert.equal(r.evidenceByFullTask['13-form-validation-ui'].exactDOMTraceParity,true);
   assert.equal(r.evidenceByFullTask['13-form-validation-ui'].codepointReductionVsIdiomaticTypeScriptPct,40.71);
   assert.equal(r.evidenceByFullTask['13-form-validation-ui'].hcodeUnicodeCodepoints,418);
+  assert.equal(r.evidenceByFullTask['14-todo-app'].kind,'full-compiler-evidence');
+  assert.equal(r.evidenceByFullTask['14-todo-app'].actualBrowserChromium,true);
+  assert.equal(r.evidenceByFullTask['14-todo-app'].independentHCodeJSReference,true);
+  assert.equal(r.evidenceByFullTask['14-todo-app'].independentIdiomaticTypeScript,true);
+  assert.equal(r.evidenceByFullTask['14-todo-app'].originalBrowserTraceStagesVerified,15);
+  assert.equal(r.evidenceByFullTask['14-todo-app'].addCompleteRemoveWithPersistence,true);
+  assert.equal(r.evidenceByFullTask['14-todo-app'].fullBrowserRestartsVerified,2);
+  assert.equal(r.evidenceByFullTask['14-todo-app'].hcodeUnicodeCodepoints,1456);
+  assert.equal(r.evidenceByFullTask['14-todo-app'].codepointReductionVsIdiomaticTypeScriptPct,27.16);
+  assert.ok(r.evidenceByFullTask['14-todo-app'].compiledBrowserJavascriptUtf8Bytes>0);
   assert.ok(r.evidenceByFullTask['13-form-validation-ui'].compiledBrowserJavascriptUtf8Bytes>0);
   assert.ok(r.evidenceByFullTask['12-crud-api'].compiledJavascriptUtf8Bytes>0);
   assert.ok(r.evidenceByFullTask['11-markdown-processing'].compiledJavascriptUtf8Bytes>0);
@@ -138,8 +148,8 @@ test('the strict twenty-workload CI gate intentionally fails until all 20 pass',
   assert.match(child.stderr,/all 20 must be compiler-verified/);
   const report=JSON.parse(child.stdout);
   assert.equal(report.preregisteredTasks,20);
-  assert.equal(report.verifiedFullWorkloads,13);
-  assert.equal(report.unsupported,7);
+  assert.equal(report.verifiedFullWorkloads,14);
+  assert.equal(report.unsupported,6);
   assert.equal(report.globalMedianCodepointReduction,null);
   assert.equal(report.objectiveAchieved,false);
 });

@@ -151,6 +151,7 @@ pub fn lex(source: &str) -> Result<Vec<Token>, Diagnostic> {
             '⟒'=>Some(TokenKind::Identifier("dom_valid".into())),
             '⟓'=>Some(TokenKind::Identifier("dom_on".into())),
             '⟔'=>Some(TokenKind::Identifier("dom_attr".into())),
+            '⟘'=>Some(TokenKind::Identifier("dom_list".into())),
             '⟕'=>Some(TokenKind::Identifier("store_get".into())),
             '⟖'=>Some(TokenKind::Identifier("store_put".into())),
             '⟗'=>Some(TokenKind::Identifier("store_del".into())),

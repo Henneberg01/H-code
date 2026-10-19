@@ -11,7 +11,7 @@ const PACKAGE=/^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$/;
 const VERSION=/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
 const HEX=/^[a-f0-9]{64}$/;
 const TYPES=new Set(['Number','String','Bool','Unit']);
-const KEYWORDS=new Set(['fn','let','return','true','false','if','else','while','and','or','not','use','as','import','export','lambda','forall','json_in','json_valid','json_out','dom_value','dom_text','dom_valid','dom_on','dom_attr','store_get','store_put','store_del']);
+const KEYWORDS=new Set(['fn','let','return','true','false','if','else','while','and','or','not','use','as','import','export','lambda','forall','json_in','json_valid','json_out','dom_value','dom_text','dom_valid','dom_on','dom_attr','dom_list','store_get','store_put','store_del']);
 const MAX_BYTES=1024*1024;
 const sha=buffer=>createHash('sha256').update(buffer).digest('hex');
 const must=(condition,message)=>{if(!condition)throw Error(`Invalid H-Code package: ${message}`);};

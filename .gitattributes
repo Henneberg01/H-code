@@ -16,3 +16,10 @@ compact/canonical20/cases/07-*.csv -text
 # Force LF on Windows too, without rewriting unrelated historical fixtures.
 compact/canonical20/programs/13-form-validation-ui.html text eol=lf
 scripts/m19-browser-ui-probe.js text eol=lf
+
+# Native H-Code and TypeScript todo source, HTML and neutral Chrome probe are
+# benchmark candidates. Keep LF identical on Windows and Ubuntu for future locks.
+compact/canonical20/programs/14-*.html text eol=lf
+compact/canonical20/programs/14-*.hc text eol=lf
+compact/canonical20/idiomatic/14-*.ts text eol=lf
+scripts/m19-todo-browser-probe.js text eol=lf
