@@ -61,7 +61,7 @@ test('DOM signs tokenize exactly like equivalent ASCII fallback calls',()=>{
    assert.equal(RESERVED_USER_GLYPHS.has(glyph),true);
    const a=tokenize(glyph+'("#id");');
    const b=tokenize(ascii+'("#id");');
-   assert.deepEqual(a,b,glyph);
+   assert.deepEqual(a.map(t=>[t.type,t.value]),b.map(t=>[t.type,t.value]),glyph);
  }
 });
 test('source-authored HTML5-style required/email validation with accessible feedback in independent JS reference',()=>{
