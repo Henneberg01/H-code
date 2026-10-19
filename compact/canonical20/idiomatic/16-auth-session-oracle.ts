@@ -43,7 +43,7 @@ export class SessionOracle{
  }
  private decode(token:string):string|null{
   if(typeof token!=='string'||token.length>180)return null;
-  const parts=/^v1.([A-Za-z0-9_-]{24,64}).([A-Za-z0-9_-]{43})$/.exec(token);
+  const parts=/^v1\.([A-Za-z0-9_-]{24,64})\.([A-Za-z0-9_-]{43})$/.exec(token);
   if(!parts||!SID.test(parts[1]))return null;
   const signature=Buffer.from(parts[2],'base64url');
   if(signature.length!==32||signature.toString('base64url')!==parts[2])return null;

@@ -13,11 +13,11 @@
 ## Frozen test-only baseline
 
 - Fixture `compact/canonical20/cases/16-auth-sessions.json` Git blob `1861703aed80bcf4c324ad6519d8810a12bde765`.
-- Independent reference `compact/canonical20/idiomatic/16-auth-session-oracle.ts` Git blob `516028d18248c4a85952a938fbc1f48b5d1f66cf`.
+- Independent reference `compact/canonical20/idiomatic/16-auth-session-oracle.ts` Git blob `02dc03af5ea422afd5adc970f18d07f3411da142`.
 - Contract tests `scripts/canonical20-auth-contract.test.mjs`, run in Node 22 with the built-in disk-backed SQLite driver.
 - All signing keys, identities and IDs are **public deterministic test fixtures**. They MUST NOT be reused in production, and must not be treated as production entropy or secrets. Real IDs require host-granted CSPRNG, and real signing keys require host-managed secret access.
 
-The independent baseline uses HMAC-SHA256 domain separation over a versioned session identifier, exact canonical base64url parsing, and constant-time signature comparison. It stores only a SHA256 digest of the session identifier in a real persistent SQLite database; signing keys and raw bearer tokens are not stored there. Rotation revokes the old identifier atomically, preserves the original expiry, and is single-use across independent database connections. Explicit revocation is idempotent. Expiry is exclusive. Tokens have strict length and alphabet limits.
+The independent baseline uses HMAC-SHA256 domain separation over a versioned session identifier, exact canonical base64url parsing (including mandatory literal `.` token separators), and constant-time signature comparison. It stores only a SHA256 digest of the session identifier in a real persistent SQLite database; signing keys and raw bearer tokens are not stored there. Rotation revokes the old identifier atomically, preserves the original expiry, and is single-use across independent database connections. Explicit revocation is idempotent. Expiry is exclusive. Tokens have strict length and alphabet limits.
 
 ## Required B0 checks
 

@@ -13,7 +13,7 @@ const root=fileURLToPath(new URL('../',import.meta.url));
 const blobs=Object.freeze({
  registry:['compact/canonical20/workloads.json','46653ef90ffb3e420fba4ddfbfac3c4cfd57f3b3'],
  fixture:['compact/canonical20/cases/16-auth-sessions.json','1861703aed80bcf4c324ad6519d8810a12bde765'],
- oracle:['compact/canonical20/idiomatic/16-auth-session-oracle.ts','516028d18248c4a85952a938fbc1f48b5d1f66cf']
+ oracle:['compact/canonical20/idiomatic/16-auth-session-oracle.ts','02dc03af5ea422afd5adc970f18d07f3411da142']
 });
 function locked(name){
  const [path,expected]=blobs[name],data=readFileSync(join(root,path),'utf8');
@@ -93,6 +93,7 @@ test('wrong signing key and malformed or mutated cookies always fail closed',()=
  for(const forged of [
    token.replace(/.$/,token.endsWith('A')?'B':'A'),
    version+'.'+sid+'.'+('A'.repeat(mac.length)),
+   'v1X'+sid+'X'+mac,'v1/'+sid+'/'+mac,'v1 '+sid+' '+mac,
    'v2.'+sid+'.'+mac,'v1.'+sid+'.garbage','x'.repeat(8192),'',
    '__Host-hcode_session='+token
  ]) assert.equal(s.inspect(forged,1700000201),null,'Forged token accepted: '+forged.slice(0,30));
