@@ -707,6 +707,19 @@ impl Checker {
                 self.unify(&Type::String,&file.ty,database.span,"⧈ database must be String")?;
                 let name=self.expression(table)?;
                 self.unify(&Type::String,&name.ty,table.span,"⧈ table must be String")?;
+                // In the two-operand form, a literal is a TABLE IDENTIFIER,
+                // not a raw SQL statement with a missing parameter list.
+                // Dynamic identifiers are additionally checked by both hosts.
+                if let ExprKind::String(raw)=&table.kind {
+                    let mut chars=raw.chars();
+                    let valid=raw.len()<=64 &&
+                        matches!(chars.next(),Some(c) if c.is_ascii_alphabetic()||c=='_') &&
+                        chars.all(|c|c.is_ascii_alphanumeric()||c=='_');
+                    if !valid {
+                        return Err(Diagnostic::new("TYPE",
+                            "⧈ table requires a safe identifier, not SQL text".into(),table.span));
+                    }
+                }
                 (TypedExprKind::DbTable{schema:ty.clone(),database:Box::new(file),
                     table:Box::new(name)},Type::Sequence(Box::new(ty)))
             }
