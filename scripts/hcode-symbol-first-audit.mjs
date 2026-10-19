@@ -17,7 +17,7 @@ if(legacyFiles.size!==legacyLock.files.length||legacyFiles.size<100)
   throw Error('H-Code legacy source lock contains duplicates or missing fixtures');
 export const activeSources=Object.freeze([
   'compact/canonical20/programs/15-db-query-b1.hc',
-  'compact/canonical20/programs/15-db-dashboard-b2b.hc',
+  'compact/canonical20/candidates/15-db-dashboard-sign-first.hc',
   'compact/canonical20/programs/15-generic-table-b2a.hc',
   'compact/canonical20/programs/15-db-dashboard-ui.hc'
 ]);

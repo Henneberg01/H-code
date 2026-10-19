@@ -21,7 +21,7 @@ Eksempel på kildekode for vilkårlige records:
 - `node scripts/hcode-symbol-first-audit.mjs` gennemgår **alle** repository-filer med `.hc` og indfører et CI-gate mod engelske kontrolord/ASCII-skrift i **alle nye eller ændrede `.hc`-programmer** overalt i projektet. SQL og HTML i strenge er data og ignoreres korrekt af auditen.
 - Den nøjagtige tidligere beholdning af **107 H-Code-kildefiler** (inklusive før-sortering-arkivet) er låst med Git-blob-SHA i `docs/H-CODE-LEGACY-SOURCE-LOCK.json`. Nye og ændrede filer bliver automatisk håndhævet i CI.
 - Tidligere sign/ASCII-paritetsfiksturer, SHA-låste benchmarks, gamle opgaveprogrammer og importerede signerede pakker **bevares uændret**. Ellers ville kildefaste målinger og bagudkompatibilitet være falske.
-- Før-versus-efter for det SAMME H-Code B2b-program er målt fra de rigtige UTF-8-filer: **1.220 → 826 Unicode-kodepunkter (32,30 % kortere)** og **1.406 → 922 bytes (34,42 % kortere)**. Den oprindelige fil er SHA-låst i `candidates/15-db-dashboard-b2b-before-symbol-sort.hc`. Det er ikke et H-Code-versus-TypeScript-tal.
+- Før-versus-efter for det SAMME H-Code B2b-program er målt fra de rigtige UTF-8-filer: **1.220 → 826 Unicode-kodepunkter (32,30 % kortere)** og **1.406 → 922 bytes (34,42 % kortere)**. Den oprindelige fil er SHA-låst i `candidates/15-db-dashboard-b2b-before-symbol-sort.hc`; den kortere kilde ligger i `candidates/15-db-dashboard-sign-first.hc`, mens `programs/15-db-dashboard-b2b.hc` forbliver SHA-låst af den eksisterende M19.15 B3-beviskæde. Det er ikke et H-Code-versus-TypeScript-tal.
 - Den oprindelige 20-opgavers registrering og dens TypeScript-baselines ændres ikke. 70 %-målet er endnu IKKE dokumenteret på 20/20.
 
 ## Åben teknisk gæld skal ikke skjules

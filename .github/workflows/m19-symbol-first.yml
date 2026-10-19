@@ -27,3 +27,5 @@ jobs:
         run: node --test scripts/m19-symbol-sort.test.mjs
       - name: Project-wide symbol-first source gate and unchanged candidate provenance
         run: node --test scripts/hcode-symbol-first-audit.test.mjs
+      - name: Frozen original H-Code versus symbol-first candidate and independently authored TypeScript on real SQLite
+        run: node --experimental-sqlite --experimental-strip-types --test scripts/m19-sign-first-dashboard.test.mjs
