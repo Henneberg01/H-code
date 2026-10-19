@@ -511,6 +511,70 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
   const root=new Scope(),operations=new Map(),operationSpecs=new Map(),loadedLibraries=new Set();let steps=0,stdinConsumed=false,httpIndex=0,sleepIndex=0,fileIndex=0,pureDepth=0,functionDepth=0,httpServerRegistered=false;
   const step=()=>{if(++steps>maxSteps)throw Error('Execution step limit exceeded');};
   root.define('print',(...args)=>{if(pureDepth>0)throw Error('CAS reducer effect denied: print');stdout(args.map(x=>x===null?'none':String(x)).join(' '));return null;});
+
+  // Independent browser-host reference semantics. Unlike Rust generated ESM,
+  // this interpreter receives an explicit host; no implicit document access.
+  const domTarget=selector=>{
+    step();
+    if(pureDepth>0)throw Error('DOM effect denied in CAS reducer');
+    if(typeof selector!=='string'||selector.length<1||selector.length>256||!selector.isWellFormed())
+      throw TypeError('DOM selector must be well-formed String (1..256)');
+    if(!domHost||typeof domHost.querySelector!=='function')
+      throw Error('Browser DOM capability unavailable');
+    const element=domHost.querySelector(selector);
+    if(!element)throw Error('DOM target not found');
+    return element;
+  };
+  const domBounded=(value,max=16384)=>{
+    if(typeof value!=='string'||!value.isWellFormed()||
+       new TextEncoder().encode(value).length>max)
+      throw TypeError('DOM text must be bounded well-formed String');
+    return value;
+  };
+  root.define('dom_value',selector=>{
+    const element=domTarget(selector);
+    const value=typeof element.value==='string'?element.value:element.textContent;
+    return domBounded(value??'');
+  });
+  root.define('dom_text',(selector,value)=>{
+    domTarget(selector).textContent=domBounded(value);
+    return null;
+  });
+  root.define('dom_valid',selector=>{
+    const el=domTarget(selector);
+    if(typeof el.checkValidity!=='function')throw TypeError('DOM target has no native constraint validation');
+    const valid=el.checkValidity();
+    if(typeof valid!=='boolean')throw TypeError('DOM validity must be Bool');
+    return valid;
+  });
+  root.define('dom_attr',(selector,attribute,value)=>{
+    const el=domTarget(selector);
+    if(typeof attribute!=='string'||
+       !/^(?:aria-[a-z][a-z0-9-]*|role|title|data-hcode-[a-z0-9-]+)$/.test(attribute))
+      throw TypeError('DOM attribute not in safe accessibility/data allowlist');
+    if(typeof el.setAttribute!=='function')throw TypeError('DOM attribute setter unavailable');
+    el.setAttribute(attribute,domBounded(value,2048));
+    return null;
+  });
+  let domListeners=0;
+  root.define('dom_on',(selector,eventName,handler)=>{
+    const el=domTarget(selector);
+    if(!['input','change','submit','click','blur','focus'].includes(eventName))
+      throw TypeError('DOM event name is not permitted');
+    if(typeof handler!=='function')throw TypeError('DOM event handler must be a function');
+    if(typeof el.addEventListener!=='function')throw TypeError('DOM target cannot receive events');
+    if(domListeners>=256)throw RangeError('DOM listener budget exceeded');
+    el.addEventListener(eventName,event=>{
+      step();
+      const value=event?.target&&typeof event.target.value==='string'?event.target.value:'';
+      const accepted=handler(domBounded(value));
+      if(typeof accepted!=='boolean')throw TypeError('DOM event handler must return Bool');
+      if(!accepted&&event?.cancelable&&typeof event.preventDefault==='function')event.preventDefault();
+    },{passive:false});
+    domListeners++;
+    return null;
+  });
+
   const truth=v=>{if(typeof v!=='boolean')throw Error('Condition must be Boolean');return v;};
   // The parser emits ⦃name:Type,...⦄. Split top-level commas without
   // losing recursively nested sequence/record types.
