@@ -320,6 +320,10 @@ impl Checker {
     fn push(&mut self){self.scopes.push(HashMap::new());}
     fn pop(&mut self){self.scopes.pop();}
     fn declare(&mut self,name:&str,ty:Type,assignable:bool,span:Span)->Result<(),Diagnostic>{
+        if matches!(name,"dom_value"|"dom_text"|"dom_valid"|"dom_on"|"dom_attr") &&
+           (!self.allow_print || self.scopes.len()>1) {
+            return Err(Diagnostic::new("TYPE","Reserved core browser DOM capability cannot be shadowed".into(),span));
+        }
         let scope=self.scopes.last_mut().expect("root scope exists");
         if scope.contains_key(name){return Err(Diagnostic::new("TYPE",format!("Duplicate declaration {name}"),span));}
         scope.insert(name.into(),Binding{ty,assignable});Ok(())
