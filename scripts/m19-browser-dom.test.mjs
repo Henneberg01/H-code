@@ -103,3 +103,9 @@ test('real browser fixture supplies required/email controls and accessible error
  assert.match(html,/id="email-error" role="alert" aria-live="polite"/);
  assert.match(html,/script type="module" src="\.\/13-form-validation-ui\.mjs"/);
 });
+
+test('nested user parameters cannot spoof or shadow browser intrinsic capabilities',()=>{
+ const source='fn bad(dom_value:String)->String { return dom_value; } print(bad("x"));';
+ assert.throws(()=>execute(source,{domHost:fixture().domHost}),
+   /Reserved core browser DOM capability/);
+});
