@@ -126,6 +126,6 @@ test('⟙ typed empty record sequence preserves real column headers in both H-Co
   const table=js.target.children;
   assert.deepEqual(table[1].children[0].children.map(v=>v.textContent),['region','revenue']);
   assert.equal(table[2].children.length,0);
-  assert.throws(()=>execute('⟙("#results",⟦⟧)',{domHost:js.doc}),/explicit ⟦Record⟧ annotation/);
+  assert.throws(()=>execute('⟙("#results",⟦⟧)',{domHost:js.doc}),/Cannot infer empty sequence type|explicit ⟦Record⟧ annotation/);
  }finally{rmSync(dir,{recursive:true,force:true});}
 });
