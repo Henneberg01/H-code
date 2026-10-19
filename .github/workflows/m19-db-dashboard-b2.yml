@@ -1,0 +1,22 @@
+name: H-Code M19.15 B2 source-authored dashboard parity
+on:
+  push:
+    branches:
+      - 'feat/m19-canonical15-b2-*'
+permissions:
+  contents: read
+jobs:
+  dashboard:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Real SQLite dashboard source in Rust ESM and independent JS versus TS oracle
+        run: node --experimental-sqlite --experimental-strip-types --test scripts/m19-db-dashboard-b2.test.mjs
