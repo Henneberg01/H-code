@@ -152,6 +152,27 @@ jobs:
       - name: M19.12 B3a typed HTTP MIME and durable CAS receipt parity
         run: npm run benchmark20:b3a-envelope
         if: ${{ success() || failure() }}
+      - name: B3b type-safe JSON validation checks
+        run: npm run benchmark20:b3b-json-valid
+        if: ${{ success() || failure() }}
+      - name: B3b source-authored CRUD reducer reference test
+        run: npm run benchmark20:b3b-crud-source
+        if: ${{ success() || failure() }}
+      - name: Canonical12 real Rust compiled H-Code HTTP sockets and persistent state proof
+        run: npm run benchmark20:verify12-hcode
+        if: ${{ success() || failure() }}
+      - name: Canonical12 independent JS reference executes original six scenarios
+        run: npm run benchmark20:verify12-js
+        if: ${{ success() || failure() }}
+      - name: Canonical12 three-engine Rust JS TypeScript exact fixture and state parity
+        run: npm run benchmark20:verify12-three
+        if: ${{ success() || failure() }}
+      - name: Canonical12 B4 source locked Unicode bytes and honesty gate
+        run: npm run benchmark20:measure12
+        if: ${{ success() || failure() }}
+      - name: Canonical12 competitive idiomatic TypeScript six frozen contracts
+        run: npm run benchmark20:idiomatic12
+        if: ${{ success() || failure() }}
       - name: Canonical twenty source-locked readiness check
         run: npm run benchmark20:status
         if: ${{ success() || failure() }}

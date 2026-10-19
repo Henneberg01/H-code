@@ -14,6 +14,8 @@ const sha=content=>createHash('sha256').update(content).digest('hex');
 test('▷ and |> are one real pipeline token in the reference lexer',()=>{
   assert.equal(CORE_GLYPHS['▷'],'|>');
   assert.equal(RESERVED_USER_GLYPHS.has('▷'),true);
+  assert.equal(RESERVED_USER_GLYPHS.has('⤔'),true);
+  assert.equal(CORE_GLYPHS['⤔'],'json-valid');
   for(const source of ['1 ▷ f;','1 |> f;']){
     assert.deepEqual(tokenize(source).map(t=>t.type),['number','|>','ident',';','eof']);
   }
@@ -31,12 +33,14 @@ test('signed package manifests may not shadow the reserved pipeline glyph',()=>{
     const manifestPath=join(dir,'packages/demo.math/manifest.json');
     const lockPath=join(dir,'hcode.lock.json');
     const manifest=JSON.parse(readFileSync(manifestPath,'utf8'));
-    manifest.operations[0].glyph='▷';
-    writeFileSync(manifestPath,JSON.stringify(manifest));
     const lock=JSON.parse(readFileSync(join(root,'hcode.lock.json'),'utf8'));
-    lock.packages[0].manifestSha256=sha(readFileSync(manifestPath));
-    lock.packages[0].sourceSha256=sha(readFileSync(join(dir,'packages/demo.math/lib.hc')));
-    writeFileSync(lockPath,JSON.stringify(lock));
-    assert.throws(()=>loadLockedPackages(lockPath),/reserved core glyph/);
+    for(const glyph of ['▷','⤔']){
+      manifest.operations[0].glyph=glyph;
+      writeFileSync(manifestPath,JSON.stringify(manifest));
+      lock.packages[0].manifestSha256=sha(readFileSync(manifestPath));
+      lock.packages[0].sourceSha256=sha(readFileSync(join(dir,'packages/demo.math/lib.hc')));
+      writeFileSync(lockPath,JSON.stringify(lock));
+      assert.throws(()=>loadLockedPackages(lockPath),/reserved core glyph/,glyph);
+    }
   } finally {rmSync(dir,{recursive:true,force:true});}
 });
