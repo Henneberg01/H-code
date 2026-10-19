@@ -119,6 +119,9 @@ impl Emitter {
     // Native conditional expression: unused branch is never evaluated.
     format!("({} ? {} : {})",self.expr(condition),self.expr(when_true),self.expr(when_false))
    }
+   TypedExprKind::DomRecordTable{selector,rows,schema}=>{
+    format!("__hc_dom_records({}, {}, {})",self.expr(selector),self.expr(rows),json_schema(schema))
+   }
    TypedExprKind::Call{callee,arguments}=>{
     let args=arguments.iter().map(|x|self.expr(x)).collect::<Vec<_>>().join(", ");
     if matches!(callee.ty,Type::BuiltinPrint){format!("__hc_print({args})")}else{format!("(__hc_tick(),{})({args})",self.expr(callee))}
@@ -163,6 +166,7 @@ impl Emitter {
 // that require it. A new glyph must not inflate the runtime of unrelated code.
 fn expr_uses_json(e:&TypedExpr)->bool {
  match &e.kind {
+    TypedExprKind::DomRecordTable{selector,rows,..}=>expr_uses_json(selector)||expr_uses_json(rows),
    TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_json(database)||expr_uses_json(sql)||expr_uses_json(params),
   TypedExprKind::HttpServeState{handler,initial}=>expr_uses_json(handler)||expr_uses_json(initial),
   TypedExprKind::Markdown(value)|TypedExprKind::HttpServe(value)=>expr_uses_json(value),
@@ -200,6 +204,7 @@ fn stmt_uses_json(s:&TypedStmt)->bool {
 // the universal text/histogram primitives (including verified imported packages).
 fn expr_uses_markdown(e:&TypedExpr)->bool {
  match &e.kind {
+    TypedExprKind::DomRecordTable{selector,rows,..}=>expr_uses_markdown(selector)||expr_uses_markdown(rows),
    TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_markdown(database)||expr_uses_markdown(sql)||expr_uses_markdown(params),
   TypedExprKind::HttpServeState{handler,initial}=>expr_uses_markdown(handler)||expr_uses_markdown(initial),
   TypedExprKind::Markdown(_)=>true,
@@ -238,6 +243,7 @@ fn stmt_uses_markdown(s:&TypedStmt)->bool {
 // the universal text/histogram primitives (including verified imported packages).
 fn expr_uses_http_serve(e:&TypedExpr)->bool {
  match &e.kind {
+    TypedExprKind::DomRecordTable{selector,rows,..}=>expr_uses_http_serve(selector)||expr_uses_http_serve(rows),
    TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_http_serve(database)||expr_uses_http_serve(sql)||expr_uses_http_serve(params),
   TypedExprKind::HttpServe(_)|TypedExprKind::HttpServeState{..}=>true,
   TypedExprKind::Markdown(value)=>expr_uses_http_serve(value),
@@ -275,6 +281,7 @@ fn stmt_uses_http_serve(s:&TypedStmt)->bool {
 // the universal text/histogram primitives (including verified imported packages).
 fn expr_uses_http_state(e:&TypedExpr)->bool {
  match &e.kind {
+    TypedExprKind::DomRecordTable{selector,rows,..}=>expr_uses_http_state(selector)||expr_uses_http_state(rows),
    TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_http_state(database)||expr_uses_http_state(sql)||expr_uses_http_state(params),
   TypedExprKind::HttpServeState{..}=>true,
   TypedExprKind::HttpServe(value)=>expr_uses_http_state(value),
@@ -313,6 +320,7 @@ fn stmt_uses_http_state(s:&TypedStmt)->bool {
 // the universal text/histogram primitives (including verified imported packages).
 fn expr_uses_text(e:&TypedExpr)->bool {
  match &e.kind {
+    TypedExprKind::DomRecordTable{selector,rows,..}=>expr_uses_text(selector)||expr_uses_text(rows),
    TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_text(database)||expr_uses_text(sql)||expr_uses_text(params),
   TypedExprKind::HttpServeState{handler,initial}=>expr_uses_text(handler)||expr_uses_text(initial),
   TypedExprKind::Markdown(value)|TypedExprKind::HttpServe(value)=>expr_uses_text(value),
@@ -350,6 +358,7 @@ fn stmt_uses_text(s:&TypedStmt)->bool {
 
 fn expr_uses_csv(e:&TypedExpr)->bool {
   match &e.kind {
+    TypedExprKind::DomRecordTable{selector,rows,..}=>expr_uses_csv(selector)||expr_uses_csv(rows),
    TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_csv(database)||expr_uses_csv(sql)||expr_uses_csv(params),
   TypedExprKind::HttpServeState{handler,initial}=>expr_uses_csv(handler)||expr_uses_csv(initial),
   TypedExprKind::Markdown(value)|TypedExprKind::HttpServe(value)=>expr_uses_csv(value),
@@ -386,6 +395,7 @@ fn stmt_uses_csv(s:&TypedStmt)->bool {
 }
 fn expr_uses_file(e:&TypedExpr)->bool {
   match &e.kind {
+    TypedExprKind::DomRecordTable{selector,rows,..}=>expr_uses_file(selector)||expr_uses_file(rows),
    TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_file(database)||expr_uses_file(sql)||expr_uses_file(params),
   TypedExprKind::HttpServeState{handler,initial}=>expr_uses_file(handler)||expr_uses_file(initial),
   TypedExprKind::Markdown(value)|TypedExprKind::HttpServe(value)=>expr_uses_file(value),
@@ -423,6 +433,7 @@ fn stmt_uses_file(s:&TypedStmt)->bool {
 // Link the network runtime only when a checked expression contains ⤋.
 fn expr_uses_http(e:&TypedExpr)->bool {
  match &e.kind {
+    TypedExprKind::DomRecordTable{selector,rows,..}=>expr_uses_http(selector)||expr_uses_http(rows),
    TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_http(database)||expr_uses_http(sql)||expr_uses_http(params),
   TypedExprKind::HttpServeState{handler,initial}=>expr_uses_http(handler)||expr_uses_http(initial),
   TypedExprKind::Markdown(value)|TypedExprKind::HttpServe(value)=>expr_uses_http(value),
@@ -460,6 +471,7 @@ fn stmt_uses_http(s:&TypedStmt)->bool {
 
 fn expr_uses_sleep(e:&TypedExpr)->bool {
  match &e.kind {
+    TypedExprKind::DomRecordTable{selector,rows,..}=>expr_uses_sleep(selector)||expr_uses_sleep(rows),
    TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_sleep(database)||expr_uses_sleep(sql)||expr_uses_sleep(params),
   TypedExprKind::HttpServeState{handler,initial}=>expr_uses_sleep(handler)||expr_uses_sleep(initial),
   TypedExprKind::Markdown(value)|TypedExprKind::HttpServe(value)=>expr_uses_sleep(value),
@@ -497,6 +509,7 @@ fn stmt_uses_sleep(s:&TypedStmt)->bool {
 
 fn expr_uses_file_write(e:&TypedExpr)->bool {
  match &e.kind {
+    TypedExprKind::DomRecordTable{selector,rows,..}=>expr_uses_file_write(selector)||expr_uses_file_write(rows),
    TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_file_write(database)||expr_uses_file_write(sql)||expr_uses_file_write(params),
   TypedExprKind::HttpServeState{handler,initial}=>expr_uses_file_write(handler)||expr_uses_file_write(initial),
   TypedExprKind::Markdown(value)|TypedExprKind::HttpServe(value)=>expr_uses_file_write(value),
@@ -533,6 +546,7 @@ fn stmt_uses_file_write(s:&TypedStmt)->bool {
 
 fn expr_cli_flags(e:&TypedExpr)->u8 {
   match &e.kind {
+    TypedExprKind::DomRecordTable{selector,rows,..}=>expr_cli_flags(selector)|expr_cli_flags(rows),
     TypedExprKind::DbRows{database,sql,params,..}=>expr_cli_flags(database)|expr_cli_flags(sql)|expr_cli_flags(params),
     TypedExprKind::HttpServeState{handler,initial}=>expr_cli_flags(handler)|expr_cli_flags(initial),
     TypedExprKind::Markdown(v)|TypedExprKind::HttpServe(v)=>expr_cli_flags(v),
@@ -570,6 +584,7 @@ fn stmt_cli_flags(s:&TypedStmt)->u8 {
 
 fn expr_uses_db(e:&TypedExpr)->bool {
  match &e.kind {
+    TypedExprKind::DomRecordTable{selector,rows,..}=>expr_uses_db(selector)||expr_uses_db(rows),
    TypedExprKind::DbRows{..}=>true,
    TypedExprKind::HttpServeState{handler,initial}=>expr_uses_db(handler)||expr_uses_db(initial),
    TypedExprKind::FileWrite{filename,content}=>expr_uses_db(filename)||expr_uses_db(content),
@@ -862,7 +877,7 @@ const __hc_hist = input => {
  }
  // Only include the real browser effect host when these typed builtins are used.
  // Existing CLI, HTTP and compression fixtures retain unchanged generated bytes.
- if ["__hc_dom_value","__hc_dom_text","__hc_dom_valid","__hc_dom_on","__hc_dom_attr","__hc_dom_list","__hc_dom_table"]
+ if ["__hc_dom_value","__hc_dom_text","__hc_dom_valid","__hc_dom_on","__hc_dom_attr","__hc_dom_list","__hc_dom_table","__hc_dom_records"]
        .iter().any(|symbol|application.contains(symbol)) {
    output.push_str(include_str!("browser_dom_prelude.js"));
  }
