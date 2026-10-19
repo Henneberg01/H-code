@@ -104,6 +104,7 @@ impl Emitter {
     match op {
      BinaryOp::Filter=>format!("__hc_filter({a},{b})"),
      BinaryOp::Map=>format!("__hc_map({a},{b})"),
+     BinaryOp::SortDesc=>format!("__hc_sort_desc({a},{b})"),
      BinaryOp::Concat=>format!("__hc_concat({a},{b})"),
      BinaryOp::Compose=>format!("__hc_compose({a},{b})"),
      BinaryOp::Divide=>format!("__hc_div({a},{b})"),
@@ -604,6 +605,43 @@ fn stmt_uses_db(s:&TypedStmt)->bool {
  }
 }
 
+
+fn expr_uses_sort(e:&TypedExpr)->bool {
+ match &e.kind {
+  TypedExprKind::Binary{op,left,right}=>matches!(op,BinaryOp::SortDesc)||
+    expr_uses_sort(left)||expr_uses_sort(right),
+  TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_sort(database)||expr_uses_sort(sql)||expr_uses_sort(params),
+  TypedExprKind::HttpServeState{handler,initial}=>expr_uses_sort(handler)||expr_uses_sort(initial),
+  TypedExprKind::FileWrite{filename,content}=>expr_uses_sort(filename)||expr_uses_sort(content),
+  TypedExprKind::Record(fields)=>fields.iter().any(|(_,v)|expr_uses_sort(v)),
+  TypedExprKind::RecordUpdate{record,value,..}=>expr_uses_sort(record)||expr_uses_sort(value),
+  TypedExprKind::Field{record,..}=>expr_uses_sort(record),
+  TypedExprKind::Index{sequence,index}=>expr_uses_sort(sequence)||expr_uses_sort(index),
+  TypedExprKind::Sequence(xs)=>xs.iter().any(expr_uses_sort),
+  TypedExprKind::Choice{condition,when_true,when_false}=>expr_uses_sort(condition)||expr_uses_sort(when_true)||expr_uses_sort(when_false),
+  TypedExprKind::Call{callee,arguments}=>expr_uses_sort(callee)||arguments.iter().any(expr_uses_sort),
+  TypedExprKind::JsonRead{value,..}|TypedExprKind::JsonValid{value,..}|TypedExprKind::JsonWrite{value,..}|
+  TypedExprKind::CsvTyped{value,..}|TypedExprKind::Markdown(value)|TypedExprKind::HttpServe(value)|
+  TypedExprKind::FileRead(value)|TypedExprKind::HttpGet(value)|TypedExprKind::Sleep(value)|
+  TypedExprKind::ArithEval(value)|TypedExprKind::TextScalars(value)|TypedExprKind::TextWords(value)|
+  TypedExprKind::Histogram(value)|TypedExprKind::Length(value)|TypedExprKind::Sum(value)|
+  TypedExprKind::Unary{operand:value,..}|TypedExprKind::Lambda{body:value,..}|
+  TypedExprKind::Section{right:value,..}=>expr_uses_sort(value),
+  _=>false
+ }
+}
+fn stmt_uses_sort(s:&TypedStmt)->bool {
+ match &s.kind {
+  TypedStmtKind::Use{..}|TypedStmtKind::Import{..}=>false,
+  TypedStmtKind::Export{declaration}=>stmt_uses_sort(declaration),
+  TypedStmtKind::Let{value,..}|TypedStmtKind::Assign{value,..}|
+  TypedStmtKind::Return(value)|TypedStmtKind::Expression(value)=>expr_uses_sort(value),
+  TypedStmtKind::Function{body,..}|TypedStmtKind::While{body,..}=>body.iter().any(stmt_uses_sort),
+  TypedStmtKind::If{condition,then_body,else_body}=>expr_uses_sort(condition)||
+    then_body.iter().any(stmt_uses_sort)||else_body.as_ref().is_some_and(|b|b.iter().any(stmt_uses_sort))
+ }
+}
+
 pub fn emit(program:&TypedProgram,registry:&PackageRegistry)->Result<String,String>{
  let mut imported=BTreeMap::<String,()>::new();
  for stmt in &program.statements { if let TypedStmtKind::Use{package,..}=&stmt.kind {imported.insert(package.clone(),());}}
@@ -620,6 +658,8 @@ pub fn emit(program:&TypedProgram,registry:&PackageRegistry)->Result<String,Stri
  let requires_markdown=program.statements.iter().any(stmt_uses_markdown) ||
   imported.keys().any(|id|registry.packages.get(id)
     .is_some_and(|pkg|pkg.typed_source.statements.iter().any(stmt_uses_markdown)));
+ let requires_sort=program.statements.iter().any(stmt_uses_sort) ||
+   imported.keys().any(|id|registry.packages.get(id).is_some_and(|p|p.typed_source.statements.iter().any(stmt_uses_sort)));
  let requires_db=program.statements.iter().any(stmt_uses_db);
  let requires_json=requires_db || program.statements.iter().any(stmt_uses_json) ||
   imported.keys().any(|id|registry.packages.get(id)
@@ -687,6 +727,7 @@ const __hc_stdin=()=>{
  output.push_str("const __hc_sum = (xs) => { __hc_seq(xs); let total=0; for (const item of xs) { __hc_tick(); if (typeof item !== 'number') throw Error('∑ requires a numeric sequence'); total+=item; } return total; };\n");
   output.push_str("const __hc_filter = (xs,fn) => { __hc_seq(xs); if (typeof fn!=='function') throw Error('⌕ requires a unary predicate'); const output=[]; for (const item of xs) { __hc_tick(); const keep=fn(item); if (typeof keep!=='boolean') throw Error('⌕ predicate must return Bool'); if (keep) output.push(item); if (output.length>16384) throw Error('Sequence allocation limit exceeded'); } return __hc_seq(output); };\n");
   output.push_str("const __hc_map = (xs,fn) => { __hc_seq(xs); if (typeof fn!=='function') throw Error('⇢ requires a unary transform'); const output=[]; for (const item of xs) { __hc_tick(); output.push(fn(item)); if (output.length>16384) throw Error('Sequence allocation limit exceeded'); } return __hc_seq(output); };\n");
+  if requires_sort { output.push_str("\nconst __hc_sort_desc=(xs,fn)=>{\n  __hc_seq(xs);\n  if(typeof fn!=='function')throw TypeError('⇣ requires a unary numeric key function');\n  const keyed=xs.map((value,index)=>{\n    __hc_tick();\n    const wasPure=__hc_cas_reducer_active;\n    __hc_cas_reducer_active=true;\n    let score;\n    try{score=fn(value);}finally{__hc_cas_reducer_active=wasPure;}\n    if(typeof score!=='number'||!Number.isFinite(score))\n      throw TypeError('⇣ key must be a finite Number');\n    return {value,index,score};\n  });\n  keyed.sort((a,b)=>{\n    __hc_tick();\n    return a.score>b.score?-1:a.score<b.score?1:a.index-b.index;\n  });\n  return __hc_seq(keyed.map(item=>item.value));\n};\n"); }
   if requires_json {
   // A deterministic, bounded JSON boundary shared in meaning with the JS reference.
   // It cannot be bypassed with "as T": every scalar, field and array element is checked.

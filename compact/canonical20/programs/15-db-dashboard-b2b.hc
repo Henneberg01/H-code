@@ -9,21 +9,5 @@
 ≔revenue←∑(orders⇢λr:r·amountCents)
 ≔regions←⧉(orders⇢λr:r·region)
 ≔grouped←regions⇢λg:⦃region:g·value,paidOrders:g·count,revenueCents:∑((orders⌕λr:r·region≡g·value)⇢λr:r·amountCents)⦄
-ƒ sortRevenue(rs:⟦⦃paidOrders:Number,region:String,revenueCents:Number⦄⟧)→⟦⦃paidOrders:Number,region:String,revenueCents:Number⦄⟧ {
- ≔remaining←rs
- ≔sorted:⟦⦃paidOrders:Number,region:String,revenueCents:Number⦄⟧←⟦⟧
- ⟳(⌗remaining>0){
-  ≔best←remaining⟦0⟧
-  ≔i←1
-  ⟳(i<⌗remaining){
-   ≔candidate←remaining⟦i⟧
-   ⊢(candidate·revenueCents>best·revenueCents)⇒best←candidate
-   i←i+1
-  }
-  sorted←sorted⧺⟦best⟧
-  remaining←remaining⌕λr:r·region≠best·region
- }
- ↩sorted
-}
-≔result←⦃paidOrders:count,revenueCents:revenue,byRegion:sortRevenue(grouped)⦄
+≔result←⦃paidOrders:count,revenueCents:revenue,byRegion:(grouped⇣λr:r·revenueCents)⦄
 print(⤒result)
