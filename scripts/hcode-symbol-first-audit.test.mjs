@@ -6,6 +6,11 @@ test('audit covers entire H-Code inventory and enforces active candidates withou
  assert.ok(report.scanned>=95,'Audit must discover the source corpus');
  assert.deepEqual(report.active,activeSources.slice().sort());
  assert.ok(report.preserved>=80,'Historical benchmark and accessibility source must stay available');
+ assert.equal(report.legacyCount,107);
+ assert.ok(report.changedOrNew.includes('examples/symbol-first-ranking.hc'));
+ assert.ok(report.changedOrNew.includes('compact/canonical20/programs/15-db-dashboard-b2b.hc'));
+ assert.ok(!report.changedOrNew.includes('examples/hello_ascii.hc'),
+   'Frozen ASCII accessibility samples must remain unchanged');
  assert.deepEqual(report.failing,[]);
 });
 test('keyword-like text inside SQL/HTML strings and comments is not developer syntax',()=>{

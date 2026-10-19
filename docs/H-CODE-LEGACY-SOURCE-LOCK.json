@@ -1,0 +1,435 @@
+{
+  "schema": 1,
+  "baseCommit": "d6c1ab61ec7996b1defb01e09fd49b53479d4580",
+  "meaning": "Grandfathered immutable H-Code source files and intentional ASCII accessibility fixtures. Changed/new source must pass symbol-first audit.",
+  "files": [
+    {
+      "path": "compact/benchmarks/m11/filter-typed-sequence.hc",
+      "gitBlob": "e26c0d6a6e2bdda05091113040168e3f98947b11"
+    },
+    {
+      "path": "compact/benchmarks/m11/map-typed-sequence.hc",
+      "gitBlob": "467a0b18544b1721683d68421cf870d03a5451dc"
+    },
+    {
+      "path": "compact/benchmarks/m11/sum-typed-sequence.hc",
+      "gitBlob": "23824383ce47a287e1ff83fb21a6ec05e4749e4c"
+    },
+    {
+      "path": "compact/benchmarks/m12/json-typed.hc",
+      "gitBlob": "f0e108c272341b16ba4d490d70b8094778f99cc5"
+    },
+    {
+      "path": "compact/benchmarks/m12/records.hc",
+      "gitBlob": "7fe1a8ec27ed3187f20e9495548b726e9a5c0200"
+    },
+    {
+      "path": "compact/benchmarks/m12/update.hc",
+      "gitBlob": "cbf2cf6b5c34d860992ad69a323795a937a14231"
+    },
+    {
+      "path": "compact/benchmarks/m13/filter-typed-sequence.hc",
+      "gitBlob": "8bf23da122c2e7ce1db0107d3607cce5aa7a3506"
+    },
+    {
+      "path": "compact/benchmarks/m13/map-typed-sequence.hc",
+      "gitBlob": "da5a3e90268f53217e84483ba1f811352fda7111"
+    },
+    {
+      "path": "compact/benchmarks/m13/sum-typed-sequence.hc",
+      "gitBlob": "4407ad4043c29f10fbeafbbd60070ee2ae6daabc"
+    },
+    {
+      "path": "compact/benchmarks/m14/filter-typed-sequence.hc",
+      "gitBlob": "8c0f3a165fece721c3fb66dba3b3aee1d7367e85"
+    },
+    {
+      "path": "compact/benchmarks/m14/map-typed-sequence.hc",
+      "gitBlob": "5d0ee1cf3f5bcb702f260a7c9824a3dcf2245c80"
+    },
+    {
+      "path": "compact/benchmarks/m14/sum-typed-sequence.hc",
+      "gitBlob": "4407ad4043c29f10fbeafbbd60070ee2ae6daabc"
+    },
+    {
+      "path": "compact/benchmarks/m15/boolean-check.hc",
+      "gitBlob": "8d0381170804a5e39d6e97db0f4ed930436af3df"
+    },
+    {
+      "path": "compact/benchmarks/m15/chained-functions.hc",
+      "gitBlob": "08e2e53a3ab022302dcff0562a399ca81a90fcd2"
+    },
+    {
+      "path": "compact/benchmarks/m15/conditional-branch.hc",
+      "gitBlob": "56ca891ee0f68a2ab619b55229b74a06661085e8"
+    },
+    {
+      "path": "compact/benchmarks/m15/counter-loop.hc",
+      "gitBlob": "eb54d4b4b8dfca57269032cecd30879a5a895fac"
+    },
+    {
+      "path": "compact/benchmarks/m15/recursive-factorial.hc",
+      "gitBlob": "f2b46c3a937a6f0be833d6e163d0cb1e5f4f3a1c"
+    },
+    {
+      "path": "compact/benchmarks/m15/recursive-fibonacci.hc",
+      "gitBlob": "ab7c9da0673f038e5e57b75cf3306b70a27dca45"
+    },
+    {
+      "path": "compact/benchmarks/m15/string-greeting.hc",
+      "gitBlob": "4ee5faddb422708bd393152e759d1558bb62ee74"
+    },
+    {
+      "path": "compact/benchmarks/m15/typed-function.hc",
+      "gitBlob": "453e76231467dfdf3d8598682ce14cbb8b4afaaa"
+    },
+    {
+      "path": "compact/benchmarks/paired/boolean-check.hc",
+      "gitBlob": "af3787b3dc81eb7f9e543dc9ef645844d641d7cd"
+    },
+    {
+      "path": "compact/benchmarks/paired/chained-functions.hc",
+      "gitBlob": "1298abb6b1ebf879f98279842590818860ca033c"
+    },
+    {
+      "path": "compact/benchmarks/paired/conditional-branch.hc",
+      "gitBlob": "d1d504fb7421dc0d5854f4181c12a909400de70f"
+    },
+    {
+      "path": "compact/benchmarks/paired/counter-loop.hc",
+      "gitBlob": "e8ec1ef3b9b39ded9071444fbc1e7cf6db3789f3"
+    },
+    {
+      "path": "compact/benchmarks/paired/recursive-factorial.hc",
+      "gitBlob": "d6be5bdc1cd3d6f3cf29c1485756f4234a4af585"
+    },
+    {
+      "path": "compact/benchmarks/paired/recursive-fibonacci.hc",
+      "gitBlob": "66f02e2dce678b51f8d02766742d9d24aa5d66f7"
+    },
+    {
+      "path": "compact/benchmarks/paired/string-greeting.hc",
+      "gitBlob": "c48e8b2a6cfe4fac778d3d76c42906f0270a6e0a"
+    },
+    {
+      "path": "compact/benchmarks/paired/typed-function.hc",
+      "gitBlob": "33f0a9315f70b11c46dd16922c45b18d3f106ad9"
+    },
+    {
+      "path": "compact/benchmarks/symbol-choice/conditional-branch.hc",
+      "gitBlob": "b44e8c269af561c7b1ae499dc147f1cb06caeeb0"
+    },
+    {
+      "path": "compact/benchmarks/symbol-choice/recursive-factorial.hc",
+      "gitBlob": "2a1da8056133fb7aa10791c2752d83ffea5635b4"
+    },
+    {
+      "path": "compact/benchmarks/symbol-choice/recursive-fibonacci.hc",
+      "gitBlob": "07d003d70bf35c022bb2a0e8c8ac8c847d295fb7"
+    },
+    {
+      "path": "compact/canonical20/candidates/02-fibonacci-glyph-first.hc",
+      "gitBlob": "9f60ca57fec6dd77c1b4ee358913224e860b140c"
+    },
+    {
+      "path": "compact/canonical20/candidates/15-db-dashboard-b2b-before-symbol-sort.hc",
+      "gitBlob": "096d248c3c6d42f7e430d7e53a6b191a3560e52f"
+    },
+    {
+      "path": "compact/canonical20/programs/01-calculator-cli.hc",
+      "gitBlob": "3acfbc0be6f7902db7aee5dd46ecf0a8eb07a5a6"
+    },
+    {
+      "path": "compact/canonical20/programs/03-text-frequency-counter.hc",
+      "gitBlob": "c8a54820def663c364ec39ee0989d1406d6370e2"
+    },
+    {
+      "path": "compact/canonical20/programs/04-csv-validation.hc",
+      "gitBlob": "ab7c4a8059244339318d31bd553dfebe463fab4f"
+    },
+    {
+      "path": "compact/canonical20/programs/05-json-transformation.hc",
+      "gitBlob": "9e98f97129e6c40c41ba4635f63fe9af26275f19"
+    },
+    {
+      "path": "compact/canonical20/programs/06-http-retries.hc",
+      "gitBlob": "8abedc2d8fa32fa6ec157bb98d3a64a02408dfda"
+    },
+    {
+      "path": "compact/canonical20/programs/07-file-conversion.hc",
+      "gitBlob": "b93015a0dab3cd5b616026a16348de97162b5bac"
+    },
+    {
+      "path": "compact/canonical20/programs/08-concurrent-requests.hc",
+      "gitBlob": "1b948801e6f411a93f8de0581ccc34b7dbb4dc07"
+    },
+    {
+      "path": "compact/canonical20/programs/09-expiring-cache.hc",
+      "gitBlob": "c77479b480904950a1c059f5d920e4a78d31ed62"
+    },
+    {
+      "path": "compact/canonical20/programs/10-generic-collection-transforms.hc",
+      "gitBlob": "8620b434b846714e10484f607f67bc37f393fe43"
+    },
+    {
+      "path": "compact/canonical20/programs/11-markdown-processing.hc",
+      "gitBlob": "e826116ae1f7df4603fad62aee356594c7e58d5f"
+    },
+    {
+      "path": "compact/canonical20/programs/12-crud-api.hc",
+      "gitBlob": "b3ba6542ef27474390a7354c8c01a22464156179"
+    },
+    {
+      "path": "compact/canonical20/programs/12-http-serve-b1.hc",
+      "gitBlob": "2946222c74c95fa9df6a52cf283e4bd862f8f0ce"
+    },
+    {
+      "path": "compact/canonical20/programs/12-http-state-b2a.hc",
+      "gitBlob": "caae4a1de09c6d097f57e99566b3007d75d6e443"
+    },
+    {
+      "path": "compact/canonical20/programs/13-form-validation-ui.hc",
+      "gitBlob": "67d5766dd1624fb9780639d574a13d15f8a55e6f"
+    },
+    {
+      "path": "compact/canonical20/programs/14-browser-storage-demo.hc",
+      "gitBlob": "b88aacd4853d5b4509797ccf1082f4f911db6e8c"
+    },
+    {
+      "path": "compact/canonical20/programs/14-todo-app.hc",
+      "gitBlob": "2931b75caac9db0582e0d8088fe2f1e29f5cd934"
+    },
+    {
+      "path": "compact/canonical20/programs/15-db-dashboard-b2b.hc",
+      "gitBlob": "096d248c3c6d42f7e430d7e53a6b191a3560e52f"
+    },
+    {
+      "path": "compact/canonical20/programs/15-db-dashboard-ui.hc",
+      "gitBlob": "ebfe4116989491cd28bc46ecdf56d910c4280773"
+    },
+    {
+      "path": "compact/canonical20/programs/15-db-query-b1.hc",
+      "gitBlob": "61d3cf2927841a5a5aaaedd1683c055833659326"
+    },
+    {
+      "path": "compact/canonical20/programs/15-generic-table-b2a.hc",
+      "gitBlob": "77a28cbf9b282e42567a427548dac58f5f9b77e8"
+    },
+    {
+      "path": "compact/fixtures/chain.ascii.hc",
+      "gitBlob": "52f427315554673eec49ba03f05d9e7785c5f617"
+    },
+    {
+      "path": "compact/fixtures/chain.glyph.hc",
+      "gitBlob": "96d6debbebd41ca7a5594f1e1ef4f3b7e5cefe73"
+    },
+    {
+      "path": "compact/fixtures/direct-pipeline.ascii.hc",
+      "gitBlob": "0b101dfe200ce14e318ef15da785295a6fb6cada"
+    },
+    {
+      "path": "compact/fixtures/direct-pipeline.glyph.hc",
+      "gitBlob": "a5fa5e1237d9094f03b17ef69fc27993f1f7b67f"
+    },
+    {
+      "path": "compact/fixtures/extra-args.ascii.hc",
+      "gitBlob": "d32c585b9b440f420798d68877efdeed1b079e77"
+    },
+    {
+      "path": "compact/fixtures/extra-args.glyph.hc",
+      "gitBlob": "3de886cdc570a6afee2137aa3e74d0b24bc9a8fc"
+    },
+    {
+      "path": "compact/fixtures/locked-package.ascii.hc",
+      "gitBlob": "7321453d7b9a443f8b43ae1ff82734b0b9489f30"
+    },
+    {
+      "path": "compact/fixtures/locked-package.glyph.hc",
+      "gitBlob": "8aa290d49922502f53eef815ecba9a80a8b032cd"
+    },
+    {
+      "path": "compact/fixtures/m11-filter.hc",
+      "gitBlob": "e26c0d6a6e2bdda05091113040168e3f98947b11"
+    },
+    {
+      "path": "compact/fixtures/m11-map.hc",
+      "gitBlob": "467a0b18544b1721683d68421cf870d03a5451dc"
+    },
+    {
+      "path": "compact/fixtures/m11-sum.hc",
+      "gitBlob": "23824383ce47a287e1ff83fb21a6ec05e4749e4c"
+    },
+    {
+      "path": "compact/fixtures/precedence.ascii.hc",
+      "gitBlob": "8ee7071c2ad605f57bb9074eb7429edd7a7984f3"
+    },
+    {
+      "path": "compact/fixtures/precedence.glyph.hc",
+      "gitBlob": "effd43d0da5b603d42903bf9c46ac843d3acf412"
+    },
+    {
+      "path": "compact/fixtures/short-function.ascii.hc",
+      "gitBlob": "2fb6040d5431bbee14f58d260a7fdfd89493f708"
+    },
+    {
+      "path": "compact/fixtures/short-function.glyph.hc",
+      "gitBlob": "0f7510e4c1e391e65673e052ee9f2959c16b6b04"
+    },
+    {
+      "path": "compact/fixtures/single-evaluation.ascii.hc",
+      "gitBlob": "23a5b56b3d6beeb97926627c7a0c4ef7927c341d"
+    },
+    {
+      "path": "compact/fixtures/single-evaluation.glyph.hc",
+      "gitBlob": "4d717b54c784a4cb773a7663f69c56402f7c9e8d"
+    },
+    {
+      "path": "examples/boolean.hc",
+      "gitBlob": "793b4533c9607676717dafcc03c6aca06c6c31be"
+    },
+    {
+      "path": "examples/conditions.hc",
+      "gitBlob": "5aa096e926739023434d5258f6e58983ae4d26d6"
+    },
+    {
+      "path": "examples/counter.hc",
+      "gitBlob": "a19817ddde5ece829a83caa197b4c109541954b0"
+    },
+    {
+      "path": "examples/fibonacci.hc",
+      "gitBlob": "d348eb14bde6e3f7dd75d44f29818b7ac79e00b7"
+    },
+    {
+      "path": "examples/hello_ascii.hc",
+      "gitBlob": "38d992fba3ea9b953e3978308d4889c4066b7382"
+    },
+    {
+      "path": "examples/hello_symbols.hc",
+      "gitBlob": "34b70b16e1bc09ffacb79c655da5ef9a470d6e8c"
+    },
+    {
+      "path": "examples/logic.hc",
+      "gitBlob": "b8fed905106dcae884836cf0665d47445b4e5d26"
+    },
+    {
+      "path": "examples/m16_vec_operations.hc",
+      "gitBlob": "d56dae57324297e5fb44b3bbecf145d2c076e137"
+    },
+    {
+      "path": "examples/recursion.hc",
+      "gitBlob": "cacd7abad1e3f191cbac9cc5c29a7a11106a82ee"
+    },
+    {
+      "path": "examples/scopes.hc",
+      "gitBlob": "7bdfa0b9871af8cf5e9336ca0aead39e4ca54f5f"
+    },
+    {
+      "path": "examples/strings.hc",
+      "gitBlob": "be76178756c1b489151ad11db8be774191ea4db0"
+    },
+    {
+      "path": "examples/user_symbols.hc",
+      "gitBlob": "b47c0dbe56e3052291125b92affdf098c2f1fd28"
+    },
+    {
+      "path": "m4/advanced.hc",
+      "gitBlob": "3438cb2bec3b64cdf547a081787560ccb3cd872d"
+    },
+    {
+      "path": "m4/main.hc",
+      "gitBlob": "aa222086d424fde6f3f5e8ee1f62c33cf6fc4a23"
+    },
+    {
+      "path": "m4/std/math.hc",
+      "gitBlob": "6b58be4861a9cea0f536b7bead0d550f8128c8fe"
+    },
+    {
+      "path": "m4/std/text.hc",
+      "gitBlob": "04f5cd4dc7429cbd7e8279835594544c3fffbdf3"
+    },
+    {
+      "path": "m4/tests/cycle_a.hc",
+      "gitBlob": "94b5517e0437068ba7569767cc2a3eb1438dede0"
+    },
+    {
+      "path": "m4/tests/cycle_b.hc",
+      "gitBlob": "f6f0d878941b53064dc917be726a03d0ccb79772"
+    },
+    {
+      "path": "m5/inventory/main.hc",
+      "gitBlob": "b927f2808a8a0a3e18c34e3104a08a3432343abd"
+    },
+    {
+      "path": "m5/inventory/rules.hc",
+      "gitBlob": "f85da26428992c1d023fd139a3e00089880657a7"
+    },
+    {
+      "path": "m5/invoice/main.hc",
+      "gitBlob": "3fd4fbfb6b70d6d8338e89340f9197802625627d"
+    },
+    {
+      "path": "m5/invoice/rules.hc",
+      "gitBlob": "9eeb7dbb1792859908a45c2580adde50f108cb52"
+    },
+    {
+      "path": "m5/savings/main.hc",
+      "gitBlob": "54dd552c45d80b72f7d6d270dbaff3d99b3b39e8"
+    },
+    {
+      "path": "m5/savings/rules.hc",
+      "gitBlob": "8ef1f0b3cd80010474360569e149863467c17bb0"
+    },
+    {
+      "path": "packages/demo.math/lib.hc",
+      "gitBlob": "bdfd4ed79ef0e7d1195c21ced3fdc2af5af03428"
+    },
+    {
+      "path": "packages/poly.auto/demo.hc",
+      "gitBlob": "928730bfa86c615e2678bf48f47352987d2ace94"
+    },
+    {
+      "path": "packages/poly.signs/demo.hc",
+      "gitBlob": "fea93f630683dd44cdb95639fd3157028cbea309"
+    },
+    {
+      "path": "packages/poly.signs/lib.hc",
+      "gitBlob": "61f2e7d7fe080295ca0d9989acd39681fee8e1b6"
+    },
+    {
+      "path": "packages/vec.math/lib.hc",
+      "gitBlob": "da9af5b35fee72e0729598d4cf6e11363d02b105"
+    },
+    {
+      "path": "phase1/fixtures/booleans.ascii.hc",
+      "gitBlob": "b4fca65b2f907d4b8d9c7fca17fd12b77f22d113"
+    },
+    {
+      "path": "phase1/fixtures/booleans.glyph.hc",
+      "gitBlob": "ff290a6792894a5a1d39e72feb65b70c4f4aab9b"
+    },
+    {
+      "path": "phase1/fixtures/functions.ascii.hc",
+      "gitBlob": "3b12965464d870715d16d13ccbae9faf52a17a56"
+    },
+    {
+      "path": "phase1/fixtures/functions.glyph.hc",
+      "gitBlob": "bdc1570681106d4615407f5e044c70678dfa2d41"
+    },
+    {
+      "path": "phase1/fixtures/package.ascii.hc",
+      "gitBlob": "eee16089f121e73ebc10d8b6b25eda506d133c34"
+    },
+    {
+      "path": "phase1/fixtures/package.glyph.hc",
+      "gitBlob": "5dab8cac686edb777a9ac208f05322c76878ceb6"
+    },
+    {
+      "path": "phase1/fixtures/recursion.ascii.hc",
+      "gitBlob": "08d78e518c8895a7c2b6064df0d6d15acbd89c90"
+    },
+    {
+      "path": "phase1/fixtures/recursion.glyph.hc",
+      "gitBlob": "c36025fb66674968fefc13aa48b7c2b11ff0c629"
+    }
+  ]
+}
