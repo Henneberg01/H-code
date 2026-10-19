@@ -73,3 +73,24 @@ const __hc_db_rows=(name,sql,params,schema)=>{
     return __hc_json_guard(rows,['a',schema]);
   }finally{db.close();}
 };
+
+
+// ⧈(database,table): inspectable type-checked relational projection.
+// The schema determines selected fields; developers never need to write SQL.
+const __hc_db_table=(name,table,schema)=>{
+  if(typeof table!=='string'||!/^[A-Za-z_][A-Za-z0-9_]{0,63}$/.test(table))
+    throw TypeError('Database table name must be a safe identifier');
+  if(!Array.isArray(schema)||schema[0]!=='o'||!Array.isArray(schema[1])||
+     schema[1].length<1||schema[1].length>64)
+    throw TypeError('Database table requires a checked typed record');
+  const fields=schema[1];
+  if(!fields.every(([key,type])=>typeof key==='string'&&
+       /^[A-Za-z_][A-Za-z0-9_]{0,63}$/.test(key)&&['s','n','b'].includes(type)))
+    throw TypeError('Database table field names and scalar types must be valid');
+  const columns=fields.map(([key])=>'__hc_t."'+key+'"');
+        const ordering=fields.map(([key,type])=>'__hc_t."'+key+'"'+
+          (type==='String'||type==='s'?' COLLATE BINARY':'')+' ASC');
+        const sql='SELECT '+columns.join(',')+' FROM "'+table+'" AS __hc_t'+
+          ' ORDER BY '+ordering.join(',');
+  return __hc_db_rows(name,sql,[],schema);
+};

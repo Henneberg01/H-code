@@ -209,3 +209,20 @@ H-Code cannot always prove its origin statically. Both runtimes therefore
 reject **all H-Code assignments while evaluating the key**, as well as host
 I/O, including indirect calls. The guard is restored on exceptions. This
 retains first-class callbacks without allowing hidden mutable state.
+
+
+## M19.15 relational ⧈ — typed, SQL-free source projection (development)
+
+The primary `⧈` form `⧈⦃field:Type,...⦄("database.sqlite","table")`
+returns a real typed H-Code `⟦⦃...⦄⟧` sequence from an existing read-only
+SQLite table. Both the schema and the table identifier are explicit and
+validated. Source authors can combine `⌕`, `⇢`, `⧉`, `∑`, `↧`
+and normal record fields without authoring SQL or application-specific macros.
+
+The legacy 3-argument `⧈` prepared read remains available for specialized
+queries and backwards compatibility, but is not the primary sign-first
+example. Dynamic table names must pass identifier validation; all column
+names are derived from exact scalar String/Number/Bool schema types. The
+runtime is explicitly host-permissioned and bounded, never created on
+demand. String comparisons have source-defined Unicode scalar ordering.
+This feature must pass independent Rust/JS/real SQLite parity before merge.

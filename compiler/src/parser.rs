@@ -277,11 +277,17 @@ impl Parser {
                 self.expect(&TokenKind::LeftParen)?;
                 let database=self.expression(0)?;
                 self.expect(&TokenKind::Comma)?;
-                let sql=self.expression(0)?;
-                self.expect(&TokenKind::Comma)?;
-                let params=self.expression(0)?;
-                self.expect(&TokenKind::RightParen)?;
-                ExprKind::DbRows{schema,database:Box::new(database),sql:Box::new(sql),params:Box::new(params)}
+                let table_or_sql=self.expression(0)?;
+                if self.accept(&TokenKind::Comma).is_some() {
+                    let params=self.expression(0)?;
+                    self.expect(&TokenKind::RightParen)?;
+                    ExprKind::DbRows{schema,database:Box::new(database),
+                        sql:Box::new(table_or_sql),params:Box::new(params)}
+                }else{
+                    self.expect(&TokenKind::RightParen)?;
+                    // Direct typed table projection; never requires raw SQL source.
+                    ExprKind::DbTable{schema,database:Box::new(database),table:Box::new(table_or_sql)}
+                }
             }
             TokenKind::TextScalars=>{self.index+=1;ExprKind::TextScalars(Box::new(self.expression(8)?))}
             TokenKind::TextWords=>{self.index+=1;ExprKind::TextWords(Box::new(self.expression(8)?))}
