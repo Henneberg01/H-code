@@ -11,7 +11,8 @@ fn compile(source:&str,effects:bool)->Result<String,String>{
 fn ascending_unicode_sort_is_native_glyph_and_ascii_alias(){
  let glyph=r#"≔xs←⟦⦃region:"West",v:3⦄,⦃region:"East",v:2⦄⟧;⎙(⤒(xs↥λr:r·region));"#;
  let alias=glyph.replace('↥',"@^");
- let a=lex(glyph).unwrap(),b=lex(&alias).unwrap();
+ let a=lex(glyph).unwrap();
+ let b=lex(&alias).unwrap();
  assert!(a.iter().any(|token|token.kind==TokenKind::SortTextAsc));
  assert_eq!(a.into_iter().map(|t|t.kind).collect::<Vec<_>>(),
             b.into_iter().map(|t|t.kind).collect::<Vec<_>>());
