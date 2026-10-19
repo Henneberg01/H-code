@@ -141,3 +141,34 @@ const __hc_dom_table=(selector,caption,headers,rows)=>{
   target.replaceChildren(captionNode,head,body);
   return null;
 };
+
+
+// A real typed H-Code record sequence is rendered to semantic table data
+// without manually authoring four string-array arguments. The record fields
+// are statically checked by Rust; values are bounded before any DOM mutation.
+// Empty results must be handled explicitly to avoid inferred/unknown headings
+// in the independent interpreter.
+const __hc_dom_records=(selector,records,schema)=>{
+  if(!Array.isArray(schema)||schema[0]!=='o'||!Array.isArray(schema[1])||
+     schema[1].length<1||schema[1].length>16)
+    throw TypeError('⟙ requires statically checked record columns');
+  if(!Array.isArray(records)||records.length<1||records.length>1000)
+    throw TypeError('⟙ typed rows require 1..1000 records; empty state must be handled explicitly');
+  const fields=schema[1],columns=fields.map(([name])=>name);
+  const matrix=records.map(record=>{
+    __hc_tick();
+    if(record===null||typeof record!=='object'||Array.isArray(record)||
+       Object.getPrototypeOf(record)!==null||Object.keys(record).length!==fields.length)
+      throw TypeError('⟙ typed table record shape mismatch');
+    return fields.map(([name,code])=>{
+      if(!Object.hasOwn(record,name))throw TypeError('⟙ missing typed record field');
+      const value=record[name];
+      if((code==='s'&&typeof value!=='string')||
+         (code==='n'&&(typeof value!=='number'||!Number.isFinite(value)))||
+         (code==='b'&&typeof value!=='boolean'))
+        throw TypeError('⟙ typed table record must be scalar');
+      return String(value);
+    });
+  });
+  return __hc_dom_table(selector,'',columns,matrix);
+};
