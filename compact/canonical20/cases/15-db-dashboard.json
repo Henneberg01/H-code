@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "id": "15-db-dashboard",
+  "phase": "B0-independent-contract-not-H-Code-verified",
+  "registryBlobSha": "46653ef90ffb3e420fba4ddfbfac3c4cfd57f3b3",
+  "originalAcceptance": "query seeded data, aggregate metrics and render result views",
+  "requiredCapabilities": ["database", "records", "ui"],
+  "databaseEngine": "SQLite",
+  "seed": [
+    {"id":1,"region":"North","amountCents":1200,"status":"paid","day":"2026-01-02"},
+    {"id":2,"region":"South","amountCents":900,"status":"paid","day":"2026-01-03"},
+    {"id":3,"region":"North","amountCents":500,"status":"paid","day":"2026-01-04"},
+    {"id":4,"region":"North","amountCents":1500,"status":"refunded","day":"2026-01-05"},
+    {"id":5,"region":"South","amountCents":250,"status":"paid","day":"2026-01-07"},
+    {"id":6,"region":"West","amountCents":3000,"status":"paid","day":"2026-01-11"},
+    {"id":7,"region":"West","amountCents":1500,"status":"paid","day":"2026-02-01"},
+    {"id":8,"region":"South","amountCents":2000,"status":"paid","day":"2026-02-02"},
+    {"id":9,"region":"North","amountCents":780,"status":"paid","day":"2026-02-04"},
+    {"id":10,"region":"North","amountCents":600,"status":"pending","day":"2026-02-04"},
+    {"id":11,"region":"\u00c9ast","amountCents":450,"status":"paid","day":"2026-02-07"},
+    {"id":12,"region":"<img src=x onerror=1>","amountCents":250,"status":"paid","day":"2026-02-08"},
+    {"id":13,"region":"West","amountCents":0,"status":"paid","day":"2026-02-09"},
+    {"id":14,"region":"North","amountCents":333,"status":"paid","day":"2026-03-01"}
+  ],
+  "cases": [
+    {"id":"january","from":"2026-01-01","to":"2026-02-01","expected":{"paidOrders":5,"revenueCents":5850,"byRegion":[{"region":"West","paidOrders":1,"revenueCents":3000},{"region":"North","paidOrders":2,"revenueCents":1700},{"region":"South","paidOrders":2,"revenueCents":1150}]}},
+    {"id":"february","from":"2026-02-01","to":"2026-03-01","expected":{"paidOrders":6,"revenueCents":4980,"byRegion":[{"region":"South","paidOrders":1,"revenueCents":2000},{"region":"West","paidOrders":2,"revenueCents":1500},{"region":"North","paidOrders":1,"revenueCents":780},{"region":"\u00c9ast","paidOrders":1,"revenueCents":450},{"region":"<img src=x onerror=1>","paidOrders":1,"revenueCents":250}]}},
+    {"id":"march","from":"2026-03-01","to":"2026-04-01","expected":{"paidOrders":1,"revenueCents":333,"byRegion":[{"region":"North","paidOrders":1,"revenueCents":333}]}},
+    {"id":"empty","from":"2026-04-01","to":"2026-05-01","expected":{"paidOrders":0,"revenueCents":0,"byRegion":[]}},
+    {"id":"quarter","from":"2026-01-01","to":"2026-04-01","expected":{"paidOrders":12,"revenueCents":11163,"byRegion":[{"region":"West","paidOrders":3,"revenueCents":4500},{"region":"South","paidOrders":3,"revenueCents":3150},{"region":"North","paidOrders":4,"revenueCents":2813},{"region":"\u00c9ast","paidOrders":1,"revenueCents":450},{"region":"<img src=x onerror=1>","paidOrders":1,"revenueCents":250}]}}
+  ]
+}
