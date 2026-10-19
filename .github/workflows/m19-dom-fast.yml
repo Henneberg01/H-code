@@ -41,3 +41,22 @@ jobs:
         run: npm run m19:browser-compare
         env:
           HCODE_CHROME: ${{ steps.chrome.outputs.chrome-path }}
+
+  canonical13-proof:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: browser-actions/setup-chrome@v2
+        id: chrome
+      - name: Source locked Canonical13 native Rust JS and real Chromium proof
+        run: npm run benchmark20:verify13
+        env:
+          HCODE_CHROME: ${{ steps.chrome.outputs.chrome-path }}
