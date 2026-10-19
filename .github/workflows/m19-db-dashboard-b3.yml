@@ -1,0 +1,24 @@
+name: H-Code M19.15 B3 independent TypeScript and source-locked metrics
+on:
+  push:
+    branches: ['feat/m19-canonical15-*']
+  pull_request:
+    branches: [main,'feat/m19-canonical15-*']
+permissions:
+  contents: read
+jobs:
+  comparator:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest,windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Independent disk-backed TypeScript correctness competitor
+        run: node --experimental-sqlite --experimental-strip-types --test scripts/m19-db-dashboard-ts-competitor.test.mjs
+      - name: Verify immutable source hashes and measure all app source codepoints and UTF-8 bytes
+        run: node scripts/m19-db-dashboard-size.mjs
