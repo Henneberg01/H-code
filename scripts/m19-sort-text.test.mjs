@@ -50,7 +50,7 @@ test('Rust-generated ESM and independent H-Code reference sort identically',()=>
  const output=native(source);
  assert.deepEqual(output.lines,reference(source));
  assert.match(output.generated,/const __hc_sort_text=/);
- assert.match(output.generated,/const __hc_compare=/);
+ assert.match(output.generated,/const __hc_compare\s*=/);
  assert.doesNotMatch(output.generated,/node:sqlite/);
 });
 test('↥ rejects invalid key shapes and prevents selector side effects',()=>{
