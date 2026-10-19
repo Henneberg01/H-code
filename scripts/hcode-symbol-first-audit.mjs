@@ -25,7 +25,7 @@ export function codeOnly(src){
   return src.replace(/"(?:\\.|[^"\\])*"|\/\*[\s\S]*?\*\/|\/\/[^\n]*/g,
     match=>'\n'.repeat((match.match(/\n/g)||[]).length)+' ');
 }
-const fallback=/\b(?:print|db_rows|dom_table|fn|let|return|if|else|while|json_in|json_out)\b|@(?:\+|\?|>|v|\^)/g;
+const fallback=/\b(?:print|db_rows|dom_table|fn|let|return|if|else|while|json_in|json_out|sha256_text|hmac_sign|hmac_verify|random_id)\b|@(?:\+|\?|>|v|\^)/g;
 export function inspect(path){
   const source=readFileSync(join(root,path),'utf8'),code=codeOnly(source);
   return {path,codepoints:[...source].length,utf8Bytes:byteLength(source),

@@ -1,0 +1,37 @@
+name: JFH-CODE M19.16 B1 typed crypto signs
+on:
+  workflow_dispatch:
+  push:
+    branches: ['feat/m19-canonical16-b1-*']
+  pull_request:
+    branches: [main]
+    paths:
+      - 'compiler/**'
+      - 'prototype/**'
+      - 'scripts/m19-crypto*'
+      - '.github/workflows/m19-crypto.yml'
+permissions:
+  contents: read
+jobs:
+  crypto-signs:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Native Rust crypto grammar, types and effect boundaries
+        run: cargo test --locked --manifest-path compiler/Cargo.toml --test m19_crypto
+      - name: Build real compiler CLI
+        run: cargo build --locked --manifest-path compiler/Cargo.toml
+      - name: Independent interpreter and generated crypto runtime
+        run: node --test prototype/test/m19-crypto.test.mjs scripts/m19-crypto-runtime.test.mjs
+      - name: Rust-generated ESM against independent reference
+        run: node --test scripts/m19-crypto-compiler.test.mjs
+      - name: Frozen original session contract
+        run: node --experimental-sqlite --experimental-strip-types --test scripts/canonical20-auth-contract.test.mjs

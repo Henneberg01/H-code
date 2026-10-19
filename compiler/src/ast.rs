@@ -41,6 +41,7 @@ pub struct Expr {
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum ExprKind {
+    Crypto { operation:CryptoOp, arguments:Vec<Expr> },
     Number(String),
     String(String),
     Bool(bool),
@@ -86,6 +87,9 @@ pub enum ExprKind {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum UnaryOp { Negate, Not }
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum CryptoOp { Hash, Sign, Verify, Random }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum BinaryOp {

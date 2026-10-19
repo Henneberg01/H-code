@@ -1,6 +1,6 @@
 //! M3 JavaScript backend. Emits only checked H-Code AST, never raw source interpolation.
 use std::collections::BTreeMap;
-use crate::{ast::{BinaryOp,UnaryOp},checker::{TypedProgram,TypedStmt,TypedStmtKind,TypedExpr,TypedExprKind,Type},packages::PackageRegistry};
+use crate::{ast::{BinaryOp,UnaryOp,CryptoOp},checker::{TypedProgram,TypedStmt,TypedStmtKind,TypedExpr,TypedExprKind,Type},packages::PackageRegistry};
 
 fn q(s:&str)->String {serde_json::to_string(s).expect("serializable string")}
 fn name(s:&str)->String {format!("h_{}",s.bytes().map(|b|format!("{b:02x}")).collect::<String>())}
@@ -36,6 +36,11 @@ impl Emitter {
  fn ind(&self)->String {"  ".repeat(self.depth)}
  fn expr(&self,e:&TypedExpr)->String {
   match &e.kind {
+   TypedExprKind::Crypto{operation,arguments}=>{
+    let op=match operation{CryptoOp::Hash=>"hash",CryptoOp::Sign=>"sign",CryptoOp::Verify=>"verify",CryptoOp::Random=>"random"};
+    let args=arguments.iter().map(|x|self.expr(x)).collect::<Vec<_>>().join(", ");
+    format!("__hc_crypto_{op}({args})")
+   },
    TypedExprKind::Number(s)=>s.clone(),TypedExprKind::String(s)=>q(s),
    TypedExprKind::Sequence(items)=>{
      let values=items.iter().map(|x|self.expr(x)).collect::<Vec<_>>().join(", ");
@@ -172,6 +177,7 @@ impl Emitter {
 // that require it. A new glyph must not inflate the runtime of unrelated code.
 fn expr_uses_json(e:&TypedExpr)->bool {
  match &e.kind {
+  TypedExprKind::Crypto{arguments,..}=>arguments.iter().any(expr_uses_json),
     TypedExprKind::DomRecordTable{selector,rows,..}=>expr_uses_json(selector)||expr_uses_json(rows),
    TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_json(database)||expr_uses_json(sql)||expr_uses_json(params),
     TypedExprKind::DbTable{database,table,..}=>expr_uses_json(database)||expr_uses_json(table),
@@ -202,7 +208,8 @@ fn stmt_uses_json(s:&TypedStmt)->bool {
   TypedStmtKind::Export{declaration}=>stmt_uses_json(declaration),
   TypedStmtKind::Let{value,..}|TypedStmtKind::Assign{value,..}|
   TypedStmtKind::Return(value)|TypedStmtKind::Expression(value)=>expr_uses_json(value),
-  TypedStmtKind::Function{body,..}|TypedStmtKind::While{body,..}=>body.iter().any(stmt_uses_json),
+  TypedStmtKind::Function{body,..}=>body.iter().any(stmt_uses_json),
+  TypedStmtKind::While{condition,body}=>expr_uses_json(condition)||body.iter().any(stmt_uses_json),
   TypedStmtKind::If{condition,then_body,else_body}=>expr_uses_json(condition)||
    then_body.iter().any(stmt_uses_json)||else_body.as_ref().is_some_and(|b|b.iter().any(stmt_uses_json))
  }
@@ -211,6 +218,7 @@ fn stmt_uses_json(s:&TypedStmt)->bool {
 // the universal text/histogram primitives (including verified imported packages).
 fn expr_uses_markdown(e:&TypedExpr)->bool {
  match &e.kind {
+  TypedExprKind::Crypto{arguments,..}=>arguments.iter().any(expr_uses_markdown),
     TypedExprKind::DomRecordTable{selector,rows,..}=>expr_uses_markdown(selector)||expr_uses_markdown(rows),
    TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_markdown(database)||expr_uses_markdown(sql)||expr_uses_markdown(params),
     TypedExprKind::DbTable{database,table,..}=>expr_uses_markdown(database)||expr_uses_markdown(table),
@@ -242,7 +250,8 @@ fn stmt_uses_markdown(s:&TypedStmt)->bool {
   TypedStmtKind::Export{declaration}=>stmt_uses_markdown(declaration),
   TypedStmtKind::Let{value,..}|TypedStmtKind::Assign{value,..}|
   TypedStmtKind::Return(value)|TypedStmtKind::Expression(value)=>expr_uses_markdown(value),
-  TypedStmtKind::Function{body,..}|TypedStmtKind::While{body,..}=>body.iter().any(stmt_uses_markdown),
+  TypedStmtKind::Function{body,..}=>body.iter().any(stmt_uses_markdown),
+  TypedStmtKind::While{condition,body}=>expr_uses_markdown(condition)||body.iter().any(stmt_uses_markdown),
   TypedStmtKind::If{condition,then_body,else_body}=>expr_uses_markdown(condition)||
    then_body.iter().any(stmt_uses_markdown)||else_body.as_ref().is_some_and(|b|b.iter().any(stmt_uses_markdown))
  }
@@ -251,6 +260,7 @@ fn stmt_uses_markdown(s:&TypedStmt)->bool {
 // the universal text/histogram primitives (including verified imported packages).
 fn expr_uses_http_serve(e:&TypedExpr)->bool {
  match &e.kind {
+  TypedExprKind::Crypto{arguments,..}=>arguments.iter().any(expr_uses_http_serve),
     TypedExprKind::DomRecordTable{selector,rows,..}=>expr_uses_http_serve(selector)||expr_uses_http_serve(rows),
    TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_http_serve(database)||expr_uses_http_serve(sql)||expr_uses_http_serve(params),
     TypedExprKind::DbTable{database,table,..}=>expr_uses_http_serve(database)||expr_uses_http_serve(table),
@@ -281,7 +291,8 @@ fn stmt_uses_http_serve(s:&TypedStmt)->bool {
   TypedStmtKind::Export{declaration}=>stmt_uses_http_serve(declaration),
   TypedStmtKind::Let{value,..}|TypedStmtKind::Assign{value,..}|
   TypedStmtKind::Return(value)|TypedStmtKind::Expression(value)=>expr_uses_http_serve(value),
-  TypedStmtKind::Function{body,..}|TypedStmtKind::While{body,..}=>body.iter().any(stmt_uses_http_serve),
+  TypedStmtKind::Function{body,..}=>body.iter().any(stmt_uses_http_serve),
+  TypedStmtKind::While{condition,body}=>expr_uses_http_serve(condition)||body.iter().any(stmt_uses_http_serve),
   TypedStmtKind::If{condition,then_body,else_body}=>expr_uses_http_serve(condition)||
    then_body.iter().any(stmt_uses_http_serve)||else_body.as_ref().is_some_and(|b|b.iter().any(stmt_uses_http_serve))
  }
@@ -290,6 +301,7 @@ fn stmt_uses_http_serve(s:&TypedStmt)->bool {
 // the universal text/histogram primitives (including verified imported packages).
 fn expr_uses_http_state(e:&TypedExpr)->bool {
  match &e.kind {
+  TypedExprKind::Crypto{arguments,..}=>arguments.iter().any(expr_uses_http_state),
     TypedExprKind::DomRecordTable{selector,rows,..}=>expr_uses_http_state(selector)||expr_uses_http_state(rows),
    TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_http_state(database)||expr_uses_http_state(sql)||expr_uses_http_state(params),
     TypedExprKind::DbTable{database,table,..}=>expr_uses_http_state(database)||expr_uses_http_state(table),
@@ -321,7 +333,8 @@ fn stmt_uses_http_state(s:&TypedStmt)->bool {
   TypedStmtKind::Export{declaration}=>stmt_uses_http_state(declaration),
   TypedStmtKind::Let{value,..}|TypedStmtKind::Assign{value,..}|
   TypedStmtKind::Return(value)|TypedStmtKind::Expression(value)=>expr_uses_http_state(value),
-  TypedStmtKind::Function{body,..}|TypedStmtKind::While{body,..}=>body.iter().any(stmt_uses_http_state),
+  TypedStmtKind::Function{body,..}=>body.iter().any(stmt_uses_http_state),
+  TypedStmtKind::While{condition,body}=>expr_uses_http_state(condition)||body.iter().any(stmt_uses_http_state),
   TypedStmtKind::If{condition,then_body,else_body}=>expr_uses_http_state(condition)||
    then_body.iter().any(stmt_uses_http_state)||else_body.as_ref().is_some_and(|b|b.iter().any(stmt_uses_http_state))
  }
@@ -330,6 +343,7 @@ fn stmt_uses_http_state(s:&TypedStmt)->bool {
 // the universal text/histogram primitives (including verified imported packages).
 fn expr_uses_text(e:&TypedExpr)->bool {
  match &e.kind {
+  TypedExprKind::Crypto{arguments,..}=>arguments.iter().any(expr_uses_text),
     TypedExprKind::DomRecordTable{selector,rows,..}=>expr_uses_text(selector)||expr_uses_text(rows),
    TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_text(database)||expr_uses_text(sql)||expr_uses_text(params),
     TypedExprKind::DbTable{database,table,..}=>expr_uses_text(database)||expr_uses_text(table),
@@ -361,7 +375,8 @@ fn stmt_uses_text(s:&TypedStmt)->bool {
   TypedStmtKind::Export{declaration}=>stmt_uses_text(declaration),
   TypedStmtKind::Let{value,..}|TypedStmtKind::Assign{value,..}|
   TypedStmtKind::Return(value)|TypedStmtKind::Expression(value)=>expr_uses_text(value),
-  TypedStmtKind::Function{body,..}|TypedStmtKind::While{body,..}=>body.iter().any(stmt_uses_text),
+  TypedStmtKind::Function{body,..}=>body.iter().any(stmt_uses_text),
+  TypedStmtKind::While{condition,body}=>expr_uses_text(condition)||body.iter().any(stmt_uses_text),
   TypedStmtKind::If{condition,then_body,else_body}=>expr_uses_text(condition)||
     then_body.iter().any(stmt_uses_text)||else_body.as_ref().is_some_and(|b|b.iter().any(stmt_uses_text))
  }
@@ -369,6 +384,7 @@ fn stmt_uses_text(s:&TypedStmt)->bool {
 
 fn expr_uses_csv(e:&TypedExpr)->bool {
   match &e.kind {
+  TypedExprKind::Crypto{arguments,..}=>arguments.iter().any(expr_uses_csv),
     TypedExprKind::DomRecordTable{selector,rows,..}=>expr_uses_csv(selector)||expr_uses_csv(rows),
    TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_csv(database)||expr_uses_csv(sql)||expr_uses_csv(params),
     TypedExprKind::DbTable{database,table,..}=>expr_uses_csv(database)||expr_uses_csv(table),
@@ -400,13 +416,15 @@ fn stmt_uses_csv(s:&TypedStmt)->bool {
   TypedStmtKind::Export{declaration}=>stmt_uses_csv(declaration),
   TypedStmtKind::Let{value,..}|TypedStmtKind::Assign{value,..}|
   TypedStmtKind::Return(value)|TypedStmtKind::Expression(value)=>expr_uses_csv(value),
-  TypedStmtKind::Function{body,..}|TypedStmtKind::While{body,..}=>body.iter().any(stmt_uses_csv),
+  TypedStmtKind::Function{body,..}=>body.iter().any(stmt_uses_csv),
+  TypedStmtKind::While{condition,body}=>expr_uses_csv(condition)||body.iter().any(stmt_uses_csv),
   TypedStmtKind::If{condition,then_body,else_body}=>expr_uses_csv(condition)||
     then_body.iter().any(stmt_uses_csv)||else_body.as_ref().is_some_and(|x|x.iter().any(stmt_uses_csv))
  }
 }
 fn expr_uses_file(e:&TypedExpr)->bool {
   match &e.kind {
+  TypedExprKind::Crypto{arguments,..}=>arguments.iter().any(expr_uses_file),
     TypedExprKind::DomRecordTable{selector,rows,..}=>expr_uses_file(selector)||expr_uses_file(rows),
    TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_file(database)||expr_uses_file(sql)||expr_uses_file(params),
     TypedExprKind::DbTable{database,table,..}=>expr_uses_file(database)||expr_uses_file(table),
@@ -437,7 +455,8 @@ fn stmt_uses_file(s:&TypedStmt)->bool {
   TypedStmtKind::Export{declaration}=>stmt_uses_file(declaration),
   TypedStmtKind::Let{value,..}|TypedStmtKind::Assign{value,..}|
   TypedStmtKind::Return(value)|TypedStmtKind::Expression(value)=>expr_uses_file(value),
-  TypedStmtKind::Function{body,..}|TypedStmtKind::While{body,..}=>body.iter().any(stmt_uses_file),
+  TypedStmtKind::Function{body,..}=>body.iter().any(stmt_uses_file),
+  TypedStmtKind::While{condition,body}=>expr_uses_file(condition)||body.iter().any(stmt_uses_file),
   TypedStmtKind::If{condition,then_body,else_body}=>expr_uses_file(condition)||
     then_body.iter().any(stmt_uses_file)||else_body.as_ref().is_some_and(|x|x.iter().any(stmt_uses_file))
  }
@@ -446,6 +465,7 @@ fn stmt_uses_file(s:&TypedStmt)->bool {
 // Link the network runtime only when a checked expression contains ⤋.
 fn expr_uses_http(e:&TypedExpr)->bool {
  match &e.kind {
+  TypedExprKind::Crypto{arguments,..}=>arguments.iter().any(expr_uses_http),
     TypedExprKind::DomRecordTable{selector,rows,..}=>expr_uses_http(selector)||expr_uses_http(rows),
    TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_http(database)||expr_uses_http(sql)||expr_uses_http(params),
     TypedExprKind::DbTable{database,table,..}=>expr_uses_http(database)||expr_uses_http(table),
@@ -477,7 +497,8 @@ fn stmt_uses_http(s:&TypedStmt)->bool {
   TypedStmtKind::Export{declaration}=>stmt_uses_http(declaration),
   TypedStmtKind::Let{value,..}|TypedStmtKind::Assign{value,..}|
   TypedStmtKind::Return(value)|TypedStmtKind::Expression(value)=>expr_uses_http(value),
-  TypedStmtKind::Function{body,..}|TypedStmtKind::While{body,..}=>body.iter().any(stmt_uses_http),
+  TypedStmtKind::Function{body,..}=>body.iter().any(stmt_uses_http),
+  TypedStmtKind::While{condition,body}=>expr_uses_http(condition)||body.iter().any(stmt_uses_http),
   TypedStmtKind::If{condition,then_body,else_body}=>expr_uses_http(condition)||
     then_body.iter().any(stmt_uses_http)||else_body.as_ref().is_some_and(|body|body.iter().any(stmt_uses_http))
  }
@@ -485,6 +506,7 @@ fn stmt_uses_http(s:&TypedStmt)->bool {
 
 fn expr_uses_sleep(e:&TypedExpr)->bool {
  match &e.kind {
+  TypedExprKind::Crypto{arguments,..}=>arguments.iter().any(expr_uses_sleep),
     TypedExprKind::DomRecordTable{selector,rows,..}=>expr_uses_sleep(selector)||expr_uses_sleep(rows),
    TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_sleep(database)||expr_uses_sleep(sql)||expr_uses_sleep(params),
     TypedExprKind::DbTable{database,table,..}=>expr_uses_sleep(database)||expr_uses_sleep(table),
@@ -516,7 +538,8 @@ fn stmt_uses_sleep(s:&TypedStmt)->bool {
   TypedStmtKind::Export{declaration}=>stmt_uses_sleep(declaration),
   TypedStmtKind::Let{value,..}|TypedStmtKind::Assign{value,..}|
   TypedStmtKind::Return(value)|TypedStmtKind::Expression(value)=>expr_uses_sleep(value),
-  TypedStmtKind::Function{body,..}|TypedStmtKind::While{body,..}=>body.iter().any(stmt_uses_sleep),
+  TypedStmtKind::Function{body,..}=>body.iter().any(stmt_uses_sleep),
+  TypedStmtKind::While{condition,body}=>expr_uses_sleep(condition)||body.iter().any(stmt_uses_sleep),
   TypedStmtKind::If{condition,then_body,else_body}=>expr_uses_sleep(condition)||
     then_body.iter().any(stmt_uses_sleep)||else_body.as_ref().is_some_and(|body|body.iter().any(stmt_uses_sleep))
  }
@@ -524,6 +547,7 @@ fn stmt_uses_sleep(s:&TypedStmt)->bool {
 
 fn expr_uses_file_write(e:&TypedExpr)->bool {
  match &e.kind {
+  TypedExprKind::Crypto{arguments,..}=>arguments.iter().any(expr_uses_file_write),
     TypedExprKind::DomRecordTable{selector,rows,..}=>expr_uses_file_write(selector)||expr_uses_file_write(rows),
    TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_file_write(database)||expr_uses_file_write(sql)||expr_uses_file_write(params),
     TypedExprKind::DbTable{database,table,..}=>expr_uses_file_write(database)||expr_uses_file_write(table),
@@ -554,7 +578,8 @@ fn stmt_uses_file_write(s:&TypedStmt)->bool {
   TypedStmtKind::Export{declaration}=>stmt_uses_file_write(declaration),
   TypedStmtKind::Let{value,..}|TypedStmtKind::Assign{value,..}|
   TypedStmtKind::Return(value)|TypedStmtKind::Expression(value)=>expr_uses_file_write(value),
-  TypedStmtKind::Function{body,..}|TypedStmtKind::While{body,..}=>body.iter().any(stmt_uses_file_write),
+  TypedStmtKind::Function{body,..}=>body.iter().any(stmt_uses_file_write),
+  TypedStmtKind::While{condition,body}=>expr_uses_file_write(condition)||body.iter().any(stmt_uses_file_write),
   TypedStmtKind::If{condition,then_body,else_body}=>expr_uses_file_write(condition)||
     then_body.iter().any(stmt_uses_file_write)||else_body.as_ref().is_some_and(|body|body.iter().any(stmt_uses_file_write))
  }
@@ -562,6 +587,7 @@ fn stmt_uses_file_write(s:&TypedStmt)->bool {
 
 fn expr_cli_flags(e:&TypedExpr)->u8 {
   match &e.kind {
+  TypedExprKind::Crypto{operation,arguments}=>arguments.iter().fold(if *operation==CryptoOp::Hash{4}else{12},|flags,arg|flags|expr_cli_flags(arg)),
     TypedExprKind::DomRecordTable{selector,rows,..}=>expr_cli_flags(selector)|expr_cli_flags(rows),
     TypedExprKind::DbRows{database,sql,params,..}=>expr_cli_flags(database)|expr_cli_flags(sql)|expr_cli_flags(params),
     TypedExprKind::DbTable{database,table,..}=>expr_cli_flags(database)|expr_cli_flags(table),
@@ -592,7 +618,8 @@ fn stmt_cli_flags(s:&TypedStmt)->u8 {
     TypedStmtKind::Export{declaration}=>stmt_cli_flags(declaration),
     TypedStmtKind::Let{value,..}|TypedStmtKind::Assign{value,..}|
     TypedStmtKind::Return(value)|TypedStmtKind::Expression(value)=>expr_cli_flags(value),
-    TypedStmtKind::Function{body,..}|TypedStmtKind::While{body,..}=>body.iter().fold(0u8,|bits,v|bits|stmt_cli_flags(v)),
+    TypedStmtKind::Function{body,..}=>body.iter().fold(0u8,|bits,v|bits|stmt_cli_flags(v)),
+    TypedStmtKind::While{condition,body}=>expr_cli_flags(condition)|body.iter().fold(0u8,|bits,v|bits|stmt_cli_flags(v)),
     TypedStmtKind::If{condition,then_body,else_body}=>expr_cli_flags(condition)|
       then_body.iter().fold(0u8,|bits,v|bits|stmt_cli_flags(v))|
       else_body.as_ref().map_or(0,|body|body.iter().fold(0u8,|bits,v|bits|stmt_cli_flags(v)))
@@ -601,6 +628,7 @@ fn stmt_cli_flags(s:&TypedStmt)->u8 {
 
 fn expr_uses_db(e:&TypedExpr)->bool {
  match &e.kind {
+  TypedExprKind::Crypto{arguments,..}=>arguments.iter().any(expr_uses_db),
     TypedExprKind::DomRecordTable{selector,rows,..}=>expr_uses_db(selector)||expr_uses_db(rows),
    TypedExprKind::DbRows{..}|TypedExprKind::DbTable{..}=>true,
    TypedExprKind::HttpServeState{handler,initial}=>expr_uses_db(handler)||expr_uses_db(initial),
@@ -631,7 +659,8 @@ fn stmt_uses_db(s:&TypedStmt)->bool {
    TypedStmtKind::Export{declaration}=>stmt_uses_db(declaration),
    TypedStmtKind::Let{value,..}|TypedStmtKind::Assign{value,..}|
    TypedStmtKind::Return(value)|TypedStmtKind::Expression(value)=>expr_uses_db(value),
-   TypedStmtKind::Function{body,..}|TypedStmtKind::While{body,..}=>body.iter().any(stmt_uses_db),
+   TypedStmtKind::Function{body,..}=>body.iter().any(stmt_uses_db),
+  TypedStmtKind::While{condition,body}=>expr_uses_db(condition)||body.iter().any(stmt_uses_db),
    TypedStmtKind::If{condition,then_body,else_body}=>expr_uses_db(condition)||
      then_body.iter().any(stmt_uses_db)||else_body.as_ref().is_some_and(|body|body.iter().any(stmt_uses_db))
  }
@@ -719,6 +748,8 @@ const __hc_stdin=()=>{
 
  output.push_str("let __hc_fuel = 100000; let __hc_depth=0; const __hc_tick = () => { if (--__hc_fuel < 0) throw Error('H-Code instruction budget exceeded'); };\n");
  output.push_str("let __hc_cas_reducer_active=false;\nconst __hc_print = (...xs) => { if(__hc_cas_reducer_active)throw Error('CAS reducer effect denied'); console.log(xs.map(x => x === null ? 'none' : String(x)).join(' ')); return null; };\n");
+ if cli_flags&4!=0 {output.push_str(include_str!("crypto_prelude.js"));}
+ if cli_flags&8!=0 {output.push_str(include_str!("crypto_effects_prelude.js"));}
  if requires_compare { output.push_str("const __hc_compare = (a,b) => { __hc_tick(); if(typeof a==='number'&&typeof b==='number'&&Number.isFinite(a)&&Number.isFinite(b)) return a<b?-1:a>b?1:0; if(typeof a==='string'&&typeof b==='string'){ const left=[...a],right=[...b]; const limit=Math.min(left.length,right.length); for(let i=0;i<limit;i++){const d=left[i].codePointAt(0)-right[i].codePointAt(0); if(d)return d<0?-1:1;} return left.length<right.length?-1:left.length>right.length?1:0; } throw TypeError('Comparison expects Number or String'); };\n"); }
  output.push_str("const __hc_div = (a,b) => { if (b === 0) throw Error('Division by zero'); return a/b; };\n");
  output.push_str("const __hc_mod = (a,b) => { if (b === 0) throw Error('Division by zero'); return a%b; };\n");
