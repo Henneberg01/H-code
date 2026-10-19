@@ -21,10 +21,16 @@ export const FROZEN15=Object.freeze({
  chromiumProof:['scripts/m19-sqlfree-chromium-parity.test.mjs','e42bffa8db1172d27de371d5168338c2b8c74a90']
 });
 function locked(k){
- const [path,expected]=FROZEN15[k],bytes=readFileSync(join(root,path));
+ const [path,expected]=FROZEN15[k],checkoutBytes=readFileSync(join(root,path));
+ // Git stores the canonical LF text, but Windows checkout may materialize
+ // CRLF for HTML/JS. Verify the canonical Git blob bytes on every OS;
+ // reject stray carriage returns or invalid UTF-8 rather than skipping a hash.
+ const checkout=new TextDecoder('utf-8',{fatal:true}).decode(checkoutBytes);
+ const text=checkout.replaceAll('\r\n','\n');
+ if(text.includes('\r'))throw Error('Noncanonical carriage return in '+path);
+ const bytes=Buffer.from(text,'utf8');
  const sha=createHash('sha1').update('blob '+bytes.length+'\0').update(bytes).digest('hex');
  if(sha!==expected)throw Error('Canonical15 source/contract/probe tampered: '+path);
- const text=new TextDecoder('utf-8',{fatal:true}).decode(bytes);
  return {text,codepoints:[...text].length,utf8Bytes:bytes.length};
 }
 function run(name,command,args,timeout=240000){
