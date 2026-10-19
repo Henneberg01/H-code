@@ -179,3 +179,10 @@ Tegnene er kernesyntaks i Rust AST/typecheck/emitter og JS-reference; ikke genve
 ## M19.01 — `⌨` and `⩚` for an actual calculator CLI (PR #33)
 
 These are real, reserved core-language signs, not textual replacements for JS or a canned calculator app. `⌨` (`stdin_text`) is a one-time String read from host stdin with 64 KiB UTF-8 limit and a static effect ban inside pure signed packages. `⩚` (`arith_eval`) accepts String, statically returns finite Number and implements a reusable precedence/parenthesis/unary arithmetic parser without interpreting the data as executable JS. Invalid arithmetic (including division by zero) produces a deterministic stderr line and process exit code 2; valid input produces a single numeric stdout line and exit code 0. Both Rust emitter and independent H-Code JS interpreter implement it separately; see `compact/canonical20/PROOF-01.md`. The original registered task 01 and its JS/TS/HC SHA-frozen inputs remain unchanged; the overall 20-task median is still unproven.
+
+## M19 sign-first H-Code: core stable descending sort and controlled output (development PR)
+
+- **↧** (secondary accessibility form `@v`): a native AST expression over a typed sequence and a unary numeric-key H-Code function, `⟦T⟧ × (T→Number) → ⟦T⟧`. Sorts descending, stable on equal keys, non-mutating, numeric key evaluated once per input, finite Number required. Example: `xs↧λx:x·score`. It is **not** shorthand for TypeScript `sort()`, nor a business-domain-specific macro; it has real native Rust type inference and an independent H-Code JS evaluator.
+- **⎙** (secondary accessibility form `print`): the compiler-owned effectful output operation, one native visible source sign. Example: `⎙(⤒xs)`. Denied inside pure signed packages; existing ASCII `print` programs remain backward compatible.
+
+Studio's sign palette inserts the actual glyphs, with accessible alternate spelling labels. These features are in a development PR and do **not** constitute proof of the ≥70% overall source-length reduction.
