@@ -109,6 +109,7 @@ pub enum TypedExprKind {
     ArithEval(Box<TypedExpr>),
     CsvTyped {schema:Type,value:Box<TypedExpr>},
     DbRows {schema:Type,database:Box<TypedExpr>,sql:Box<TypedExpr>,params:Box<TypedExpr>},
+    DbTable {schema:Type,database:Box<TypedExpr>,table:Box<TypedExpr>},
     Index { sequence:Box<TypedExpr>,index:Box<TypedExpr> },
     Length(Box<TypedExpr>),
     Sum(Box<TypedExpr>),
@@ -131,7 +132,7 @@ fn cas_pure_expression<'a>(
     match &expr.kind {
         ExprKind::FileRead(_)|ExprKind::FileWrite{..}|ExprKind::HttpGet(_)|
         ExprKind::HttpServe(_)|ExprKind::HttpServeState{..}|ExprKind::Sleep(_)|
-        ExprKind::StdinText|ExprKind::DbRows{..}=>return Err(denied()),
+        ExprKind::StdinText|ExprKind::DbRows{..}|ExprKind::DbTable{..}=>return Err(denied()),
         ExprKind::Call{callee,arguments}=>{
             match &callee.kind {
                 ExprKind::Identifier(name)=>{
@@ -686,6 +687,28 @@ impl Checker {
                 let input=self.expression(value)?;
                 self.unify(&Type::Number,&input.ty,value.span,"⌛ expects Number milliseconds")?;
                 (TypedExprKind::Sleep(Box::new(input)),Type::Unit)
+            }
+            ExprKind::DbTable{schema,database,table}=>{
+                if !self.allow_print || self.active_function.is_some() || self.lambda_depth>0 {
+                    return Err(Diagnostic::new("EFFECT",
+                        "⧈ database table read requires top-level effect permission".into(),expr.span));
+                }
+                let ty=Type::from_name(schema,expr.span)?;
+                let Type::Record(ref fields)=ty else {
+                    return Err(Diagnostic::new("TYPE",
+                      "⧈ table requires an explicit record result schema".into(),expr.span));
+                };
+                if fields.is_empty()||fields.len()>64||
+                   !fields.iter().all(|(_,v)|matches!(v,Type::String|Type::Number|Type::Bool)){
+                    return Err(Diagnostic::new("TYPE",
+                      "⧈ table schema requires 1..64 String/Number/Bool fields".into(),expr.span));
+                }
+                let file=self.expression(database)?;
+                self.unify(&Type::String,&file.ty,database.span,"⧈ database must be String")?;
+                let name=self.expression(table)?;
+                self.unify(&Type::String,&name.ty,table.span,"⧈ table must be String")?;
+                (TypedExprKind::DbTable{schema:ty.clone(),database:Box::new(file),
+                    table:Box::new(name)},Type::Sequence(Box::new(ty)))
             }
             ExprKind::DbRows{schema,database,sql,params}=>{
                 if !self.allow_print || self.active_function.is_some() || self.lambda_depth>0 {

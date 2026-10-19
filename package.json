@@ -64,7 +64,8 @@
     "m19:todo-ui": "node --test scripts/m19-todo-ui.test.mjs",
     "m19:todo-chrome": "node --test scripts/m19-todo-browser-compare.test.mjs",
     "benchmark20:verify13": "node scripts/canonical20-verify-13.mjs",
-    "benchmark20:verify14": "node scripts/canonical20-verify-14.mjs"
+    "benchmark20:verify14": "node scripts/canonical20-verify-14.mjs",
+    "signs:check": "node --test scripts/hcode-sign-first-policy.test.mjs"
   },
   "engines": {
     "node": ">=20"

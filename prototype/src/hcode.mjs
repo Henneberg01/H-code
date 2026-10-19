@@ -288,9 +288,14 @@ class Parser {
       const schema=this.typeName();
       this.expect('(');
       const database=this.expr();this.expect(',');
-      const sql=this.expr();this.expect(',');
-      const params=this.expr();this.expect(')');
-      left={kind:'DbRows',schema,database,sql,params};
+      const tableOrSql=this.expr();
+      if(this.accept(',')){
+        const params=this.expr();this.expect(')');
+        left={kind:'DbRows',schema,database,sql:tableOrSql,params};
+      }else{
+        this.expect(')');
+        left={kind:'DbTable',schema,database,table:tableOrSql};
+      }
     }
     else if(this.accept('text-scalars'))left={kind:'TextScalars',value:this.expr(8)};
     else if(this.accept('text-words'))left={kind:'TextWords',value:this.expr(8)};
@@ -470,6 +475,7 @@ export function linkProgram(ast, registry=new Map()) {
     if(node.kind==='JsonRead'||node.kind==='JsonValid'||node.kind==='JsonWrite'||node.kind==='TextScalars'||node.kind==='TextWords'||node.kind==='Histogram'||node.kind==='Markdown'||node.kind==='FileRead'||node.kind==='HttpGet'||node.kind==='HttpServe'||node.kind==='Sleep'||node.kind==='CsvTyped'||node.kind==='ArithEval')return {...node,value:expression(node.value)};
     if(node.kind==='FileWrite')return {...node,filename:expression(node.filename),content:expression(node.content)};
     if(node.kind==='DbRows')return {...node,database:expression(node.database),sql:expression(node.sql),params:expression(node.params)};
+    if(node.kind==='DbTable')return {...node,database:expression(node.database),table:expression(node.table)};
     if(node.kind==='HttpServeState')return {...node,handler:expression(node.handler),initial:expression(node.initial)};
     if(node.kind==='RecordUpdate')return {...node,record:expression(node.record),value:expression(node.value)};
     if(node.kind==='Index')return {...node,sequence:expression(node.sequence),index:expression(node.index)};
@@ -960,6 +966,26 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
         const data=readFile(path);
         if(typeof data!=='string')throw Error('Host file-read must return UTF-8 String');
         return data;
+      }
+      case 'DbTable':{
+        // A real typed relational table effect, not user-authored SQL.
+        const table=expr(node.table,scope);
+        if(typeof table!=='string'||!/^[A-Za-z_][A-Za-z0-9_]{0,63}$/.test(table))
+          throw TypeError('⧈ table name must be a safe database identifier');
+        if(!node.schema.startsWith('⦃')||!node.schema.endsWith('⦄'))
+          throw TypeError('⧈ table requires a concrete record schema');
+        const fields=recordAnnotationFields(node.schema);
+        if(fields.length<1||fields.length>64||
+           !fields.every(([key,type])=>/^[A-Za-z_][A-Za-z0-9_]{0,63}$/.test(key)&&
+             ['String','Number','Bool'].includes(type)))
+          throw TypeError('⧈ table fields must be 1..64 scalar identifiers');
+        const columns=fields.map(([key])=>'__hc_t."'+key+'"');
+        const ordering=fields.map(([key,type])=>'__hc_t."'+key+'"'+
+          (type==='String'||type==='s'?' COLLATE BINARY':'')+' ASC');
+        const sql='SELECT '+columns.join(',')+' FROM "'+table+'" AS __hc_t'+
+          ' ORDER BY '+ordering.join(',');
+        return expr({kind:'DbRows',schema:node.schema,database:node.database,
+          sql:{kind:'Literal',value:sql},params:{kind:'Sequence',items:[]}},scope,expectedType);
       }
       case 'DbRows':{
         step();

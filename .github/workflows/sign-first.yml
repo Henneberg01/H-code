@@ -1,0 +1,22 @@
+name: H-Code sign-first source policy
+on:
+  pull_request:
+    branches: [main,'feat/m19-canonical15-*']
+  push:
+    branches: ['feat/m19-canonical15-*']
+permissions:
+  contents: read
+jobs:
+  invariant:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest,windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Enforce symbol-first source and immutable honest metrics
+        run: npm run signs:check

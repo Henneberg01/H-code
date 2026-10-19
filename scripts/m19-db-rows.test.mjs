@@ -1,6 +1,7 @@
 // M19.15 B1: true SQLite host I/O, independent H-Code reference and Rust ESM parity.
 // This is not full dashboard acceptance and does not claim 15/20.
 import test from 'node:test';
+import {createHash} from 'node:crypto';
 import assert from 'node:assert/strict';
 import {spawnSync} from 'node:child_process';
 import {mkdtempSync,readFileSync,writeFileSync,rmSync,symlinkSync} from 'node:fs';
@@ -123,4 +124,71 @@ test('compiled host denies symlinked SQLite files rather than following them',()
  const {run}=compiled(source,dir);
  assert.notEqual(run.status,0);
  assert.match(run.stderr,/approved regular file/);
+}));
+
+
+test('native symbol-first ⧈ table projection executes without developer SQL',()=>withDatabase(dir=>{
+ const source=readFileSync(join(root,'compact/canonical20/programs/15-db-symbol-first-b1.hc'),'utf8');
+ assert.ok(source.includes('⧈')&&source.includes('⌕')&&source.includes('⇢'));
+ assert.ok(!/SELECT|GROUP BY|ORDER BY|FROM orders/i.test(source));
+ const {run,esm}=compiled(source,dir);
+ assert.equal(run.status,0,run.stderr||String(run.error));
+ assert.match(esm,/__hc_db_table/);
+ const native=JSON.parse(run.stdout.trim()),js=reference(source,dir);
+ assert.deepEqual(native,js,'Rust and independent JS H-Code must calculate identical typed data');
+ const expected=fixture.seed.filter(x=>x.status==='paid'&&
+    x.day>='2026-01-01'&&x.day<'2026-02-01')
+    .sort((a,b)=>a.amountCents-b.amountCents||
+      (a.day<b.day?-1:a.day>b.day?1:0)||
+      (a.region<b.region?-1:a.region>b.region?1:0))
+    .map(x=>({amount:x.amountCents,region:x.region}));
+ assert.deepEqual(native,expected,'Actual SQLite rows must equal independent seeded data oracle');
+}));
+test('two-operand table read and ASCII alias have identical typed result',()=>withDatabase(dir=>{
+ const source='print(⤒⧈⦃amount_cents:Number,day:String,region:String,status:String⦄("orders.sqlite","orders"));';
+ const glyph=reference(source,dir);
+ const alias=reference(source.replace('⧈','db_rows'),dir);
+ assert.deepEqual(glyph,alias);
+ assert.equal(glyph.length,fixture.seed.length);
+ assert.equal(glyph[0].amount_cents,0);
+}));
+test('generic table projection denies injected identifiers and schema mismatches',()=>withDatabase(dir=>{
+ const path='print(⤒⧈⦃region:String⦄("orders.sqlite","orders;DELETE"));';
+ assert.throws(()=>reference(path,dir),/safe database identifier/);
+ const compiledBad=compiled(path,dir).run;
+ assert.notEqual(compiledBad.status,0);
+ assert.match(compiledBad.stderr,/safe identifier/);
+ const missing='print(⤒⧈⦃not_a_column:String⦄("orders.sqlite","orders"));';
+ assert.throws(()=>reference(missing,dir),/no such column|no such table/);
+ const built=compiled(missing,dir).run;
+ assert.notEqual(built.status,0);
+ assert.match(built.stderr,/no such column/);
+ const badType='print(⤒⧈⦃amount_cents:String⦄("orders.sqlite","orders"));';
+ assert.throws(()=>reference(badType,dir),/String/);
+ assert.notEqual(compiled(badType,dir).run.status,0);
+}));
+
+test('source-locked sign-first H-Code and independent idiomatic TypeScript are executable equivalents',()=>withDatabase(dir=>{
+ const source=readFileSync(join(root,'compact/canonical20/programs/15-db-symbol-first-b1.hc'),'utf8');
+ const comparator=readFileSync(join(root,'compact/canonical20/idiomatic/15-db-table-symbol-first.ts'),'utf8');
+ const gitBlob=text=>createHash('sha1').update('blob '+Buffer.byteLength(text)+'\0').update(text).digest('hex');
+ assert.equal(gitBlob(source),'730daae69d80bbfb52200c056d368161600518ac');
+ assert.equal(gitBlob(comparator),'f753b7ec77bf5aff06025a618ef4a5df6e8a3451');
+ const {run}=compiled(source,dir);
+ assert.equal(run.status,0,run.stderr||String(run.error));
+ const ts=spawnSync(process.execPath,['--experimental-sqlite','--experimental-strip-types',
+   join(root,'compact/canonical20/idiomatic/15-db-table-symbol-first.ts')],{
+   cwd:dir,encoding:'utf8',windowsHide:true,timeout:20000,maxBuffer:1024*1024
+ });
+ assert.equal(ts.status,0,ts.stderr||String(ts.error));
+ const native=JSON.parse(run.stdout.trim());
+ assert.deepEqual(native,JSON.parse(ts.stdout.trim()),'Do not compare non-equivalent workloads');
+ assert.deepEqual(native,reference(source,dir),'Independent H-Code semantics mismatch');
+ const hcPoints=[...source].length,tsPoints=[...comparator].length;
+ assert.ok(hcPoints<tsPoints,'Symbol-first source must have fewer code points for this pair');
+ console.log(JSON.stringify({pair:'15-db-table-scan-filter-map',
+   hcodeCodePoints:hcPoints,typescriptCodePoints:tsPoints,
+   codePointReductionPercent:Number((100*(1-hcPoints/tsPoints)).toFixed(2)),
+   hcodeUtf8Bytes:Buffer.byteLength(source),typescriptUtf8Bytes:Buffer.byteLength(comparator),
+   benchmarkScope:'one paired B1 primitive, not Canonical15 dashboard and not global 70%'}));
 }));

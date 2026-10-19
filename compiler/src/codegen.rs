@@ -73,6 +73,7 @@ impl Emitter {
     TypedExprKind::Sleep(value)=>format!("(await __hc_sleep({}))",self.expr(value)),
     TypedExprKind::CsvTyped{schema,value}=>format!("__hc_csv_typed({}, {})",self.expr(value),csv_schema(schema)),
     TypedExprKind::DbRows{schema,database,sql,params}=>format!("__hc_db_rows({}, {}, {}, {})",self.expr(database),self.expr(sql),self.expr(params),json_schema(schema)),
+    TypedExprKind::DbTable{schema,database,table}=>format!("__hc_db_table({}, {}, {})",self.expr(database),self.expr(table),json_schema(schema)),
     TypedExprKind::StdinText=>"__hc_stdin()".into(),
     TypedExprKind::ArithEval(value)=>format!("__hc_arith({})",self.expr(value)),
     TypedExprKind::Lambda{parameter,body}=>format!("(({}) => ({}))",name(parameter),self.expr(body)),
@@ -163,6 +164,7 @@ impl Emitter {
 fn expr_uses_json(e:&TypedExpr)->bool {
  match &e.kind {
    TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_json(database)||expr_uses_json(sql)||expr_uses_json(params),
+    TypedExprKind::DbTable{database,table,..}=>expr_uses_json(database)||expr_uses_json(table),
   TypedExprKind::HttpServeState{handler,initial}=>expr_uses_json(handler)||expr_uses_json(initial),
   TypedExprKind::Markdown(value)|TypedExprKind::HttpServe(value)=>expr_uses_json(value),
   TypedExprKind::FileWrite{filename,content}=>expr_uses_json(filename)||expr_uses_json(content),
@@ -200,6 +202,7 @@ fn stmt_uses_json(s:&TypedStmt)->bool {
 fn expr_uses_markdown(e:&TypedExpr)->bool {
  match &e.kind {
    TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_markdown(database)||expr_uses_markdown(sql)||expr_uses_markdown(params),
+    TypedExprKind::DbTable{database,table,..}=>expr_uses_markdown(database)||expr_uses_markdown(table),
   TypedExprKind::HttpServeState{handler,initial}=>expr_uses_markdown(handler)||expr_uses_markdown(initial),
   TypedExprKind::Markdown(_)=>true,
   TypedExprKind::HttpServe(value)=>expr_uses_markdown(value),
@@ -238,6 +241,7 @@ fn stmt_uses_markdown(s:&TypedStmt)->bool {
 fn expr_uses_http_serve(e:&TypedExpr)->bool {
  match &e.kind {
    TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_http_serve(database)||expr_uses_http_serve(sql)||expr_uses_http_serve(params),
+    TypedExprKind::DbTable{database,table,..}=>expr_uses_http_serve(database)||expr_uses_http_serve(table),
   TypedExprKind::HttpServe(_)|TypedExprKind::HttpServeState{..}=>true,
   TypedExprKind::Markdown(value)=>expr_uses_http_serve(value),
   TypedExprKind::FileWrite{filename,content}=>expr_uses_http_serve(filename)||expr_uses_http_serve(content),
@@ -275,6 +279,7 @@ fn stmt_uses_http_serve(s:&TypedStmt)->bool {
 fn expr_uses_http_state(e:&TypedExpr)->bool {
  match &e.kind {
    TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_http_state(database)||expr_uses_http_state(sql)||expr_uses_http_state(params),
+    TypedExprKind::DbTable{database,table,..}=>expr_uses_http_state(database)||expr_uses_http_state(table),
   TypedExprKind::HttpServeState{..}=>true,
   TypedExprKind::HttpServe(value)=>expr_uses_http_state(value),
   TypedExprKind::Markdown(value)=>expr_uses_http_state(value),
@@ -313,6 +318,7 @@ fn stmt_uses_http_state(s:&TypedStmt)->bool {
 fn expr_uses_text(e:&TypedExpr)->bool {
  match &e.kind {
    TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_text(database)||expr_uses_text(sql)||expr_uses_text(params),
+    TypedExprKind::DbTable{database,table,..}=>expr_uses_text(database)||expr_uses_text(table),
   TypedExprKind::HttpServeState{handler,initial}=>expr_uses_text(handler)||expr_uses_text(initial),
   TypedExprKind::Markdown(value)|TypedExprKind::HttpServe(value)=>expr_uses_text(value),
   TypedExprKind::FileWrite{filename,content}=>expr_uses_text(filename)||expr_uses_text(content),
@@ -350,6 +356,7 @@ fn stmt_uses_text(s:&TypedStmt)->bool {
 fn expr_uses_csv(e:&TypedExpr)->bool {
   match &e.kind {
    TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_csv(database)||expr_uses_csv(sql)||expr_uses_csv(params),
+    TypedExprKind::DbTable{database,table,..}=>expr_uses_csv(database)||expr_uses_csv(table),
   TypedExprKind::HttpServeState{handler,initial}=>expr_uses_csv(handler)||expr_uses_csv(initial),
   TypedExprKind::Markdown(value)|TypedExprKind::HttpServe(value)=>expr_uses_csv(value),
   TypedExprKind::FileWrite{filename,content}=>expr_uses_csv(filename)||expr_uses_csv(content),
@@ -386,6 +393,7 @@ fn stmt_uses_csv(s:&TypedStmt)->bool {
 fn expr_uses_file(e:&TypedExpr)->bool {
   match &e.kind {
    TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_file(database)||expr_uses_file(sql)||expr_uses_file(params),
+    TypedExprKind::DbTable{database,table,..}=>expr_uses_file(database)||expr_uses_file(table),
   TypedExprKind::HttpServeState{handler,initial}=>expr_uses_file(handler)||expr_uses_file(initial),
   TypedExprKind::Markdown(value)|TypedExprKind::HttpServe(value)=>expr_uses_file(value),
   TypedExprKind::FileWrite{filename,content}=>expr_uses_file(filename)||expr_uses_file(content),
@@ -423,6 +431,7 @@ fn stmt_uses_file(s:&TypedStmt)->bool {
 fn expr_uses_http(e:&TypedExpr)->bool {
  match &e.kind {
    TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_http(database)||expr_uses_http(sql)||expr_uses_http(params),
+    TypedExprKind::DbTable{database,table,..}=>expr_uses_http(database)||expr_uses_http(table),
   TypedExprKind::HttpServeState{handler,initial}=>expr_uses_http(handler)||expr_uses_http(initial),
   TypedExprKind::Markdown(value)|TypedExprKind::HttpServe(value)=>expr_uses_http(value),
   TypedExprKind::FileWrite{filename,content}=>expr_uses_http(filename)||expr_uses_http(content),
@@ -460,6 +469,7 @@ fn stmt_uses_http(s:&TypedStmt)->bool {
 fn expr_uses_sleep(e:&TypedExpr)->bool {
  match &e.kind {
    TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_sleep(database)||expr_uses_sleep(sql)||expr_uses_sleep(params),
+    TypedExprKind::DbTable{database,table,..}=>expr_uses_sleep(database)||expr_uses_sleep(table),
   TypedExprKind::HttpServeState{handler,initial}=>expr_uses_sleep(handler)||expr_uses_sleep(initial),
   TypedExprKind::Markdown(value)|TypedExprKind::HttpServe(value)=>expr_uses_sleep(value),
   TypedExprKind::FileWrite{filename,content}=>expr_uses_sleep(filename)||expr_uses_sleep(content),
@@ -497,6 +507,7 @@ fn stmt_uses_sleep(s:&TypedStmt)->bool {
 fn expr_uses_file_write(e:&TypedExpr)->bool {
  match &e.kind {
    TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_file_write(database)||expr_uses_file_write(sql)||expr_uses_file_write(params),
+    TypedExprKind::DbTable{database,table,..}=>expr_uses_file_write(database)||expr_uses_file_write(table),
   TypedExprKind::HttpServeState{handler,initial}=>expr_uses_file_write(handler)||expr_uses_file_write(initial),
   TypedExprKind::Markdown(value)|TypedExprKind::HttpServe(value)=>expr_uses_file_write(value),
   TypedExprKind::FileWrite{..}=>true,
@@ -533,6 +544,7 @@ fn stmt_uses_file_write(s:&TypedStmt)->bool {
 fn expr_cli_flags(e:&TypedExpr)->u8 {
   match &e.kind {
     TypedExprKind::DbRows{database,sql,params,..}=>expr_cli_flags(database)|expr_cli_flags(sql)|expr_cli_flags(params),
+    TypedExprKind::DbTable{database,table,..}=>expr_cli_flags(database)|expr_cli_flags(table),
     TypedExprKind::HttpServeState{handler,initial}=>expr_cli_flags(handler)|expr_cli_flags(initial),
     TypedExprKind::Markdown(v)|TypedExprKind::HttpServe(v)=>expr_cli_flags(v),
     TypedExprKind::FileWrite{filename,content}=>expr_cli_flags(filename)|expr_cli_flags(content),
@@ -569,7 +581,7 @@ fn stmt_cli_flags(s:&TypedStmt)->u8 {
 
 fn expr_uses_db(e:&TypedExpr)->bool {
  match &e.kind {
-   TypedExprKind::DbRows{..}=>true,
+   TypedExprKind::DbRows{..}|TypedExprKind::DbTable{..}=>true,
    TypedExprKind::HttpServeState{handler,initial}=>expr_uses_db(handler)||expr_uses_db(initial),
    TypedExprKind::FileWrite{filename,content}=>expr_uses_db(filename)||expr_uses_db(content),
    TypedExprKind::Record(fields)=>fields.iter().any(|(_,v)|expr_uses_db(v)),
