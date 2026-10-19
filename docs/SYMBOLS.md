@@ -203,3 +203,9 @@ For clarity: `↧` sorts the original sequence **without mutation**;
 it computes each numeric key once, maintains source order on ties and rejects
 non-finite numbers. The new effect-isolation safeguards do not change output
 on pure selectors and do not modify the SHA-locked comparison corpus.
+
+When a callback is stored in a variable or passed through another callable,
+H-Code cannot always prove its origin statically. Both runtimes therefore
+reject **all H-Code assignments while evaluating the key**, as well as host
+I/O, including indirect calls. The guard is restored on exceptions. This
+retains first-class callbacks without allowing hidden mutable state.

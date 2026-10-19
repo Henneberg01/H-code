@@ -71,3 +71,11 @@ fn pure_named_sort_functions_and_operator_sections_are_still_valid(){
   assert!(js.contains("__hc_cas_reducer_active=true;"));
  }
 }
+
+#[test]
+fn generated_hcode_assignment_checks_effect_guard_for_dynamic_callbacks(){
+ let program=r#"≔counter←0; ƒ dirty(n:Number)→Number {counter←counter+1; ↩n} ≔alias←dirty; ⎙(⤒(⟦1,2⟧↧alias));"#;
+ let js=compile(program,true).expect("First-class alias must remain a valid typed callable");
+ assert!(js.contains("__hc_cas_reducer_active=true;"));
+ assert!(js.contains("if(__hc_cas_reducer_active)throw Error('↧ key mutation denied');"));
+}

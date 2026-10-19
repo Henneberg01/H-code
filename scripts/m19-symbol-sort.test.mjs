@@ -77,3 +77,26 @@ test('typed callback variables remain first-class, not rejected by the purity ch
  const source='≔key←λn:n*2; ⎙(⤒(⟦3,1,2⟧↧key));';
  assert.deepEqual(runReference(source),['[3,2,1]']);
 });
+
+test('↧ blocks state mutation through a dynamically aliased named function in both runtimes',()=>{
+ const source='≔counter←0; ƒ dirty(n:Number)→Number {counter←counter+1; ↩n} ≔alias←dirty; ⎙(⤒(⟦1,2⟧↧alias));';
+ const stdout=[];
+ assert.throws(()=>execute(source,{stdout:x=>stdout.push(x)}),/↧ key mutation denied/);
+ assert.deepEqual(stdout,[],'A failed selector cannot commit output');
+ const dir=mkdtempSync(join(tmpdir(),'hcode-sort-purity-'));
+ try{
+  const file=join(dir,'unsafe.hc'),compiled=join(dir,'unsafe.mjs');
+  writeFileSync(file,source);
+  const cargo=spawnSync('cargo',['run','--quiet','--manifest-path','compiler/Cargo.toml','--',
+   'build',file,'--out',compiled],{
+   cwd:root,encoding:'utf8',windowsHide:true,timeout:180000,maxBuffer:1048576
+  });
+  assert.equal(cargo.status,0,cargo.stderr||cargo.stdout||String(cargo.error));
+  const output=spawnSync(process.execPath,[compiled],{
+   cwd:root,encoding:'utf8',windowsHide:true,timeout:20000
+  });
+  assert.notEqual(output.status,0,'Compiled program must reject captured mutation');
+  assert.match(output.stderr,/↧ key mutation denied/);
+  assert.equal(output.stdout,'','No output may escape an effectful sort selector');
+ }finally{rmSync(dir,{recursive:true,force:true});}
+});

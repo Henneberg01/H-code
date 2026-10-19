@@ -131,7 +131,7 @@ impl Emitter {
    TypedStmtKind::Use{..}|TypedStmtKind::Import{..}=>String::new(),
    TypedStmtKind::Export{declaration}=>self.statement(declaration),
    TypedStmtKind::Let{name:n,value}=>format!("{pad}let {} = {};\n",name(n),self.expr(value)),
-   TypedStmtKind::Assign{name:n,value}=>format!("{pad}{} = {};\n",name(n),self.expr(value)),
+   TypedStmtKind::Assign{name:n,value}=>format!("{pad}if(__hc_cas_reducer_active)throw Error('↧ key mutation denied');\n{pad}{} = {};\n",name(n),self.expr(value)),
    TypedStmtKind::Return(e)=>format!("{pad}return {};\n",self.expr(e)),
    TypedStmtKind::Expression(e)=>format!("{pad}{};\n",self.expr(e)),
    TypedStmtKind::Function{name:n,parameters,body,..}=>{

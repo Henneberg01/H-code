@@ -1291,6 +1291,7 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
         break;
       }
       case 'Assign':{
+        if(pureDepth>0)throw Error('↧ key mutation denied');
         const binding=scope.find(node.name);
         const type=binding.annotations.get(node.name);
         const val=expr(node.value,scope,type);
