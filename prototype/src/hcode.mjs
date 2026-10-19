@@ -600,7 +600,8 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
     return value;
   };
   root.define('store_get',key=>{
-    const value=storageHost.getItem(storeKey(key));
+    const name=storeKey(key);
+    const value=storageHost.getItem(name);
     if(value===null)return '';
     return storeText(value);
   });
@@ -610,7 +611,8 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
     return null;
   });
   root.define('store_del',key=>{
-    storageHost.removeItem(storeKey(key));
+    const name=storeKey(key);
+    storageHost.removeItem(name);
     return null;
   });
 

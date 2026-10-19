@@ -22,7 +22,8 @@ const __hc_store_text=value=>{
   return value;
 };
 const __hc_store_get=key=>{
-  const value=globalThis.localStorage.getItem(__hc_store_key(key));
+  const name=__hc_store_key(key);
+  const value=globalThis.localStorage.getItem(name);
   return value===null?'':__hc_store_text(value);
 };
 const __hc_store_put=(key,value)=>{
@@ -31,6 +32,7 @@ const __hc_store_put=(key,value)=>{
   return null;
 };
 const __hc_store_del=key=>{
-  globalThis.localStorage.removeItem(__hc_store_key(key));
+  const name=__hc_store_key(key);
+  globalThis.localStorage.removeItem(name);
   return null;
 };
