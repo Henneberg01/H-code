@@ -1,4 +1,4 @@
-use hcode_compiler::{lexer::{lex,TokenKind},parser::parse,checker::check,codegen::emit,packages::PackageRegistry};
+use hcode_compiler::{lexer::lex,parser::parse,checker::check,codegen::emit,packages::PackageRegistry};
 fn compile(source:&str, effects:bool)->Result<String,String>{
  let ast=parse(source).map_err(|e|e.to_string())?;
  let registry=PackageRegistry::default();
@@ -9,7 +9,8 @@ fn compile(source:&str, effects:bool)->Result<String,String>{
 fn actual_unicode_sort_and_print_glyphs_are_same_typed_language_as_accessible_aliases(){
  let src=r#"≔xs←⟦3,1,2,2⟧↧λx:x;⎙(⤒xs)"#;
  let ascii=src.replace('↧',"@v").replace('⎙',"print");
- let a=lex(src).unwrap(),b=lex(&ascii).unwrap();
+ let a=lex(src).unwrap();
+ let b=lex(&ascii).unwrap();
  assert_eq!(a.into_iter().map(|t|t.kind).collect::<Vec<_>>(),
             b.into_iter().map(|t|t.kind).collect::<Vec<_>>());
  let js=compile(src,true).expect("sort sign must be native typed Rust source");
