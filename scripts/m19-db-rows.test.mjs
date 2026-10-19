@@ -61,8 +61,10 @@ test('⧈ is a real reserved source glyph with an ASCII token counterpart',()=>{
 });
 test('independent H-Code reference queries all five real seeded SQLite periods',()=>withDatabase(dir=>{
  for(const c of fixture.cases){
-   const source=authored.replace('"2026-01-01"','"'+c.from+'"')
-                         .replace('"2026-02-01"','"'+c.to+'"');
+   // Replace both date operands atomically. Sequential replacements change the
+   // newly inserted lower bound when it equals the original upper bound.
+   const source=authored.replace('⟦"paid","2026-01-01","2026-02-01"⟧',
+     '⟦"paid","'+c.from+'","'+c.to+'"⟧');
    assert.deepEqual(reference(source,dir),c.expected.byRegion,c.id);
  }
 }));
