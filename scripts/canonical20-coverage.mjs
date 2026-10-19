@@ -21,6 +21,7 @@ import {verifyCanonical12} from './canonical20-verify-12.mjs';
 import {verifyCanonical13} from './canonical20-verify-13.mjs';
 import {verifyCanonical14} from './canonical20-verify-14.mjs';
 import {verifyCanonical15} from './canonical20-verify-15.mjs';
+import {verifyCanonical18} from './canonical20-verify-18.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
 const registryBytes=readFileSync(join(root,'compact/canonical20/workloads.json'));
@@ -160,6 +161,12 @@ export function readiness(){
         // typed SQL-free H-Code Rust/JS, independent TS and real Chromium.
         fullEvidence[w.id]=verifyCanonical15();
         verified++;
+      }else if(w.id==='18-refactor-task'){
+        // The concrete baseline was committed before refactoring. Require
+        // identical assertion bytes, real native projects, independent TS,
+        // generated cases and seeded faults. Never rewrite preregistration.
+        fullEvidence[w.id]=verifyCanonical18();
+        verified++;
       }else{unsupported++;}
     }else if(w.status==='reference_partial'){
       if(w.evidence==='m10:fibonacci'){
@@ -208,7 +215,7 @@ export function readiness(){
     historicalM14IsGlobalMetric:false,
     evidenceByFullTask:fullEvidence,
     evidenceByPartialTask:evidence,
-    explanation:'Full verification is derived from frozen Rust/JS/TS proofs (including CRUD HTTP/disk parity with immutable six-case acceptance); original preregistration remains SHA-frozen and unsupported tasks stay in the denominator. Correctness oracles are not automatically competitive TypeScript baselines. Canonical15 is verified via real SQL-free SQLite and Chromium on SHA-locked authored sources. No global twenty-workload 70% median has been computed.'
+    explanation:'Full verification derives from source-locked compiler executions and independent comparisons. Task18 requires unchanged frozen tests on actual before/after Rust-compiled and TypeScript projects; it does not claim a local-module JS reference engine. Original preregistration remains SHA-frozen and unsupported tasks stay in the denominator. Correctness oracles are not automatically competitive TypeScript baselines. No global twenty-workload 70% median has been computed.'
   };
 }
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){

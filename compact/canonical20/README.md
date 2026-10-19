@@ -4,7 +4,7 @@
 
 Source registry: `compact/canonical20/workloads.json`; coverage checker: `npm run benchmark20:status` on Node22+. The registered source is anchored to Git blob SHA `46653ef90ffb3e420fba4ddfbfac3c4cfd57f3b3` from the original M19 preregistration. Rewriting the scope requires an explicit new reviewed registry version, not silent benchmark edits. All twenty IDs, category requirements and acceptance criteria are recorded so that skipped work cannot disappear from the denominator.
 
-**Derived state when canonical14's source-locked Rust/JS/TypeScript/real-Chrome acceptance proof passes exact-head cross-platform CI: 14/20 compiler-verified, 0/20 partial references, 6/20 unsupported.** The initial manifest JSON retains its original pre-implementation statuses and Git blob SHA; **separate SHA-locked proof harnesses derive full verification only when each task's actual Rust/JS/TypeScript execution passes**. Do not modify the twenty IDs or call a registry field a test.
+**Derived state when all current source-locked acceptance proofs pass: 16/20 compiler-verified, 0/20 partial references, 4/20 unsupported.** This includes the database dashboard and the native/TypeScript refactor proof. The initial manifest JSON retains its original pre-implementation statuses and Git blob SHA; **separate SHA-locked proof harnesses derive full verification only when actual execution passes**. The aggregate must rerun its browser, HTTP and database proofs; a failed environment check does not authorize bypassing one. Do not modify the twenty IDs or call a registry field a test.
 
 Task **01 — stdin arithmetic CLI** implements real typechecked `⌨` (stdin String effect) and `⩚` (pure String→Number arithmetic parser), with exactly 17 frozen valid and 15 invalid command-line inputs, 64 independently expected generated arithmetic expressions, input byte/UTF-8 limits, negative Rust types, byte-exact stdout/stderr/process status, and real `hcodec run` CLI parity on Windows/Linux. Original authored source is **11 codepoints / 15 bytes**, and the handwritten TypeScript correctness oracle remains at **2,365 codepoints**, but is *not* a competitive source baseline. A separately tested, exact-SHA-pinned maintained library comparator in PR #34 uses `@expr-eval/js@3.7.0`: **11 H-Code versus 2,786 all-authored TS codepoints = 99.61% fewer on *task 01 only***, plus 121,201 installed library bytes, 6,255 Rust-compiled JS bytes and distinct package metadata tracked outside author source. See PROOF-01.md. See `compact/canonical20/PROOF-01.md`.
 
@@ -37,21 +37,26 @@ The checker **still refuses arbitrary `status: verified` labels**. Workloads 01,
 
 **Task 14 (M19.14: persisted browser todo):** real user-authored H-Code uses native `⟕` (read storage), `⟖` (persist), `⟗` (remove storage key) and `⟘` (render semantic, HTML-safe native UL/OL item lists). A full add/complete/remove app with duplicate/missing/invalid task handling is checked in Rust and independent H-Code JS; real Chromium compares 15 stages across 3 separate launches against an idiomatic TypeScript version, including persistence, Unicode and accessibility. User-authored code is **1,456 Unicode codepoints / 1,757 UTF-8 bytes** versus independent idiomatic TypeScript **1,999 / 2,003**, or **27.16% codepoint / 12.28% byte savings on this one workload**, far below the 70% goal; **18,213 bytes of generated ESM** are tracked separately. Source code, shared HTML and neutral browser trace are SHA-frozen in `scripts/canonical20-verify-14.mjs`. Requires real Chromium via `HCODE_CHROME`, not a simulated pass. See `compact/canonical20/PROOF-14-B2.md`.
 
+**Task 18 — frozen unit-test refactor:** a concrete starter project was established and committed before refactoring on 2026-10-19. Both native and TypeScript projects extract reusable numerical-summary logic while preserving the original assertion-file bytes. Twelve fixed and thirty-two generated datasets pass on both versions; six seeded faults must fail by assertions. All module, support/type and test source is counted: **1,313 JFH-CODE vs 2,068 TypeScript codepoints (36.51% fewer)** after refactoring, below the 70% target. Shared JSON fixture bytes and generated JavaScript are separate, with alternate fixture-inclusive totals. This proof uses the real Rust compiler and independent TypeScript; it does not claim a JS reference module loader. Run `npm run benchmark20:verify18` and `npm run benchmark20:test18`. See [PROOF-18.md](PROOF-18.md).
+
 ### What we build next: evidence-driven language primitives
 
-The status command also reports **required capabilities across all unverified workloads**. This is the immutable registration's demand tally, **not** a claim about which features the current compiler already has:
+The status command also reports **required capabilities across all unverified workloads**. When all current proofs pass, tasks 16, 17, 19 and 20 remain, with the demand below. This tallies workload requirements; it does not establish compiler coverage:
 
 | Required capability in unverified tasks | Workloads requiring it |
 |---|---:|
-| `multi-file-project` | 3 |
-| `test-runner` | 2 |
+| `multi-file-project` | 2 |
+| `test-runner` | 1 |
 | `http-server` | 1 |
-| `database` | 1 |
 | `cryptography` | 1 |
 | `websocket` | 1 |
 | `persistent-session` | 1 |
+| `app-runtime` | 1 |
+| `integration-tests` | 1 |
+| `async` | 1 |
+| `server` | 1 |
 
-After task 14's full proof, prioritize database, signed-session and WebSocket language primitives (tasks 15–17), and verified multi-file project support (tasks 18–20), not application macros. Any new glyph must **replace** developer-authored syntax and pass semantic parity; then use the unchanged workload fixtures to determine which larger tasks can be fully implemented. Symbol-first compression is the design criterion, but I/O, auth and UI require real runtimes, not a deceptive single-character stand-in for hidden unsupported effects.
+Remaining work covers signed sessions (16), WebSocket chat (17), seeded bug repair (19) and an incremental application feature (20). Native testing and multi-file imports support the next project proofs, which must retain their own acceptance contracts. Each new glyph must replace developer-authored syntax through general typed semantics and pass parity checks. I/O, authentication and UI require executable runtimes and complete acceptance evidence.
 
 **Historical data separation:** `npm run m14:measure` still verifies its original 3-case median **68.46% fewer Unicode codepoints**, which is *not* the twenty-task score. M16.3 independently reduces the *two-function package microcase* to 159 H-Code vs 230 TS codepoints, including package authoring; it must not replace M14's score either.
 

@@ -1,5 +1,11 @@
 # JFH-CODE change log
 
+## Unreleased — frozen refactor workload (2026-10-19)
+
+- Established and committed a concrete baseline for Canonical18 before extracting a reusable statistics module; kept both native and TypeScript assertion files byte-identical.
+- Added source-locked proof execution for both versions and languages, twelve fixed inputs, thirty-two generated inputs and six seeded faults. Authored-source measurement includes all modules, support/types and tests.
+- Added derived task18 readiness without changing the original twenty-workload registry. The measured 36.51% source reduction on this task does not establish the global 70% goal.
+
 ## Unreleased — native program testing (2026-10-19)
 
 - Added the typed assertion sign `⊨` with accessible `assert` alias in the Rust compiler and JavaScript reference.

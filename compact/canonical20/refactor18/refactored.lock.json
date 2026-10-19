@@ -1,0 +1,59 @@
+{
+  "schema": 1,
+  "id": "JFH-CODE-CANONICAL18-REFACTOR-2026-10-19-v1",
+  "baselineCommit": "43d49ba2529befc10210062eaa4128ff9260a2b0",
+  "baselineManifest": {
+    "path": "compact/canonical20/refactor18/baseline.lock.json",
+    "gitBlobSha": "14b812d12478fef0dba7920dc2858865c120bee2"
+  },
+  "files": [
+    {
+      "path": "compact/canonical20/refactor18/refactored/hcode/core.hc",
+      "gitBlobSha": "2de27752994edd7adde2916746d5b221370e137a"
+    },
+    {
+      "path": "compact/canonical20/refactor18/refactored/hcode/report.hc",
+      "gitBlobSha": "1224aa4d8e9a41917c1968064f94e73c37216822"
+    },
+    {
+      "path": "compact/canonical20/refactor18/refactored/hcode/report.test.hc",
+      "gitBlobSha": "c70c3e0a48407b55156b5ee0b615761261593a7c"
+    },
+    {
+      "path": "compact/canonical20/refactor18/refactored/hcode/statistics.hc",
+      "gitBlobSha": "e130e07a2106de4b62c3b108def4d5ae651deef0"
+    },
+    {
+      "path": "compact/canonical20/refactor18/refactored/hcode/statistics.test.hc",
+      "gitBlobSha": "b32f818cdb248ef1d8928881f2ad6fa8d966dca2"
+    },
+    {
+      "path": "compact/canonical20/refactor18/refactored/typescript/core.ts",
+      "gitBlobSha": "d7be10802fc91d2711f64eb6472c2900173dc042"
+    },
+    {
+      "path": "compact/canonical20/refactor18/refactored/typescript/fixtures.ts",
+      "gitBlobSha": "333a0d51699e77cc5f5404d9bdf4f98f7f2776bc"
+    },
+    {
+      "path": "compact/canonical20/refactor18/refactored/typescript/report.test.ts",
+      "gitBlobSha": "b2e3945555e98ed884380ec48c76ff76e5b18855"
+    },
+    {
+      "path": "compact/canonical20/refactor18/refactored/typescript/report.ts",
+      "gitBlobSha": "0b2eb763c97bcded413f2441cbef9fad78f43d91"
+    },
+    {
+      "path": "compact/canonical20/refactor18/refactored/typescript/statistics.test.ts",
+      "gitBlobSha": "59712c88b4eab3cb94c0f671878f60f35f923324"
+    },
+    {
+      "path": "compact/canonical20/refactor18/refactored/typescript/statistics.ts",
+      "gitBlobSha": "6ca79b8a6953f839ee1c20a106b3ccde7702f78a"
+    },
+    {
+      "path": "compact/canonical20/refactor18/refactored/typescript/types.ts",
+      "gitBlobSha": "a354f29a04a8401a2d85d652784ddca95c05cb7f"
+    }
+  ]
+}
