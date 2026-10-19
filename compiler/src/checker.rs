@@ -2,7 +2,7 @@
 //! Program checking is conservative: unknown types and ambiguous `+` are errors,
 //! not runtime guesses. Imported symbols have the exact contracts from their lockfile.
 use std::collections::{HashMap};
-use crate::{Diagnostic,ast::{Program,Stmt,StmtKind,Expr,ExprKind,UnaryOp,BinaryOp},lexer::Span,packages::{PackageRegistry,OperationSig}};
+use crate::{Diagnostic,ast::{Program,Stmt,StmtKind,Expr,ExprKind,UnaryOp,BinaryOp,CryptoOp},lexer::Span,packages::{PackageRegistry,OperationSig}};
 
 #[derive(Clone,Debug,PartialEq,Eq)]
 pub enum Type {
@@ -82,6 +82,7 @@ pub enum TypedStmtKind {
 pub struct TypedExpr { pub kind:TypedExprKind,pub ty:Type,pub span:Span }
 #[derive(Clone,Debug,PartialEq)]
 pub enum TypedExprKind {
+    Crypto {operation:CryptoOp,arguments:Vec<TypedExpr>},
     Number(String),String(String),Bool(bool),Identifier(String),
     OperationRef { id:String },
     Unary { op:UnaryOp,operand:Box<TypedExpr> },
@@ -132,6 +133,10 @@ fn cas_pure_expression<'a>(
 )->Result<(),Diagnostic>{
     let denied=||Diagnostic::new("EFFECT","CAS HTTP state reducer must be replay-safe and effect-free".into(),expr.span);
     match &expr.kind {
+        ExprKind::Crypto{operation,arguments}=>{
+            if *operation!=CryptoOp::Hash{return Err(denied());}
+            for arg in arguments{cas_pure_expression(arg,functions,visiting)?;}
+        },
         ExprKind::FileRead(_)|ExprKind::FileWrite{..}|ExprKind::HttpGet(_)|
         ExprKind::HttpServe(_)|ExprKind::HttpServeState{..}|ExprKind::Sleep(_)|
         ExprKind::StdinText|ExprKind::DbRows{..}|ExprKind::DbTable{..}=>return Err(denied()),
@@ -272,6 +277,7 @@ fn check_sort_key_purity(program:&Program)->Result<(),Diagnostic>{
           }
         }
         match &node.kind {
+            ExprKind::Crypto{arguments,..}=>for arg in arguments{scan_expr(arg,functions)?;},
             ExprKind::FileRead(v)|ExprKind::HttpGet(v)|ExprKind::HttpServe(v)|
             ExprKind::Sleep(v)|ExprKind::ArithEval(v)|ExprKind::JsonWrite(v)|
             ExprKind::TextScalars(v)|ExprKind::TextWords(v)|ExprKind::Histogram(v)|
@@ -690,6 +696,20 @@ impl Checker {
                     return Err(Diagnostic::new("TYPE","⤒ expects statically typed JSON-compatible data".into(),expr.span));
                 }
                 (TypedExprKind::JsonWrite{value:Box::new(checked),schema:resolved},Type::String)
+            }
+            ExprKind::Crypto{operation,arguments}=>{
+                if *operation!=CryptoOp::Hash&&!self.allow_print{
+                    return Err(Diagnostic::new("EFFECT","crypto requires an explicit host capability; pure packages cannot use keys or entropy".into(),expr.span));
+                }
+                let mut checked=Vec::new();
+                for arg in arguments{
+                    let typed=self.expression(arg)?;
+                    let required=if *operation==CryptoOp::Random{Type::Number}else{Type::String};
+                    self.unify(&required,&typed.ty,arg.span,"crypto operand type")?;
+                    checked.push(typed);
+                }
+                let result=if *operation==CryptoOp::Verify{Type::Bool}else{Type::String};
+                (TypedExprKind::Crypto{operation:*operation,arguments:checked},result)
             }
             ExprKind::StdinText=>{
                 if !self.allow_print {
@@ -1247,6 +1267,7 @@ impl Checker {
     fn finalize_expr(&self,e:&mut TypedExpr)->Result<(),Diagnostic>{
         e.ty=self.require_known(&e.ty,e.span)?;
         match &mut e.kind {
+            TypedExprKind::Crypto{arguments,..}=>for arg in arguments{self.finalize_expr(arg)?;},
             TypedExprKind::Sequence(items)=>{for item in items {self.finalize_expr(item)?;}},
             TypedExprKind::Record(fields)=>{for (_,value) in fields{self.finalize_expr(value)?;}},
             TypedExprKind::Field{record,..}=>self.finalize_expr(record)?,

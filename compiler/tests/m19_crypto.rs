@@ -46,3 +46,12 @@ fn crypto_linkage_is_conditional_and_traverses_effectful_operands(){
  let http=compile("⎙(⌁(⤒(⤋\"http://127.0.0.1:1234\")))",true).unwrap();
  assert!(http.contains("const __hc_http_get"));
 }
+#[test]
+fn while_conditions_link_crypto_and_nested_operand_runtimes(){
+ let source="⟳(⊨(\"rfc\",\"x\",\"bad\")){⎙(1)}";
+ let js=compile(source,true).unwrap();
+ assert!(js.contains("const __hc_crypto_verify="),"while condition crypto runtime missing");
+ let nested=compile("⟳(⌁(⤒⦃x:1⦄)≡\"never\"){}",true).unwrap();
+ assert!(nested.contains("const __hc_crypto_hash="));
+ assert!(nested.contains("const __hc_json_write"),"nested condition JSON runtime missing");
+}

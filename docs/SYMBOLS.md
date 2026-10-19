@@ -1,5 +1,24 @@
 # H-Code symbol registry — primary language syntax
 
+## JFH-CODE M19.16 B1 — cryptographic signs (candidate, Rust verification pending)
+
+| Primary source | Secondary accessibility alias | Generic typed operation |
+|---|---|---|
+| `⌁text` | `sha256_text` | UTF-8 String → lowercase SHA-256 hex String |
+| `⊩(key,message)` | `hmac_sign` | Host key alias and message → canonical HMAC-SHA256 base64url String |
+| `⊨(key,message,mac)` | `hmac_verify` | Verify a canonical MAC with fixed-size constant-time byte comparison → Bool |
+| `⚄bytes` | `random_id` | Explicitly granted OS CSPRNG, 16–64 bytes → canonical base64url String |
+
+These are native typed language operations, not login/session macros. Keys
+remain host-owned; the source uses public aliases only. Pure hashing is
+allowed in pure contexts; key/entropy effects are denied in pure packages,
+sort keys and replayable CAS reducers. Reference async entropy is journaled
+so suspensions do not generate replacement IDs. The actual primary example
+is `examples/capabilities/crypto-signs.hc`.
+
+Candidate implementation and test limitations: [M19-16-CRYPTO.md](M19-16-CRYPTO.md).
+No 16/20 or global ≥70% result follows from these primitives.
+
 **H-Code uses signs as its primary real source-code syntax**, inspired by Morse-code-style compact information encoding. Each sign maps to an explicitly defined, inspectable semantic operation. A secondary ASCII spelling is always available for accessibility, keyboards, code review and AI; these are two spellings of the **same language**, not editor macros. Compactness is measured in code points and UTF-8 bytes independently. **User-defined glyphs are package-scoped**, not a collection of magic builtins. Reference implementations are version-locked and inspectable.
 
 | # | Glyph | Alias / textual form | Status | Definition |

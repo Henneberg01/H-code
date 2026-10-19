@@ -247,6 +247,22 @@ impl Parser {
                 self.index+=1;
                 ExprKind::JsonWrite(Box::new(self.expression(8)?))
             }
+            TokenKind::CryptoHash|TokenKind::CryptoSign|TokenKind::CryptoVerify|TokenKind::CryptoRandom=>{
+                let operation=match self.peek().kind {
+                    TokenKind::CryptoHash=>CryptoOp::Hash,TokenKind::CryptoSign=>CryptoOp::Sign,
+                    TokenKind::CryptoVerify=>CryptoOp::Verify,_=>CryptoOp::Random
+                };
+                self.index+=1;
+                let mut arguments=Vec::new();
+                if matches!(operation,CryptoOp::Sign|CryptoOp::Verify){
+                    self.expect(&TokenKind::LeftParen)?;
+                    arguments.push(self.expression(0)?);self.expect(&TokenKind::Comma)?;
+                    arguments.push(self.expression(0)?);
+                    if operation==CryptoOp::Verify{self.expect(&TokenKind::Comma)?;arguments.push(self.expression(0)?);}
+                    self.expect(&TokenKind::RightParen)?;
+                }else{arguments.push(self.expression(8)?);}
+                ExprKind::Crypto{operation,arguments}
+            }
             TokenKind::StdinText=>{self.index+=1;ExprKind::StdinText}
             TokenKind::ArithEval=>{self.index+=1;ExprKind::ArithEval(Box::new(self.expression(8)?))}
             TokenKind::FileRead=>{self.index+=1;ExprKind::FileRead(Box::new(self.expression(8)?))}

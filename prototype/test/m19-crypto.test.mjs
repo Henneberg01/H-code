@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
 import {execute,executeAsync,parse} from '../src/hcode.mjs';
 
 const key='0b'.repeat(20),message='Hi There';
@@ -119,4 +120,20 @@ test('malicious host results and exceptions are rejected without exposing conten
     ['⚄24',{random:()=>{throw Error(secret);}}],
     ['⊩("rfc","message")',{sign:()=>{throw Error(secret);}}]
   ])assert.throws(()=>execute(source,{cryptoHost}),e=>!e.message.includes(secret)&&/crypto|entropy/.test(e.message));
+});
+test('interpreter enforces canonical MAC input even with a custom boolean host',()=>{
+  let calls=0;
+  const cryptoHost={verify:()=>{calls++;return true;}};
+  for(const mac of ['!',expected+'=','A'.repeat(42)+'B']){
+    assert.deepEqual(output('⎙(⊨("rfc","x",'+JSON.stringify(mac)+'))',{cryptoHost}),['false']);
+  }
+  assert.equal(calls,3,'host is still consulted for key permission before rejecting malformed MAC');
+  const denied={verify:()=>{const error=Error('private detail');error.code='JFH_CRYPTO_DENIED';throw error;}};
+  assert.throws(()=>execute('⊨("rfc","x","!")',{cryptoHost:denied}),/capability denied/);
+});
+test('the actual sign-first capability example runs only with its explicit host grant',async()=>{
+  const source=readFileSync(new URL('../../examples/capabilities/crypto-signs.hc',import.meta.url),'utf8');
+  const cryptoHost=await host({version:1,keys:{example:{hex:'42'.repeat(32),sign:true,verify:true}},random:true});
+  assert.deepEqual(output(source,{cryptoHost}),['true']);
+  assert.throws(()=>execute(source),/capability denied/);
 });

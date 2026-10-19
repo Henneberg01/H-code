@@ -984,6 +984,7 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
         catch(error){throw Error(error?.code==='JFH_CRYPTO_DENIED'?'crypto capability denied':'crypto host operation failed');}
         if(method==='sign'&&!canonicalMac(result))throw Error('Invalid crypto MAC result');
         if(method==='verify'&&typeof result!=='boolean')throw Error('Invalid crypto verification result');
+        if(method==='verify')result=canonicalMac(args[2])&&result;
         if(method==='random'){
           entropyValue(result,args[0]);
           entropyJournal.push(Object.freeze({bytes:args[0],value:result}));entropyBytes+=args[0];

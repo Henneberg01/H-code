@@ -1,6 +1,9 @@
 # M19.16 B1 — generelle kryptografiske tegn i H-Code
 
-Status: **konkret design til ejergennemgang; ikke implementeret eller godkendt**.
+Oprindelig status 2026-10-19: konkret design til ejergennemgang.
+Aktuel status 2026-10-20: ejeren har bedt os tage de tekniske valg og arbejde
+videre. B1-kandidaten er implementeret; Rust- og platformverifikation er
+fortsat udestående. Se `docs/M19-16-CRYPTO.md` for faktisk testevidens.
 
 ## Formål og afgrænsning
 
@@ -16,7 +19,7 @@ sprogimplementeringen; B2 skal skrive sessionsalgoritmen i H-Code, og B3
 skal bevise hele opgaven. Dækning forbliver 15/20, og ingen samlet
 70 %-konklusion følger af B1.
 
-Normativ retning: `H-CODE-PRINCIPLES.md`. Det oprindelige register,
+Normativ retning: `JFH-CODE-PRINCIPLES.md`. Det oprindelige register,
 historiske programmer, biblioteker og benchmarkbaselines ændres ikke.
 
 ## Undersøgt udgangspunkt
