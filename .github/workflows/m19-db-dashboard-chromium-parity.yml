@@ -1,0 +1,27 @@
+name: H-Code M19.15 B3 native-versus-idiomatic TS Chromium proof
+on:
+  push:
+    branches: ['feat/m19-canonical15-*']
+  pull_request:
+    branches: [main,'feat/m19-canonical15-*']
+permissions:
+  contents: read
+jobs:
+  chromium-parity:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest,windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: dtolnay/rust-toolchain@stable
+      - id: chrome
+        uses: browser-actions/setup-chrome@v2
+      - name: Repeated same-DB real Chromium native/TS DOM equality and mutation
+        env:
+          HCODE_CHROME: ${{ steps.chrome.outputs.chrome-path }}
+        run: node --experimental-sqlite --experimental-strip-types --test scripts/m19-db-dashboard-chromium-parity.test.mjs
