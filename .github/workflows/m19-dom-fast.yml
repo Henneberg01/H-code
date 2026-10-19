@@ -22,3 +22,18 @@ jobs:
         run: cargo test --manifest-path compiler/Cargo.toml --test m19_browser_dom
       - name: Rust generated JS versus independent H-Code DOM reference
         run: npm run m19:browser-dom
+
+  real-browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: browser-actions/setup-chrome@v2
+        id: chrome
+      - name: Real Chromium HTML5 controls, keyboard-compatible events and screen-reader feedback
+        run: npm run m19:browser-real
+        env:
+          HCODE_CHROME: ${{ steps.chrome.outputs.chrome-path }}
