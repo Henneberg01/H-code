@@ -61,6 +61,12 @@ proof compares the actual native compiler, independent TypeScript and a neutral
 expected-output calculation. TypeScript runs with Node's type stripping; a
 separate `tsc` typecheck is not claimed.
 
+Local validation on 2026-10-19 passed all seven verifier tests and eighteen
+assertion/test-runner regression tests. The aggregate `benchmark20:status`
+command still stops at the existing task13 Chromium timeout in this cloud
+environment, also reproducible with an empty browser page. This run therefore
+does not assert an aggregate 16/20 pass; task18's standalone evidence is separate.
+
 ## Source measurement
 
 All application modules, test files, type declarations and fixture-reader code
