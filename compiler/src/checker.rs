@@ -245,9 +245,11 @@ fn check_sort_key_purity(program:&Program)->Result<(),Diagnostic>{
         if let StmtKind::Function{name,..}=&original.kind{functions.insert(name.clone(),original);}
     }
     fn scan_expr<'a>(node:&Expr,functions:&HashMap<String,&'a Stmt>)->Result<(),Diagnostic>{
-        if let ExprKind::Binary{op:BinaryOp::SortDesc,right,..}=&node.kind {
+        if let ExprKind::Binary{op,right,..}=&node.kind {
+          if matches!(op,BinaryOp::SortDesc|BinaryOp::SortTextAsc) {
             let denied=||Diagnostic::new("EFFECT",
-                "↧ requires a statically known effect-free key (no I/O or mutation)".into(),right.span);
+                format!("{} requires a statically known effect-free key (no I/O or mutation)",
+                  if *op==BinaryOp::SortDesc{"↧"}else{"↥"}),right.span);
             let mut visiting=Vec::new();
             match &right.kind {
                 ExprKind::Identifier(name)=>{
@@ -267,6 +269,7 @@ fn check_sort_key_purity(program:&Program)->Result<(),Diagnostic>{
                 },
                 _=>return Err(denied())
             }
+          }
         }
         match &node.kind {
             ExprKind::FileRead(v)|ExprKind::HttpGet(v)|ExprKind::HttpServe(v)|
@@ -1054,7 +1057,7 @@ impl Checker {
             }
             ExprKind::Binary{op,left,right}=>{
                 let l=self.expression(left)?;
-                let r=if matches!(op,BinaryOp::Filter|BinaryOp::Map|BinaryOp::SortDesc) &&
+                let r=if matches!(op,BinaryOp::Filter|BinaryOp::Map|BinaryOp::SortDesc|BinaryOp::SortTextAsc) &&
                           matches!(&right.kind,ExprKind::Lambda{..}){
                     let element=self.fresh();
                     self.unify(&l.ty,&Type::Sequence(Box::new(element.clone())),left.span,
@@ -1086,6 +1089,15 @@ impl Checker {
                         self.unify(&l.ty,&seq,left.span,"↧ requires a typed sequence")?;
                         let callback=Type::Function(vec![item],Box::new(Type::Number));
                         self.unify(&r.ty,&callback,right.span,"↧ key selector must return Number")?;
+                        seq
+                    }
+                    BinaryOp::SortTextAsc=>{
+                        // Generic, stable ascending Unicode scalar key ordering.
+                        let item=self.fresh();
+                        let seq=Type::Sequence(Box::new(item.clone()));
+                        self.unify(&l.ty,&seq,left.span,"↥ requires a typed sequence")?;
+                        let callback=Type::Function(vec![item],Box::new(Type::String));
+                        self.unify(&r.ty,&callback,right.span,"↥ key selector must return String")?;
                         seq
                     }
                     BinaryOp::Concat=>{

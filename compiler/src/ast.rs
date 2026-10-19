@@ -89,7 +89,7 @@ pub enum UnaryOp { Negate, Not }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum BinaryOp {
-    Add, Subtract, Multiply, Divide, Modulo, Compose, Concat, Filter, Map, SortDesc, Equal, NotEqual,
+    Add, Subtract, Multiply, Divide, Modulo, Compose, Concat, Filter, Map, SortDesc, SortTextAsc, Equal, NotEqual,
     Less, Greater, LessEqual, GreaterEqual, And, Or,
 }
 
@@ -100,7 +100,7 @@ impl BinaryOp {
             Self::And => 2,
             Self::Equal | Self::NotEqual => 3,
             Self::Less | Self::Greater | Self::LessEqual | Self::GreaterEqual => 4,
-            Self::Add | Self::Subtract | Self::Concat | Self::Filter | Self::Map | Self::SortDesc => 5,
+            Self::Add | Self::Subtract | Self::Concat | Self::Filter | Self::Map | Self::SortDesc | Self::SortTextAsc => 5,
             Self::Multiply | Self::Divide | Self::Modulo => 6,
             Self::Compose => 7,
         }

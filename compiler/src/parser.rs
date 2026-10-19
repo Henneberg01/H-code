@@ -214,7 +214,8 @@ impl Parser {
             TokenKind::Percent=>BinaryOp::Modulo,TokenKind::Compose=>BinaryOp::Compose,
             TokenKind::SeqConcat=>BinaryOp::Concat,
             TokenKind::Filter=>BinaryOp::Filter,TokenKind::Map=>BinaryOp::Map,
-            TokenKind::SortDesc=>BinaryOp::SortDesc,_=>return None
+            TokenKind::SortDesc=>BinaryOp::SortDesc,
+            TokenKind::SortTextAsc=>BinaryOp::SortTextAsc,_=>return None
         })
     }
     fn expression(&mut self,min_power:u8)->Result<Expr,Diagnostic>{
