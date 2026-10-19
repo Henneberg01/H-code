@@ -1,0 +1,22 @@
+name: H-Code M19.16 B0 independent signed-session contract
+on:
+  push:
+    branches: ['feat/m19-canonical16-*']
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  auth-contract:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Original preregistration and real SQLite HMAC session oracle
+        run: node --experimental-sqlite --experimental-strip-types --test scripts/canonical20-auth-contract.test.mjs
