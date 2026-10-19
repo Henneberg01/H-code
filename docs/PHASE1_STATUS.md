@@ -1,3 +1,5 @@
+> Historical record: the licensing and branding assumptions in this document are superseded by the owner-directed JFH-CODE paid-use policy of 2026-10-19. See [current licensing](../LICENSING.md), [commercial terms](../COMMERCIAL.md) and [project principles](../JFH-CODE-PRINCIPLES.md). This document grants no current use permission.
+
 # H-Code phase 1 — symbol-first foundation acceptance (2026-10-17)
 
 **Scope:** the approved hardening plan for H-Code's existing M0–M9 foundation, not delivery of a universal language or the future M10–M59 ecosystem. Official name **H-Code**. Owner **Jonas Fogh Henneberg**, operating as Fastsell.net (CVR 46614887), Denmark. Core and source-shipped Studio: **Apache-2.0**.

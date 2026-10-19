@@ -1,4 +1,4 @@
-name: H-Code M19.14 browser storage conformance
+name: JFH-CODE M19.14 browser storage conformance
 on:
   push:
     branches:
@@ -20,7 +20,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - name: Native typed storage and signed-purity Rust checks
         run: cargo test --manifest-path compiler/Cargo.toml --test m19_browser_storage
-      - name: Rust-emitted ESM versus H-Code JS interpreter storage parity
+      - name: Rust-emitted ESM versus JFH-CODE JS interpreter storage parity
         run: npm run m19:browser-storage
 
   persistent-browser:
@@ -50,7 +50,7 @@ jobs:
         with:
           node-version: '22'
       - uses: dtolnay/rust-toolchain@stable
-      - name: Rust typechecked developer-authored H-Code todo and DOM list
+      - name: Rust typechecked developer-authored JFH-CODE todo and DOM list
         run: cargo test --manifest-path compiler/Cargo.toml --test m19_todo_ui
       - name: Todo add complete remove source in independent JS and Rust-compiled ESM
         run: npm run m19:todo-ui

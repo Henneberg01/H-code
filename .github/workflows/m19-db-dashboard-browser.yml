@@ -1,4 +1,4 @@
-name: H-Code M19.15 real Chromium dashboard
+name: JFH-CODE M19.15 real Chromium dashboard
 on:
   push:
     branches: ['feat/m19-canonical15-*']
@@ -21,7 +21,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - id: chrome
         uses: browser-actions/setup-chrome@v2
-      - name: Rust ESM, SQLite, browser H-Code and exact Chromium DOM traces
+      - name: Rust ESM, SQLite, browser JFH-CODE and exact Chromium DOM traces
         env:
           HCODE_CHROME: ${{ steps.chrome.outputs.chrome-path }}
         run: node --experimental-sqlite --experimental-strip-types --test scripts/m19-db-dashboard-browser.test.mjs

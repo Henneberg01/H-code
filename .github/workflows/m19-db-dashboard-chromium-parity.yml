@@ -1,4 +1,4 @@
-name: H-Code M19.15 B3 native-versus-idiomatic TS Chromium proof
+name: JFH-CODE M19.15 B3 native-versus-idiomatic TS Chromium proof
 on:
   push:
     branches: ['feat/m19-canonical15-*']

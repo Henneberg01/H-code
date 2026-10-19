@@ -1,4 +1,4 @@
-name: H-Code M19.15 B1 native typed SQLite
+name: JFH-CODE M19.15 B1 native typed SQLite
 on:
   push:
     branches:
@@ -24,5 +24,5 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - name: Native typed SQLite lexer parser typechecker and conditional ESM
         run: cargo test --manifest-path compiler/Cargo.toml --test m19_db_rows
-      - name: Real SQLite query and independent H-Code interpreter parity
+      - name: Real SQLite query and independent JFH-CODE interpreter parity
         run: node --experimental-sqlite --experimental-strip-types --test scripts/m19-db-rows.test.mjs

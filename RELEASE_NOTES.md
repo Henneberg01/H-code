@@ -1,3 +1,11 @@
+# JFH-CODE — current release policy
+
+The current development revision uses the JFH-CODE name and requires a separate paid commercial agreement. No free use license is granted. See LICENSE, LICENSING.md and COMMERCIAL.md. Local edits do not publish a release or rename the hosted repository.
+
+The M9 notes below are historical and describe a previous revision.
+
+---
+
 # H-Code beta release candidate — M9
 
 **Status:** Private review candidate; **not an officially published version or tag**.

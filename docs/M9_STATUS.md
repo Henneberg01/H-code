@@ -1,3 +1,5 @@
+> Historical record: the licensing and branding assumptions in this document are superseded by the owner-directed JFH-CODE paid-use policy of 2026-10-19. See [current licensing](../LICENSING.md), [commercial terms](../COMMERCIAL.md) and [project principles](../JFH-CODE-PRINCIPLES.md). This document grants no current use permission.
+
 # H-Code M9 — source merged, release readiness still limited
 
 **Project:** H-Code, an independent symbolic programming language (not a FastSell feature).

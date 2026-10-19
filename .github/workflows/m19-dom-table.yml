@@ -1,4 +1,4 @@
-name: H-Code M19.15 B2a typed semantic DOM table
+name: JFH-CODE M19.15 B2a typed semantic DOM table
 on:
   push:
     branches: ['feat/m19-canonical15-*']
@@ -21,5 +21,5 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - name: Typed Rust glyph and accessibility parity
         run: cargo test --manifest-path compiler/Cargo.toml --test m19_dom_table
-      - name: Independent H-Code JS interpreter and emitted Rust table parity
+      - name: Independent JFH-CODE JS interpreter and emitted Rust table parity
         run: node --test scripts/m19-dom-table.test.mjs

@@ -1,4 +1,6 @@
-# Contributing to H-Code
+# Contributing to JFH-CODE
+
+Current licensing and contribution-rights requirements are defined by [CONTRIBUTING.md](../CONTRIBUTING.md) and [LICENSING.md](../LICENSING.md). A separate paid commercial agreement is required for use. This technical guide grants no permission.
 
 M1 is experimental. Keep proposal/design changes and runtime changes separate. Every semantic change must update `docs/LANGUAGE_SPEC.md`, `grammar/hcode-m1.ebnf`, relevant examples and `prototype/test/hcode.test.mjs`.
 

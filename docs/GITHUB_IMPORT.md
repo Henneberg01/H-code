@@ -1,23 +1,7 @@
-# Publish H-Code to its independent GitHub repository
+# JFH-CODE GitHub repository
 
-GitHub account verified in this project session: `henneberg1`. The connected GitHub integration cannot create repositories. The Henneberg Browser MCP bridge was disconnected, and the `h-code` repository did not exist when last checked. No remote push has been performed.
+The checkout was obtained from `Henneberg01/H-code`. The owner has requested the official product and repository name **JFH-CODE**.
 
-## Easiest path
+After the reviewed code and commercial licensing notice are ready, use authorized GitHub administration access to rename the hosted repository to `JFH-CODE`. Confirm the returned repository identity, default branch, remote reachability and the actual LICENSE/README before updating URLs or managed-environment metadata. GitHub's old URL may redirect after a successful rename, but do not assume that a local text change performed the rename.
 
-1. Open https://github.com/new
-2. Choose owner `henneberg1`, repository name `h-code`, visibility **Private** during development.
-3. For an API-assisted import, initialize with a README so `main` exists. Then ask ChatGPT to push the H-Code M1 source to `henneberg1/h-code`. GitHub integration can add files to existing repositories.
-4. Alternatively create an **empty repository** and run the commands below using the included local Git history.
-
-## Local Git route after creating an empty remote
-
-```bash
-# From a clone of the included .bundle history
-# git clone H-Code-M1-symbol-libraries.bundle h-code
-cd h-code
-git remote remove origin
-git remote add origin https://github.com/henneberg1/h-code.git
-git push -u origin main
-```
-
-Never push this work to an unrelated FastSell repository.
+Do not change visibility, delete repository history, force-push or claim publication without the relevant authorization and verification. Existing `.hc` programs, `hcodec`, `hcode.lock.json` and `HCODE_*` identifiers remain compatible.

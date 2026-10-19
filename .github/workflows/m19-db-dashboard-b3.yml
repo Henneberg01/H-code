@@ -1,4 +1,4 @@
-name: H-Code M19.15 B3 independent TypeScript and source-locked metrics
+name: JFH-CODE M19.15 B3 independent TypeScript and source-locked metrics
 on:
   push:
     branches: ['feat/m19-canonical15-*']

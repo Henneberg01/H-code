@@ -1,4 +1,10 @@
-# Change log
+# JFH-CODE change log
+
+## Unreleased — identity and paid licensing (2026-10-19)
+
+- Adopted JFH-CODE as the official product name while preserving technical compatibility identifiers and immutable benchmark sources.
+- Adopted proprietary commercial licensing requiring a separate paid agreement, with no free use grant. Third-party terms and previously granted legal permissions remain effective.
+- Aligned package metadata, contributor-rights requirements and release checks with the current policy.
 
 ## M1 offline user-symbol reference (2026-10-17)
 

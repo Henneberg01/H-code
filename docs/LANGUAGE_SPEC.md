@@ -1,10 +1,10 @@
-# H-Code language specification - M1 draft (0.1)
+# JFH-CODE language specification - M1 draft (0.1)
 
 > **Normative status:** DRAFT. Only the subset flagged `reference implemented` is executable. The reference frontend is written in JavaScript to validate semantics quickly. It is not the intended future optimized compiler.
 
 ## Goals
 
-H-Code is a general-purpose language with a readable textual spelling and a compact symbolic spelling. A glyph is an alternative notation for a well-defined semantic operation, **not** a magic replacement for hundreds of missing lines. The M1 reference implementation already links user-defined operations to imported, typed, version-locked local libraries.
+JFH-CODE is a general-purpose language with a readable textual spelling and a compact symbolic spelling. A glyph is an alternative notation for a well-defined semantic operation, **not** a magic replacement for hundreds of missing lines. The M1 reference implementation already links user-defined operations to imported, typed, version-locked local libraries.
 
 The language is independent of FastSell or any platform. For M1 its reference program runs in Node.js. Web, server, native, desktop, mobile and games are future target/library combinations, not presently shipped functionality.
 
@@ -67,7 +67,7 @@ Types: `Number`, `String`, `Bool`, `Unit`, `List<T>`, `Map<K,V>`, `Option<T>`, `
 
 ## User symbols and locked libraries (reference implemented)
 
-M1 now includes an **offline reference implementation** of user-defined, pure, typed operation symbols. A package author writes ordinary H-Code functions, then exports them through a `manifest.json` specifying the glyph, canonical name, explicit input/output types, package version, and `effects: []`. The importer pins exact manifest and library-source SHA-256 digests in `hcode.lock.json` and explicitly imports a package:
+M1 now includes an **offline reference implementation** of user-defined, pure, typed operation symbols. A package author writes ordinary JFH-CODE functions, then exports them through a `manifest.json` specifying the glyph, canonical name, explicit input/output types, package version, and `effects: []`. The importer pins exact manifest and library-source SHA-256 digests in `hcode.lock.json` and explicitly imports a package:
 
 ```hcode
 use "demo.math@1.0.0" as math;
@@ -76,7 +76,7 @@ print(math::add(20, 22)); // 42
 print(math∷⊕(5, 6));     // 11
 ```
 
-In the linker, each spelling produces the same `OperationRef {id: "demo.math@1.0.0::add"}`; the corresponding H-Code library source defines the implementation. The operation is never automatically available without an explicit import.
+In the linker, each spelling produces the same `OperationRef {id: "demo.math@1.0.0::add"}`; the corresponding JFH-CODE library source defines the implementation. The operation is never automatically available without an explicit import.
 
 ### M1 supported contract semantics
 

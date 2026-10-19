@@ -1,4 +1,4 @@
-name: H-Code M19.15 B2b real SQLite authored aggregation
+name: JFH-CODE M19.15 B2b real SQLite authored aggregation
 on:
   push:
     branches: ['feat/m19-canonical15-*']
@@ -19,5 +19,5 @@ jobs:
         with:
           node-version: '22'
       - uses: dtolnay/rust-toolchain@stable
-      - name: Developer-authored H-Code SQLite aggregation parity
+      - name: Developer-authored JFH-CODE SQLite aggregation parity
         run: node --experimental-sqlite --experimental-strip-types --test scripts/m19-db-dashboard-b2b.test.mjs

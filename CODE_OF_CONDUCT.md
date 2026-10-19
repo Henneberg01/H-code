@@ -1,4 +1,4 @@
-# H-Code community code of conduct
+# JFH-CODE community code of conduct
 
 Keep discussion respectful, constructive and inclusive. Harassment, intimidation, discrimination, threats, spamming, deliberate exploitation or publication of others' private information are not welcome. Maintainers may remove content or restrict participation to protect the community.
 

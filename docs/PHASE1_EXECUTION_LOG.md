@@ -1,3 +1,5 @@
+> Historical record: the licensing and branding assumptions in this document are superseded by the owner-directed JFH-CODE paid-use policy of 2026-10-19. See [current licensing](../LICENSING.md), [commercial terms](../COMMERCIAL.md) and [project principles](../JFH-CODE-PRINCIPLES.md). This document grants no current use permission.
+
 # H-Code phase 1 — execution record
 
 Plan: `docs/superpowers/plans/2026-10-17-hcode-phase1-symbol-first.md`

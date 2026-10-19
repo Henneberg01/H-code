@@ -1,8 +1,18 @@
-# Contributing to H-Code
+# Contributing to JFH-CODE
 
-H-Code is an experimental symbolic programming language. Discuss substantial feature changes in an issue before sending a focused pull request. Include behavior-oriented tests and update documentation when behavior changes.
+JFH-CODE is proprietary software requiring a paid commercial license. Discuss proposed contributions with the rights holder before submitting code. Read [LICENSING.md](LICENSING.md) and [COMMERCIAL.md](COMMERCIAL.md).
 
-## Local checks
+## Rights required before acceptance
+
+Do not accept a contribution until its author provides an explicit written agreement granting Jonas Fogh Henneberg, operating as Fastsell.net, the necessary copyright and applicable patent permissions to use, modify, distribute and sublicense it under proprietary commercial terms.
+
+A pull request, Git author name or developer sign-off is not, by itself, that agreement. Contributors may retain ownership, but the grant must cover commercial sublicensing. Employer-owned, jointly owned and third-party code needs permission from the relevant rights holders. Do not submit secrets, proprietary code belonging to others or material you cannot license. Record permission before merging a contribution.
+
+Previously and lawfully granted permissions and third-party licenses remain effective. This policy does not retroactively create ownership or commercial sublicensing rights over earlier contributions.
+
+## Development checks
+
+For the rights holder and developers authorized by a commercial agreement:
 
 ```sh
 npm test
@@ -11,6 +21,4 @@ cargo test --manifest-path compiler/Cargo.toml
 npm run release:check
 ```
 
-Do not include secrets, copied proprietary software, vendor artifacts, generated binaries or code you are not legally allowed to contribute. By intentionally submitting a pull request, you confirm you have the authority to grant the project the right to distribute your contribution under Apache License 2.0. There is currently no separate CLA; third-party code and additional rights should be cleared before inclusion.
-
-Follow CODE_OF_CONDUCT.md and keep GitHub Actions usage controlled; the CI workflow is manually triggered to avoid unplanned compute charges.
+Include tests for behavior changes and preserve historical SHA-locked benchmarks. Follow CODE_OF_CONDUCT.md. Paid CI runs, publication and releases require the appropriate authorization.

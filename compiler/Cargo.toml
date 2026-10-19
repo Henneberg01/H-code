@@ -1,9 +1,13 @@
 [package]
-name = "hcode-compiler"
+name = "jfh-code-compiler"
 version = "0.2.0"
 edition = "2021"
-license = "Apache-2.0"
-description = "H-Code M2 compiler frontend: Unicode lexer, parser, typed AST and static analysis"
+license-file = "../LICENSE"
+description = "JFH-CODE M2 compiler frontend: Unicode lexer, parser, typed AST and static analysis"
+
+# Preserve the internal Rust import name used by existing programs and tests.
+[lib]
+name = "hcode_compiler"
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }

@@ -1,14 +1,14 @@
-# H-Code
+# JFH-CODE
 
-**H-Code** is an experimental typed, symbol-first programming language inspired by Morse-code-style information density: a real Unicode sign can stand for a precise, reusable, typed operation. The glyph is actual compiler-recognized source syntax, **not** a visual replacement for JavaScript. ASCII aliases are secondary accessibility spellings with the same semantics. H-Code is an independent project, not a FastSell platform feature.
+**JFH-CODE** is an experimental typed, symbol-first programming language inspired by Morse-code-style information density: a real Unicode sign can stand for a precise, reusable, typed operation. The glyph is actual compiler-recognized source syntax, **not** a visual replacement for JavaScript. ASCII aliases are secondary accessibility spellings with the same semantics. JFH-CODE is an independent project, not a FastSell platform feature.
 
 Copyright © 2026 **Jonas Fogh Henneberg**, operating as **Fastsell.net** (CVR **46614887**), Denmark.
 
-**Project identity and durable language rules:** [H-CODE-PRINCIPLES.md](H-CODE-PRINCIPLES.md). Signs are source code — never only visual shortcuts.
+**Project identity and durable language rules:** [JFH-CODE-PRINCIPLES.md](JFH-CODE-PRINCIPLES.md). Signs are source code — never only visual shortcuts.
 
 ## Source code must be signs first
 
-H-Code is a **symbolic language**, not TypeScript with replacement characters.
+JFH-CODE is a **symbolic language**, not TypeScript with replacement characters.
 The primary executable notation is built around typed signs. New general
 operators include `↧` (stable numeric-key sorting) and `⎙` (output), in
 addition to `⇢`, `⌕`, `∑` and `⧉`. Conventional ASCII spellings exist for
@@ -20,7 +20,7 @@ that demonstrates shorter, real computation **without** app-specific macros.
 ⎙(⤒(xs↧λr:r·score))
 ```
 
-These are **development-branch capabilities**, not a released H-Code
+These are **development-branch capabilities**, not a released JFH-CODE
 compiler guarantee. [Symbol-first M19.15 correction](compact/canonical20/SYMBOL-FIRST-M19-15.md)
 documents the source audit, locked evidence and remaining SQL syntax debt.
 The 70% source-character reduction across the original twenty workloads
@@ -28,9 +28,9 @@ is a research objective, not an achieved project-wide result.
 
 
 
-## Write H-Code with real signs
+## Write JFH-CODE with real signs
 
-These are executable H-Code programs using the same imported typed operation:
+These are executable JFH-CODE programs using the same imported typed operation:
 
 ```hcode
 use "demo.math@1.0.0" as math;
@@ -60,16 +60,16 @@ cargo run --manifest-path compiler/Cargo.toml -- run examples/hello_ascii.hc
 npm run studio
 ```
 
-Studio runs at **http://127.0.0.1:4317/** on the local computer. It can open, save, check, build and run H-Code. It also supports reviewed AI code-edit proposals, optionally generated using a separately billed OpenAI API key. Using a ChatGPT subscription does not pay for the API.
+Studio runs at **http://127.0.0.1:4317/** on the local computer. It can open, save, check, build and run JFH-CODE. It also supports reviewed AI code-edit proposals, optionally generated using a separately billed OpenAI API key. Using a ChatGPT subscription does not pay for the API.
 
 ## Features
 
 - **M1:** JS reference interpreter, user-defined glyph libraries, SHA-256-locked packages.
 - **M2:** Rust lexer/parser and static type checking.
-- **M3:** typed H-Code to JavaScript compilation; `hcodec build` and `hcodec run`.
+- **M3:** typed JFH-CODE to JavaScript compilation; `hcodec build` and `hcodec run`.
 - **M4:** local `.hc` modules, explicit function exports and starter math/text library.
 - **M5:** invoice, inventory and savings calculation demos (not complete production apps).
-- **M6:** H-Code Studio local web editor.
+- **M6:** JFH-CODE Studio local web editor.
 - **M7:** model-assisted structured edits with diff review and explicit approval.
 - **M8:** basic loop and recursion limits and local HTTP safeguards — **not** a sandbox.
 - **M9:** beta staging and governance, **not yet a public release**.
@@ -80,11 +80,11 @@ Four equivalent programs reduced Unicode code points by **11.39–18.92%** but U
 
 ## License and commercial offering
 
-Source in this repository is licensed under **Apache License 2.0** (see LICENSE/NOTICE). You can redistribute and use it commercially subject to that license. The official H-Code name and logos are governed separately by TRADEMARKS.md. Future H-Code Studio Pro/Cloud offerings may be sold under separate terms, while Core remains free (COMMERCIAL.md).
+**JFH-CODE requires a separate valid paid commercial agreement. No free use license is offered.** The compiler, reference interpreter, Studio and project-authored runtime are proprietary. Source access does not grant permission to run, modify, redistribute or host the current software. Developers retain ownership of their own original application code; their agreement must grant any required embedded-runtime and application-distribution rights. Read [LICENSE](LICENSE), [LICENSING.md](LICENSING.md) and [COMMERCIAL.md](COMMERCIAL.md). Official branding is governed separately by [TRADEMARKS.md](TRADEMARKS.md).
 
 ## Security and limitations
 
-**Only run H-Code from trusted authors.** Generated JavaScript has Node.js host privileges and is not isolated. Studio should never be exposed to the public network. There is no production readiness or measured superiority claim; see SECURITY.md and docs/M9_STATUS.md.
+**Only run JFH-CODE from trusted authors.** Generated JavaScript has Node.js host privileges and is not isolated. Studio should never be exposed to the public network. There is no production readiness or measured superiority claim; see SECURITY.md and docs/M9_STATUS.md.
 
 ## Release and contributing
 
@@ -116,7 +116,7 @@ Expected `120`. The compiler checks Boolean conditions and matching arm types; o
 
 ## Experimental higher-order collection signs — `∑`, `⌕`, `⇢` (unreleased)
 
-These are real Unicode-first H-Code operations in both compilers' source code, using typed, general-purpose array semantics, not AI or hardcoded commerce tasks:
+These are real Unicode-first JFH-CODE operations in both compilers' source code, using typed, general-purpose array semantics, not AI or hardcoded commerce tasks:
 
 ```hcode
 ƒ positive(n) ↩ n>0;
@@ -139,7 +139,7 @@ print(ys⟦1⟧);
 ```
 Expected output: `20`, `22`. Function sections capture their right operand once, execute generically and are checked by Rust's type-inference system.
 
-In a frozen three-task comparison, interim median H-Code source size improved from 56.15% to **68.46% fewer Unicode code points** than the unchanged idiomatic TypeScript inputs. Byte-size reduction median **55.09%**. **This is not a 20-case study or proof of 70% across all programs.** Reproduce with `npm run m14:measure`, see `docs/M14-SYMBOL-LAMBDAS.md`.
+In a frozen three-task comparison, interim median JFH-CODE source size improved from 56.15% to **68.46% fewer Unicode code points** than the unchanged idiomatic TypeScript inputs. Byte-size reduction median **55.09%**. **This is not a 20-case study or proof of 70% across all programs.** Reproduce with `npm run m14:measure`, see `docs/M14-SYMBOL-LAMBDAS.md`.
 
 **Draft feature branch, not merged/released; cargo tests and full CI pending.**
 
@@ -154,7 +154,7 @@ print(n)
 
 ## M16 user-defined symbolic packages (development branch)
 
-A SHA-256-locked `format: 2` package can export actual, pure, typechecked H-Code functions as **user-owned signs** without compiler patches. The `vec.math@1.0.0` fixture defines `⊚` and `⊛` for concrete sequence types; `hcode.m16.lock.json` verifies its exact source and manifest. Full Rust and JS reference tests are under `compiler/tests/m16_packages_v2.rs` and `prototype/test/m16-packages-v2.test.mjs`. See `docs/M16-USER-SIGNS.md` for documented limitations and release criteria. This feature is not merged into main and cannot be claimed as a new 70% source-size result.
+A SHA-256-locked `format: 2` package can export actual, pure, typechecked JFH-CODE functions as **user-owned signs** without compiler patches. The `vec.math@1.0.0` fixture defines `⊚` and `⊛` for concrete sequence types; `hcode.m16.lock.json` verifies its exact source and manifest. Full Rust and JS reference tests are under `compiler/tests/m16_packages_v2.rs` and `prototype/test/m16-packages-v2.test.mjs`. See `docs/M16-USER-SIGNS.md` for documented limitations and release criteria. This feature is not merged into main and cannot be claimed as a new 70% source-size result.
 
 ## M16.2 experimental ∀-quantified packages
 

@@ -1,4 +1,4 @@
-name: H-Code M19.15 B4 SQL-free full dashboard and Unicode sorts
+name: JFH-CODE M19.15 B4 SQL-free full dashboard and Unicode sorts
 on:
   push:
     branches: ['feat/m19-canonical15-*']
@@ -23,7 +23,7 @@ jobs:
         run: cargo test --manifest-path compiler/Cargo.toml --test m19_sort_text
       - name: Independent Unicode scalar interpreter versus compiled Rust
         run: node --test scripts/m19-sort-text.test.mjs
-      - name: SQL-free H-Code and source-locked original H-Code versus TypeScript
+      - name: SQL-free JFH-CODE and source-locked original JFH-CODE versus TypeScript
         run: node --experimental-sqlite --experimental-strip-types --test scripts/m19-sqlfree-dashboard.test.mjs
       - name: Full source audit
         run: node --test scripts/hcode-symbol-first-audit.test.mjs

@@ -1,4 +1,4 @@
-name: H-Code M19.13 fast browser DOM conformance
+name: JFH-CODE M19.13 fast browser DOM conformance
 on:
   push:
     branches:
@@ -20,7 +20,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - name: Rust native typed browser DOM
         run: cargo test --manifest-path compiler/Cargo.toml --test m19_browser_dom
-      - name: Rust generated JS versus independent H-Code DOM reference
+      - name: Rust generated JS versus independent JFH-CODE DOM reference
         run: npm run m19:browser-dom
 
   real-browser:
@@ -37,7 +37,7 @@ jobs:
         run: npm run m19:browser-real
         env:
           HCODE_CHROME: ${{ steps.chrome.outputs.chrome-path }}
-      - name: Independent idiomatic TypeScript versus generated H-Code on same real DOM events
+      - name: Independent idiomatic TypeScript versus generated JFH-CODE on same real DOM events
         run: npm run m19:browser-compare
         env:
           HCODE_CHROME: ${{ steps.chrome.outputs.chrome-path }}

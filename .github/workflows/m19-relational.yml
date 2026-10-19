@@ -1,4 +1,4 @@
-name: H-Code M19 relational ⧈ native parity
+name: JFH-CODE M19 relational ⧈ native parity
 on:
   push:
     branches: ['feat/m19-relational-*']
@@ -21,7 +21,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - name: Rust native glyph and 2-vs-3 operand parser/typechecker tests
         run: cargo test --manifest-path compiler/Cargo.toml --test m19_db_rows --test m19_dom_table --test m19_symbol_sort
-      - name: Disk-backed SQLite and independent H-Code/idiomatic TypeScript parity
+      - name: Disk-backed SQLite and independent JFH-CODE/idiomatic TypeScript parity
         run: node --experimental-sqlite --experimental-strip-types --test scripts/m19-db-rows.test.mjs
       - name: Existing semantic tables and effect-safe sort regression
         run: node --test scripts/m19-dom-table.test.mjs scripts/m19-symbol-sort.test.mjs

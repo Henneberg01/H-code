@@ -1,9 +1,9 @@
 {
-  "name": "h-code-language",
+  "name": "jfh-code-language",
   "version": "0.0.2",
   "private": true,
   "type": "module",
-  "description": "H-Code M1 reference interpreter, symbol linker and offline library contract verification",
+  "description": "JFH-CODE M1 reference interpreter, symbol linker and offline library contract verification",
   "scripts": {
     "test": "node --test prototype/test/*.test.mjs",
     "demo": "node prototype/bin/hcode.mjs run examples/user_symbols.hc --lock hcode.lock.json",
@@ -68,5 +68,6 @@
   },
   "engines": {
     "node": ">=20"
-  }
+  },
+  "license": "UNLICENSED"
 }

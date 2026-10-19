@@ -1,4 +1,4 @@
-name: H-Code compiler and package conformance (M16.3)
+name: JFH-CODE compiler and package conformance (M16.3)
 on:
   workflow_dispatch:
   pull_request:
@@ -45,7 +45,7 @@ jobs:
       - name: Export actual Chrome executable for all nested coverage subprocesses
         shell: bash
         run: echo "HCODE_CHROME=${{ steps.chrome.outputs.chrome-path }}" >> "$GITHUB_ENV"
-      - name: Generate typed packages from concise H-Code
+      - name: Generate typed packages from concise JFH-CODE
         run: cargo run --manifest-path compiler/Cargo.toml -- pack --name poly.auto --version 1.0.0 --source packages/poly.auto/signs.hcs --lock hcode.m16.3.lock.json
       - name: Verify deterministic package output
         run: cargo run --manifest-path compiler/Cargo.toml -- pack --name poly.auto --version 1.0.0 --source packages/poly.auto/signs.hcs --lock hcode.m16.3.lock.json --check
@@ -114,10 +114,10 @@ jobs:
       - name: Verify task06 frozen loopback HTTP fixtures and independent TypeScript baseline
         run: npm run benchmark20:http-contract
         if: ${{ success() || failure() }}
-      - name: Verify canonical06 live H-Code retry policy against Rust JS and TypeScript
+      - name: Verify canonical06 live JFH-CODE retry policy against Rust JS and TypeScript
         run: npm run benchmark20:verify06
         if: ${{ success() || failure() }}
-      - name: Verify real parallel three-request HTTP barrier in Rust-generated H-Code
+      - name: Verify real parallel three-request HTTP barrier in Rust-generated JFH-CODE
         run: npm run benchmark20:batch08
         if: ${{ success() || failure() }}
       - name: Prove canonical08 six frozen and eight generated real concurrent HTTP scenarios
@@ -150,7 +150,7 @@ jobs:
       - name: M19.12 B2c-2 CAS reducer retries and idempotent replay
         run: npm run benchmark20:state12b2c2
         if: ${{ success() || failure() }}
-      - name: M19.12 B2c-2 Rust-compiled H-Code real HTTP crash and dual-process acceptance
+      - name: M19.12 B2c-2 Rust-compiled JFH-CODE real HTTP crash and dual-process acceptance
         run: npm run benchmark20:state12b2c2-http
         if: ${{ success() || failure() }}
       - name: M19.12 B2c-3 bounded CAS crash-point fault injection and corruption tests
@@ -165,7 +165,7 @@ jobs:
       - name: B3b source-authored CRUD reducer reference test
         run: npm run benchmark20:b3b-crud-source
         if: ${{ success() || failure() }}
-      - name: Canonical12 real Rust compiled H-Code HTTP sockets and persistent state proof
+      - name: Canonical12 real Rust compiled JFH-CODE HTTP sockets and persistent state proof
         run: npm run benchmark20:verify12-hcode
         if: ${{ success() || failure() }}
       - name: Canonical12 independent JS reference executes original six scenarios
@@ -183,7 +183,7 @@ jobs:
       - name: M19.13 browser DOM language glyphs - Rust generated and JS reference
         run: npm run m19:browser-dom
         if: ${{ success() || failure() }}
-      - name: M19.14 typed browser persistence Rust and independent H-Code JS tests
+      - name: M19.14 typed browser persistence Rust and independent JFH-CODE JS tests
         run: npm run m19:browser-storage
         if: ${{ success() || failure() }}
       - name: Canonical twenty source-locked readiness check

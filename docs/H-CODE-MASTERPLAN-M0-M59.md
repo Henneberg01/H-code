@@ -1,3 +1,5 @@
+> Historical record: the licensing and branding assumptions in this document are superseded by the owner-directed JFH-CODE paid-use policy of 2026-10-19. See [current licensing](../LICENSING.md), [commercial terms](../COMMERCIAL.md) and [project principles](../JFH-CODE-PRINCIPLES.md). This document grants no current use permission.
+
 # H-Code — samlet masterplan M0–M59 (Compact Syntax Engine / universelt programmeringssprog)
 
 **Version:** 2.0 — 17. oktober 2026  

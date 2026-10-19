@@ -1,4 +1,4 @@
-name: H-Code M19.15 B0 independent SQLite contract
+name: JFH-CODE M19.15 B0 independent SQLite contract
 on:
   pull_request:
     branches: [main, 'feat/m19-canonical14-*']
