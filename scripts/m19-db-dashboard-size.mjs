@@ -9,7 +9,7 @@ const locks=new Map([
  ['compact/canonical20/workloads.json','46653ef90ffb3e420fba4ddfbfac3c4cfd57f3b3'],
  ['compact/canonical20/cases/15-db-dashboard.json','184266b6e49cb8e328e868e6ebc3f1a9bec78b58'],
  ['scripts/canonical20-db-oracle.ts','82654f315c7d967228f5a0670b28265a185822b6'],
- ['compact/canonical20/programs/15-db-dashboard-b2b.hc','096d248c3c6d42f7e430d7e53a6b191a3560e52f'],
+ ['compact/canonical20/programs/15-db-dashboard-b2b.hc','b26fe472f75d844231c2cb1b4353be5f81970174'],
  ['compact/canonical20/programs/15-db-dashboard-ui.hc','ebfe4116989491cd28bc46ecdf56d910c4280773'],
  ['compact/canonical20/idiomatic/15-db-dashboard-backend.ts','6a38199524ce4b25a1476859d7817c6751006579'],
  ['compact/canonical20/idiomatic/15-db-dashboard-browser.ts','537236ac89b9eba6e4c9c188f33d1b34637ca1b0']

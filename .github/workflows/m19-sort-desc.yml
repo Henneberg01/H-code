@@ -1,0 +1,25 @@
+name: H-Code M19.15 B4 generic stable numeric-key sort
+on:
+  push:
+    branches: ['feat/m19-canonical15-*']
+  pull_request:
+    branches: [main,'feat/m19-canonical15-*']
+permissions:
+  contents: read
+jobs:
+  sort:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Rust typed native sort symbol and ASCII alias tests
+        run: cargo test --manifest-path compiler/Cargo.toml --test m19_sort_desc
+      - name: Independent H-Code JS and Rust generated Node ESM stable-sort parity
+        run: node --test scripts/m19-sort-desc.test.mjs
