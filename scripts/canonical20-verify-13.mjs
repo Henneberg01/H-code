@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Canonical13 source-locked acceptance proof. Unchanged preregistration
 // cannot be promoted merely by changing a status flag or authored metrics.
-import {readFileSync} from 'node:fs';
+import {readFileSync,statSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {spawnSync} from 'node:child_process';
 import {join,resolve} from 'node:path';
@@ -55,10 +55,21 @@ export function verifyCanonical13(){
   throw Error('Canonical13 TS competitor needs Node 22+');
  const chromium=process.env.HCODE_CHROME||process.env.CHROME_BIN||
    (process.platform==='win32'?'chrome':'google-chrome');
- const version=spawnSync(chromium,['--version'],{windowsHide:true,encoding:'utf8',timeout:10000});
- if(version.error||version.status!==0||
-    !/Chrome|Chromium/i.test(version.stdout+version.stderr))
-  throw Error('Canonical13 requires real Chromium; set HCODE_CHROME to a working Chrome binary');
+ // chrome.exe is a Windows GUI subsystem binary: "--version" can hang,
+ // produce no console output or return only the numeric product version.
+ // Verify an actual installed executable path on Windows. The following
+ // independent headless browser HTTP/DOM tests prove it really runs Chrome.
+ if(process.platform==='win32'){
+  let executable=false;
+  try{executable=/chrome\\.exe$/i.test(chromium)&&statSync(chromium).isFile();}
+  catch{}
+  if(!executable)throw Error('Canonical13 requires a working chrome.exe path in HCODE_CHROME');
+ }else{
+  const version=spawnSync(chromium,['--version'],{windowsHide:true,encoding:'utf8',timeout:10000});
+  if(version.error||version.status!==0||
+     !/Chrome|Chromium/i.test(version.stdout+version.stderr))
+   throw Error('Canonical13 requires real Chromium; set HCODE_CHROME to a working Chrome binary');
+ }
 
  const rust=checkedSubprocess('native Rust static and effect checks','cargo',[
    'test','--quiet','--manifest-path','compiler/Cargo.toml','--test','m19_browser_dom'
@@ -83,6 +94,8 @@ export function verifyCanonical13(){
     report.hcode?.utf8Bytes!==files.hc.utf8Bytes||
     report.typescriptIdiomatic?.codepoints!==files.ts.codepoints||
     report.typescriptIdiomatic?.utf8Bytes!==files.ts.utf8Bytes||
+    report.codepointReductionPct!==Number((100*(1-files.hc.codepoints/files.ts.codepoints)).toFixed(2))||
+    report.byteReductionPct!==Number((100*(1-files.hc.utf8Bytes/files.ts.utf8Bytes)).toFixed(2))||
     report.globallyVerified70Percent!==false)
   throw Error('Canonical13 source metrics mismatched actual source locks');
  cached=Object.freeze({
