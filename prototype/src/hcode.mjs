@@ -592,7 +592,35 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
   // Independent reference implementation of the general semantic HTML table
   // effect. Captions, headers, rows and hostile text are developer-provided,
   // never interpreted as HTML or as a special sales/dashboard macro.
-  root.define('dom_table',(selector,caption,headers,rows)=>{
+  root.define('dom_table',(...args)=>{
+    if(args.length===2){
+      const [selector,records]=args;
+      if(!Array.isArray(records)||records.length<1||records.length>1000)
+        throw TypeError('⟙ typed rows require 1..1000 records; empty state must be handled explicitly');
+      const first=records[0];
+      if(!first||typeof first!=='object'||Array.isArray(first)||
+         Object.getPrototypeOf(first)!==null)
+        throw TypeError('⟙ requires a genuine H-Code record sequence');
+      const keys=Object.keys(first).sort();
+      if(keys.length<1||keys.length>16||!keys.every(key=>/^[A-Za-z_][A-Za-z0-9_]*$/.test(key)))
+        throw TypeError('⟙ requires 1..16 named record columns');
+      const values=records.map(record=>{
+        if(!record||typeof record!=='object'||Array.isArray(record)||
+           Object.getPrototypeOf(record)!==null||Object.keys(record).length!==keys.length||
+           !keys.every(key=>Object.hasOwn(record,key)))
+          throw TypeError('⟙ typed table record shape mismatch');
+        return keys.map(key=>{
+          const value=record[key];
+          if(!['string','number','boolean'].includes(typeof value)||
+             (typeof value==='number'&&!Number.isFinite(value)))
+            throw TypeError('⟙ typed table record must be scalar');
+          return String(value);
+        });
+      });
+      return root.get('dom_table')?.(selector,'',keys,values);
+    }
+    if(args.length!==4)throw TypeError('⟙ expects two record arguments or four text arguments');
+    const [selector,caption,headers,rows]=args;
     const target=domTarget(selector);
     if(typeof target.tagName!=='string'||target.tagName.toUpperCase()!=='TABLE')
       throw TypeError('DOM table target must be table');
