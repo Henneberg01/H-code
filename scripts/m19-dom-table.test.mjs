@@ -63,7 +63,7 @@ test('atomic runtime failure leaves existing table unchanged',()=>{
  const saved=f.snapshot();
  assert.throws(()=>execute('⟙("#results","Oops",⟦"A","B"⟧,⟦⟦"one"⟧⟧);',{domHost:f.doc}),/rectangular/);
  assert.equal(f.snapshot(),saved);
- assert.throws(()=>execute('⟙("#results","Oops",⟦⟧,⟦⟦"x"⟧⟧);',{domHost:f.doc}),/headers/);
+ assert.throws(()=>execute('≔h:⟦String⟧←⟦⟧;⟙("#results","Oops",h,⟦⟦"x"⟧⟧);',{domHost:f.doc}),/headers/);
  assert.equal(f.snapshot(),saved);
 });
 test('general table rejects non-table targets and never interprets hostile HTML',()=>{
