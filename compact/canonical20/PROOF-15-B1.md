@@ -5,10 +5,43 @@ language operation candidate, not a database-backed dashboard and not 15/20
 verified coverage. The original 20-task registry and the B0 SQLite/TypeScript
 correctness contract remain unchanged.
 
+## Primary symbol-first source (owner correction; experimental)
+
+The developer no longer needs to author raw SQL merely to read a table:
+
+```hcode
+≔r←⧈⦃amount_cents:Number,day:String,region:String,status:String⦄("orders.sqlite","orders")
+≔p←r⌕λx:x·status≡"paid"∧x·day≥"2026-01-01"∧x·day<"2026-02-01"
+print(⤒(p⇢λx:⦃amount:x·amount_cents,region:x·region⦄))
+```
+
+This is a general typed table projection and normal higher-order H-Code source.
+The two-operand `⧈` syntax is a separate native AST variant; Rust-generated ESM
+and the independent H-Code interpreter must execute the same real SQLite file,
+return checked typed records and preserve deterministic ordering. An unknown
+column, invalid identifier, missing capability or malformed type must fail
+closed.
+
+The unchanged three-operand form is retained as **LOW-LEVEL COMPATIBILITY**
+for explicitly parameterized SQL; it is no longer the primary developer example.
+No dashboard-specific macro, hosted AI prompt or shortcut results are allowed.
+
+### Paired source metrics (candidate; must pass exact-head executable CI)
+
+- Developer-written H-Code: **291 Unicode code points / 330 UTF-8 bytes**.
+- Independently authored idiomatic TypeScript: **1,077 points / 1,077 bytes**.
+- Provisional matched-task reduction: **72.98% code points / 69.36% bytes**.
+- Exact Git blob SHA: H-Code `730daae69d80bbfb52200c056d368161600518ac`;
+  TypeScript `f753b7ec77bf5aff06025a618ef4a5df6e8a3451`.
+- This measures one B1 **table-scan/filter/map**, *not* original
+  Canonical15 `15-db-dashboard` (which still requires grouping, UI and Chrome).
+  Never present this percentage as the 20-task 70% target having been met.
+
 ## Typed symbol-first source
 
 The native glyph ⧈ and its ASCII alias db_rows must tokenize to the same
-language operation and compile to byte-identical ESM. Example H-Code:
+language operation and compile to byte-identical ESM. Legacy SQL escape-hatch
+example (not the primary source):
 
     ≔ rows=⧈⦃region:String,paidOrders:Number,revenueCents:Number⦄("orders.sqlite","SELECT region,COUNT(*) AS paidOrders,SUM(amount_cents) AS revenueCents FROM orders WHERE status=? GROUP BY region",⟦"paid"⟧);
     print(⤒rows);

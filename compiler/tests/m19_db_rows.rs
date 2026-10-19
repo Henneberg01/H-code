@@ -49,3 +49,37 @@ fn compiler_rejects_wrong_schema_types_and_unauthorized_effect(){
  let simple=compile("print(1);",false).unwrap();
  assert!(!simple.contains("node:sqlite"),"Ordinary H-Code must not link DB runtime");
 }
+
+
+#[test]
+fn symbol_first_table_projection_is_generic_typed_and_compatible_with_legacy_sql(){
+ let glyph=r#"≔r←⧈⦃amount_cents:Number,day:String,region:String,status:String⦄("orders.sqlite","orders");"#;
+ let alias=glyph.replace('⧈',"db_rows");
+ let native=compile(glyph,false).unwrap();
+ assert_eq!(native,compile(&alias,false).unwrap());
+ assert!(native.contains("__hc_db_table"));
+ assert!(native.contains("SELECT "));
+ assert!(!glyph.contains("SELECT"),"Developer does not author SQL");
+ assert!(!native.contains("__hc_dashboard"));
+ let typed=typed(glyph,false).unwrap();
+ let TypedStmtKind::Let{value,..}=&typed.statements[0].kind else {panic!("Expected typed record sequence")};
+ assert!(matches!(value.kind,TypedExprKind::DbTable{..}));
+ assert!(matches!(value.ty,Type::Sequence(_)));
+ for bad in [
+  r#"⧈Number("orders.sqlite","orders");"#,
+  r#"⧈⦃x:⟦Number⟧⦄("orders.sqlite","orders");"#,
+  r#"⧈⦃x:Number⦄(123,"orders");"#,
+  r#"⧈⦃x:Number⦄("orders.sqlite",123);"#,
+  r#"⧈⦃x:Number⦄("orders.sqlite");"#
+ ]{assert!(compile(bad,false).is_err(),"Wrongly accepted {bad}");}
+ assert!(compile(glyph,true).is_err(),"Pure packages may never read databases");
+}
+
+#[test]
+fn string_relations_are_native_typed_unicode_order_not_javascript_syntax(){
+ let js=compile(r#"print("2026-01-01"<"2026-02-01");print("😀"<"é");"#,false).unwrap();
+ assert!(js.contains("__hc_compare"),"Unicode scalar ordering requires a real runtime operation");
+ assert!(compile(r#"print("a"<3);"#,false).is_err());
+ assert!(compile(r#"print(true<false);"#,false).is_err());
+ assert!(compile(r#"print("2026-01-01"<"2026-02-01");"#,false).is_ok());
+}

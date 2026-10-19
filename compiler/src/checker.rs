@@ -109,6 +109,7 @@ pub enum TypedExprKind {
     ArithEval(Box<TypedExpr>),
     CsvTyped {schema:Type,value:Box<TypedExpr>},
     DbRows {schema:Type,database:Box<TypedExpr>,sql:Box<TypedExpr>,params:Box<TypedExpr>},
+    DbTable {schema:Type,database:Box<TypedExpr>,table:Box<TypedExpr>},
     Index { sequence:Box<TypedExpr>,index:Box<TypedExpr> },
     Length(Box<TypedExpr>),
     Sum(Box<TypedExpr>),
@@ -131,7 +132,7 @@ fn cas_pure_expression<'a>(
     match &expr.kind {
         ExprKind::FileRead(_)|ExprKind::FileWrite{..}|ExprKind::HttpGet(_)|
         ExprKind::HttpServe(_)|ExprKind::HttpServeState{..}|ExprKind::Sleep(_)|
-        ExprKind::StdinText|ExprKind::DbRows{..}=>return Err(denied()),
+        ExprKind::StdinText|ExprKind::DbRows{..}|ExprKind::DbTable{..}=>return Err(denied()),
         ExprKind::Call{callee,arguments}=>{
             match &callee.kind {
                 ExprKind::Identifier(name)=>{
@@ -687,6 +688,41 @@ impl Checker {
                 self.unify(&Type::Number,&input.ty,value.span,"⌛ expects Number milliseconds")?;
                 (TypedExprKind::Sleep(Box::new(input)),Type::Unit)
             }
+            ExprKind::DbTable{schema,database,table}=>{
+                if !self.allow_print || self.active_function.is_some() || self.lambda_depth>0 {
+                    return Err(Diagnostic::new("EFFECT",
+                        "⧈ database table read requires top-level effect permission".into(),expr.span));
+                }
+                let ty=Type::from_name(schema,expr.span)?;
+                let Type::Record(ref fields)=ty else {
+                    return Err(Diagnostic::new("TYPE",
+                      "⧈ table requires an explicit record result schema".into(),expr.span));
+                };
+                if fields.is_empty()||fields.len()>64||
+                   !fields.iter().all(|(_,v)|matches!(v,Type::String|Type::Number|Type::Bool)){
+                    return Err(Diagnostic::new("TYPE",
+                      "⧈ table schema requires 1..64 String/Number/Bool fields".into(),expr.span));
+                }
+                let file=self.expression(database)?;
+                self.unify(&Type::String,&file.ty,database.span,"⧈ database must be String")?;
+                let name=self.expression(table)?;
+                self.unify(&Type::String,&name.ty,table.span,"⧈ table must be String")?;
+                // In the two-operand form, a literal is a TABLE IDENTIFIER,
+                // not a raw SQL statement with a missing parameter list.
+                // Dynamic identifiers are additionally checked by both hosts.
+                if let ExprKind::String(raw)=&table.kind {
+                    let mut chars=raw.chars();
+                    let valid=raw.len()<=64 &&
+                        matches!(chars.next(),Some(c) if c.is_ascii_alphabetic()||c=='_') &&
+                        chars.all(|c|c.is_ascii_alphanumeric()||c=='_');
+                    if !valid {
+                        return Err(Diagnostic::new("TYPE",
+                            "⧈ table requires a safe identifier, not SQL text".into(),table.span));
+                    }
+                }
+                (TypedExprKind::DbTable{schema:ty.clone(),database:Box::new(file),
+                    table:Box::new(name)},Type::Sequence(Box::new(ty)))
+            }
             ExprKind::DbRows{schema,database,sql,params}=>{
                 if !self.allow_print || self.active_function.is_some() || self.lambda_depth>0 {
                     return Err(Diagnostic::new("EFFECT",
@@ -958,8 +994,20 @@ impl Checker {
                         Type::Number
                     }
                     BinaryOp::Less|BinaryOp::Greater|BinaryOp::LessEqual|BinaryOp::GreaterEqual=>{
-                        self.unify(&Type::Number,&l.ty,expr.span,"Comparison expects Number")?;
-                        self.unify(&Type::Number,&r.ty,expr.span,"Comparison expects Number")?;
+                        // H-Code order is defined on Number OR Unicode scalar String.
+                        // ISO dates can therefore be compared in native sign-first
+                        // expressions; mismatched types still fail at compile time.
+                        let operand=self.unify(&l.ty,&r.ty,expr.span,
+                            "Comparison expects Number or matching String")?;
+                        match self.resolved(&operand) {
+                            Type::Number|Type::String=>{},
+                            Type::Variable(_)=>{
+                                self.unify(&Type::Number,&operand,expr.span,
+                                    "Comparison expects Number or String")?;
+                            },
+                            _=>return Err(Diagnostic::new("TYPE",
+                                "Comparison expects Number or String".into(),expr.span))
+                        }
                         Type::Bool
                     }
                     BinaryOp::Equal|BinaryOp::NotEqual=>{

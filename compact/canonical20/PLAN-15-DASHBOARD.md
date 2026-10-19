@@ -1,8 +1,11 @@
 # M19.15 - genuine SQLite-backed dashboard, Canonical20 task 15
 
-Status: **B0 reference contract only**. H-Code does NOT implement database access yet.
-No compiler verification, partial credit, 15/20 score, competitive source-size
-measurement, or main merge is claimed by the contract.
+Status: **B0 reference contract merged; B1/B2 remain development candidates**.
+A symbol-first typed table-read implementation is being verified on a separate
+PR. Original `15-db-dashboard` is **not completed**: grouping, dynamic inputs,
+real HTML rendering, Chromium parity and a full same-task idiomatic TypeScript
+comparator remain outstanding. This plan is not proof of a main-branch merge
+of the B1/B2 language candidates.
 
 ## Immutable preregistration
 

@@ -27,6 +27,37 @@ These are **research targets, not achieved results**:
 
 Measure Unicode code points and UTF-8 bytes **separately**; fewer visible characters do not guarantee fewer bytes or faster runtime. Report execution speed, build time, developer effort, readability and tokens independently. Record both gains and regressions. First real results: `phase1/results/source-metrics.json`; methodology in `docs/BENCHMARKS.md`. Larger application benchmarks are still required.
 
+## Required sign-first acceptance gate (owner correction, 2026-10-19)
+
+**This is a compiler/product constraint, not an optional presentation preference.**
+Every new developer-facing feature must satisfy all requirements before it may
+be treated as an H-Code language advancement:
+
+1. **Primary source is literal H-Code signs.** Build a genuine typed construct
+   with its own grammar/AST and inspectable semantics. ASCII is only an
+   accessibility spelling of the exact same operation, not the dominant design.
+2. **No pasted TypeScript or SQL for routine computations.** Low-level host/SQL
+   escape hatches may exist for interoperability, but cannot replace a primary
+   general-purpose sign-first path. Prefer reusable operations over domain macros.
+3. **Real programs, not wrapper demos.** Verify the sign-first program with the
+   Rust compiler and independent JavaScript interpreter, against a separate,
+   executable idiomatic TypeScript implementation and invalid inputs.
+4. **Source-size proof is mandatory per comparable task.** Measure every
+   developer-authored file, Unicode code points and UTF-8 bytes separately, as
+   well as runtime dependencies and emitted code. A compiler-exported JS helper
+   is not shorter *developer-written H-Code* by itself.
+5. **Never manipulate the denominator.** Preserve SHA-locked historic sources,
+   baseline comparators, original 20 tasks and negative measurements. A local
+   ≥70% result in one selected pair is NOT the unverified global 20-task median.
+6. **Adopt CI checks, not verbal promises.** New primary examples must lead with
+   real signs; compare exact source-locked, executable pairs and retain fallback
+   compatibility tests. Regressions are investigated, not concealed by shorter
+   documentation or removing requirements.
+
+This gate also applies to M19.15's ⧈ database access and ⟙ HTML table feature,
+and all later work on webapps, games, backend and tools. Do not merge a feature
+that only adds a long ordinary-language call behind a sign.
+
 ## Reliability, rights and constraints
 
 - The language must compile and run without a paid AI subscription. AI is optional and edits require review.

@@ -179,3 +179,32 @@ Tegnene er kernesyntaks i Rust AST/typecheck/emitter og JS-reference; ikke genve
 ## M19.01 — `⌨` and `⩚` for an actual calculator CLI (PR #33)
 
 These are real, reserved core-language signs, not textual replacements for JS or a canned calculator app. `⌨` (`stdin_text`) is a one-time String read from host stdin with 64 KiB UTF-8 limit and a static effect ban inside pure signed packages. `⩚` (`arith_eval`) accepts String, statically returns finite Number and implements a reusable precedence/parenthesis/unary arithmetic parser without interpreting the data as executable JS. Invalid arithmetic (including division by zero) produces a deterministic stderr line and process exit code 2; valid input produces a single numeric stdout line and exit code 0. Both Rust emitter and independent H-Code JS interpreter implement it separately; see `compact/canonical20/PROOF-01.md`. The original registered task 01 and its JS/TS/HC SHA-frozen inputs remain unchanged; the overall 20-task median is still unproven.
+
+
+## M19.15 sign-first correction (development branch — not yet accepted)
+
+**Primary developer syntax:** ⧈⦃fields⦄(database,table) is a real typed
+relational-table expression in the Rust AST and independent JS parser. It
+returns a concrete sequence of records, projecting verified identifiers
+from an existing read-only SQLite file. Developers do **not** author SQL for
+routine typed table access. Both two-operand ⧈ and ASCII db_rows spellings
+produce the same typed AST and semantics. A **three-operand** form permits
+explicit, parameter-bound SELECT SQL for advanced interoperability; it is
+a low-level compatibility escape hatch, not the dominant H-Code design.
+
+Example of general source composition: `rows⌕λr:r·status≡"paid"`, then
+`rows⇢λr:⦃name:r·name⦄`. No hardcoded business-operation glyph exists.
+Neither ⧈ nor its runtime can bypass the explicit SQLite read capability
+or instantiate arbitrary files. B1 does not complete the original
+Canonical15 database dashboard.
+
+**General String ordering:** comparison signs `<`, `>`, `≤`, `≥`
+can compare two Strings by deterministic **Unicode scalar code-point**
+order as well as two finite Numbers. Static type mismatches are errors.
+ASCII secondary spellings are identical AST operations. This enables ISO
+date strings without JavaScript/TypeScript code in the source. Compare
+UTF-8 bytes and Unicode source code points independently.
+
+The local Studio palette exposes ⧈ for inserting literal H-Code syntax.
+See docs/H-CODE-SIGN-FIRST-REMEDIATION.md and PROOF-15-B1.md. All new
+claims remain conditional on independent Rust/JS/TypeScript exact-head CI.

@@ -26,6 +26,32 @@ print(answer);
 
 Both print `42`. The imported `⊕` denotes an inspected, version-locked function and is **not** globally hardcoded. See [symbol reference](docs/SYMBOLS.md) and [phase-1 results](docs/PHASE1_STATUS.md). Signs are the preferred spelling; every core sign has a searchable alias.
 
+## Sign-first correction (M19.15, development branch)
+
+The main goal is **developer-written H-Code**, not shorter generated JS. A
+database-backed program should use `⧈` for typed relational access, `⌕` for
+filtering, `⇢` for transformation, `λ` for functions and `·` for typed fields:
+
+```hcode
+≔r←⧈⦃amount_cents:Number,day:String,region:String,status:String⦄("orders.sqlite","orders")
+≔p←r⌕λx:x·status≡"paid"∧x·day≥"2026-01-01"∧x·day<"2026-02-01"
+print(⤒(p⇢λx:⦃amount:x·amount_cents,region:x·region⦄))
+```
+
+This **experimental** two-operand `⧈` form is genuine grammar that projects
+typed SQLite columns directly. The legacy three-operand form can still run raw,
+parameterized SQL for advanced use. Neither form is a commerce/dashboard macro.
+
+The standalone, source-locked table-scan/filter/map comparison contains **291
+H-Code Unicode code points versus 1,077 TypeScript**, with UTF-8 bytes tracked
+separately. These figures describe *one specific paired candidate*, not the
+unfinished dashboard or the global ≥70% goal. Verify executable equivalence and
+CI before treating them as accepted benchmark evidence.
+
+See [permanent language rules](H-CODE-PRINCIPLES.md) and
+[sign-first correction plan](docs/H-CODE-SIGN-FIRST-REMEDIATION.md).
+Historic M0–M19 proof files and frozen baselines are intentionally preserved.
+
 ## Start locally
 
 Requires Node.js **20+** and the stable Rust toolchain. In the repository root:
