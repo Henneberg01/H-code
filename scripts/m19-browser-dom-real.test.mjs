@@ -10,8 +10,7 @@ import {fileURLToPath} from 'node:url';
 const root=fileURLToPath(new URL('../',import.meta.url));
 const dir=()=>mkdtempSync(join(tmpdir(),'hcode13-real-browser-'));
 const form=readFileSync(join(root,'compact/canonical20/programs/13-form-validation-ui.html'),'utf8');
-const script=String.raw
-<script>
+const script=String.raw`<script>
 window.addEventListener('load',()=>{
   try{
     const email=document.querySelector('#email');
@@ -50,8 +49,7 @@ window.addEventListener('load',()=>{
     document.body.append(marker);
   }
 },{once:true});
-</script>
-;
+</script>`;
 function chromeBinary(){
  return process.env.HCODE_CHROME||process.env.CHROME_BIN||
     (process.platform==='win32'?'chrome':'google-chrome');
