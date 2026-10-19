@@ -65,6 +65,7 @@ pub enum ExprKind {
     StdinText,
     ArithEval(Box<Expr>),
     CsvTyped { schema: String, value: Box<Expr> },
+    DbRows { schema: String, database: Box<Expr>, sql: Box<Expr>, params: Box<Expr> },
     TextScalars(Box<Expr>),
     TextWords(Box<Expr>),
     Histogram(Box<Expr>),

@@ -108,6 +108,7 @@ pub enum TypedExprKind {
     StdinText,
     ArithEval(Box<TypedExpr>),
     CsvTyped {schema:Type,value:Box<TypedExpr>},
+    DbRows {schema:Type,database:Box<TypedExpr>,sql:Box<TypedExpr>,params:Box<TypedExpr>},
     Index { sequence:Box<TypedExpr>,index:Box<TypedExpr> },
     Length(Box<TypedExpr>),
     Sum(Box<TypedExpr>),
@@ -130,7 +131,7 @@ fn cas_pure_expression<'a>(
     match &expr.kind {
         ExprKind::FileRead(_)|ExprKind::FileWrite{..}|ExprKind::HttpGet(_)|
         ExprKind::HttpServe(_)|ExprKind::HttpServeState{..}|ExprKind::Sleep(_)|
-        ExprKind::StdinText=>return Err(denied()),
+        ExprKind::StdinText|ExprKind::DbRows{..}=>return Err(denied()),
         ExprKind::Call{callee,arguments}=>{
             match &callee.kind {
                 ExprKind::Identifier(name)=>{
@@ -685,6 +686,30 @@ impl Checker {
                 let input=self.expression(value)?;
                 self.unify(&Type::Number,&input.ty,value.span,"⌛ expects Number milliseconds")?;
                 (TypedExprKind::Sleep(Box::new(input)),Type::Unit)
+            }
+            ExprKind::DbRows{schema,database,sql,params}=>{
+                if !self.allow_print || self.active_function.is_some() || self.lambda_depth>0 {
+                    return Err(Diagnostic::new("EFFECT",
+                        "⧈ database read requires effectful top-level application flow".into(),expr.span));
+                }
+                let ty=Type::from_name(schema,expr.span)?;
+                let Type::Record(ref fields)=ty else {
+                    return Err(Diagnostic::new("TYPE","⧈ requires an explicit record result schema".into(),expr.span));
+                };
+                if fields.is_empty()||fields.len()>64||
+                   !fields.iter().all(|(_,v)|matches!(v,Type::String|Type::Number|Type::Bool)){
+                    return Err(Diagnostic::new("TYPE","⧈ schema requires 1..64 scalar String/Number/Bool record fields".into(),expr.span));
+                }
+                let file=self.expression(database)?;
+                self.unify(&Type::String,&file.ty,database.span,"⧈ database must be String")?;
+                let statement=self.expression(sql)?;
+                self.unify(&Type::String,&statement.ty,sql.span,"⧈ SQL must be String")?;
+                let values=self.expression(params)?;
+                self.unify(&Type::Sequence(Box::new(Type::String)),&values.ty,params.span,
+                    "⧈ bind parameters must be ⟦String⟧")?;
+                (TypedExprKind::DbRows{
+                    schema:ty.clone(),database:Box::new(file),sql:Box::new(statement),params:Box::new(values)
+                },Type::Sequence(Box::new(ty)))
             }
             ExprKind::CsvTyped{schema,value}=>{
                 let ty=Type::from_name(schema,expr.span)?;

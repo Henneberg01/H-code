@@ -72,6 +72,7 @@ impl Emitter {
     }else{format!("(await __hc_http_get({}))",self.expr(value))},
     TypedExprKind::Sleep(value)=>format!("(await __hc_sleep({}))",self.expr(value)),
     TypedExprKind::CsvTyped{schema,value}=>format!("__hc_csv_typed({}, {})",self.expr(value),csv_schema(schema)),
+    TypedExprKind::DbRows{schema,database,sql,params}=>format!("__hc_db_rows({}, {}, {}, {})",self.expr(database),self.expr(sql),self.expr(params),json_schema(schema)),
     TypedExprKind::StdinText=>"__hc_stdin()".into(),
     TypedExprKind::ArithEval(value)=>format!("__hc_arith({})",self.expr(value)),
     TypedExprKind::Lambda{parameter,body}=>format!("(({}) => ({}))",name(parameter),self.expr(body)),
@@ -161,6 +162,7 @@ impl Emitter {
 // that require it. A new glyph must not inflate the runtime of unrelated code.
 fn expr_uses_json(e:&TypedExpr)->bool {
  match &e.kind {
+   TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_json(database)||expr_uses_json(sql)||expr_uses_json(params),
   TypedExprKind::HttpServeState{handler,initial}=>expr_uses_json(handler)||expr_uses_json(initial),
   TypedExprKind::Markdown(value)|TypedExprKind::HttpServe(value)=>expr_uses_json(value),
   TypedExprKind::FileWrite{filename,content}=>expr_uses_json(filename)||expr_uses_json(content),
@@ -197,6 +199,7 @@ fn stmt_uses_json(s:&TypedStmt)->bool {
 // the universal text/histogram primitives (including verified imported packages).
 fn expr_uses_markdown(e:&TypedExpr)->bool {
  match &e.kind {
+   TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_markdown(database)||expr_uses_markdown(sql)||expr_uses_markdown(params),
   TypedExprKind::HttpServeState{handler,initial}=>expr_uses_markdown(handler)||expr_uses_markdown(initial),
   TypedExprKind::Markdown(_)=>true,
   TypedExprKind::HttpServe(value)=>expr_uses_markdown(value),
@@ -234,6 +237,7 @@ fn stmt_uses_markdown(s:&TypedStmt)->bool {
 // the universal text/histogram primitives (including verified imported packages).
 fn expr_uses_http_serve(e:&TypedExpr)->bool {
  match &e.kind {
+   TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_http_serve(database)||expr_uses_http_serve(sql)||expr_uses_http_serve(params),
   TypedExprKind::HttpServe(_)|TypedExprKind::HttpServeState{..}=>true,
   TypedExprKind::Markdown(value)=>expr_uses_http_serve(value),
   TypedExprKind::FileWrite{filename,content}=>expr_uses_http_serve(filename)||expr_uses_http_serve(content),
@@ -270,6 +274,7 @@ fn stmt_uses_http_serve(s:&TypedStmt)->bool {
 // the universal text/histogram primitives (including verified imported packages).
 fn expr_uses_http_state(e:&TypedExpr)->bool {
  match &e.kind {
+   TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_http_state(database)||expr_uses_http_state(sql)||expr_uses_http_state(params),
   TypedExprKind::HttpServeState{..}=>true,
   TypedExprKind::HttpServe(value)=>expr_uses_http_state(value),
   TypedExprKind::Markdown(value)=>expr_uses_http_state(value),
@@ -307,6 +312,7 @@ fn stmt_uses_http_state(s:&TypedStmt)->bool {
 // the universal text/histogram primitives (including verified imported packages).
 fn expr_uses_text(e:&TypedExpr)->bool {
  match &e.kind {
+   TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_text(database)||expr_uses_text(sql)||expr_uses_text(params),
   TypedExprKind::HttpServeState{handler,initial}=>expr_uses_text(handler)||expr_uses_text(initial),
   TypedExprKind::Markdown(value)|TypedExprKind::HttpServe(value)=>expr_uses_text(value),
   TypedExprKind::FileWrite{filename,content}=>expr_uses_text(filename)||expr_uses_text(content),
@@ -343,6 +349,7 @@ fn stmt_uses_text(s:&TypedStmt)->bool {
 
 fn expr_uses_csv(e:&TypedExpr)->bool {
   match &e.kind {
+   TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_csv(database)||expr_uses_csv(sql)||expr_uses_csv(params),
   TypedExprKind::HttpServeState{handler,initial}=>expr_uses_csv(handler)||expr_uses_csv(initial),
   TypedExprKind::Markdown(value)|TypedExprKind::HttpServe(value)=>expr_uses_csv(value),
   TypedExprKind::FileWrite{filename,content}=>expr_uses_csv(filename)||expr_uses_csv(content),
@@ -378,6 +385,7 @@ fn stmt_uses_csv(s:&TypedStmt)->bool {
 }
 fn expr_uses_file(e:&TypedExpr)->bool {
   match &e.kind {
+   TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_file(database)||expr_uses_file(sql)||expr_uses_file(params),
   TypedExprKind::HttpServeState{handler,initial}=>expr_uses_file(handler)||expr_uses_file(initial),
   TypedExprKind::Markdown(value)|TypedExprKind::HttpServe(value)=>expr_uses_file(value),
   TypedExprKind::FileWrite{filename,content}=>expr_uses_file(filename)||expr_uses_file(content),
@@ -414,6 +422,7 @@ fn stmt_uses_file(s:&TypedStmt)->bool {
 // Link the network runtime only when a checked expression contains ⤋.
 fn expr_uses_http(e:&TypedExpr)->bool {
  match &e.kind {
+   TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_http(database)||expr_uses_http(sql)||expr_uses_http(params),
   TypedExprKind::HttpServeState{handler,initial}=>expr_uses_http(handler)||expr_uses_http(initial),
   TypedExprKind::Markdown(value)|TypedExprKind::HttpServe(value)=>expr_uses_http(value),
   TypedExprKind::FileWrite{filename,content}=>expr_uses_http(filename)||expr_uses_http(content),
@@ -450,6 +459,7 @@ fn stmt_uses_http(s:&TypedStmt)->bool {
 
 fn expr_uses_sleep(e:&TypedExpr)->bool {
  match &e.kind {
+   TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_sleep(database)||expr_uses_sleep(sql)||expr_uses_sleep(params),
   TypedExprKind::HttpServeState{handler,initial}=>expr_uses_sleep(handler)||expr_uses_sleep(initial),
   TypedExprKind::Markdown(value)|TypedExprKind::HttpServe(value)=>expr_uses_sleep(value),
   TypedExprKind::FileWrite{filename,content}=>expr_uses_sleep(filename)||expr_uses_sleep(content),
@@ -486,6 +496,7 @@ fn stmt_uses_sleep(s:&TypedStmt)->bool {
 
 fn expr_uses_file_write(e:&TypedExpr)->bool {
  match &e.kind {
+   TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_file_write(database)||expr_uses_file_write(sql)||expr_uses_file_write(params),
   TypedExprKind::HttpServeState{handler,initial}=>expr_uses_file_write(handler)||expr_uses_file_write(initial),
   TypedExprKind::Markdown(value)|TypedExprKind::HttpServe(value)=>expr_uses_file_write(value),
   TypedExprKind::FileWrite{..}=>true,
@@ -521,6 +532,7 @@ fn stmt_uses_file_write(s:&TypedStmt)->bool {
 
 fn expr_cli_flags(e:&TypedExpr)->u8 {
   match &e.kind {
+    TypedExprKind::DbRows{database,sql,params,..}=>expr_cli_flags(database)|expr_cli_flags(sql)|expr_cli_flags(params),
     TypedExprKind::HttpServeState{handler,initial}=>expr_cli_flags(handler)|expr_cli_flags(initial),
     TypedExprKind::Markdown(v)|TypedExprKind::HttpServe(v)=>expr_cli_flags(v),
     TypedExprKind::FileWrite{filename,content}=>expr_cli_flags(filename)|expr_cli_flags(content),
@@ -554,6 +566,44 @@ fn stmt_cli_flags(s:&TypedStmt)->u8 {
       else_body.as_ref().map_or(0,|body|body.iter().fold(0u8,|bits,v|bits|stmt_cli_flags(v)))
   }
 }
+
+fn expr_uses_db(e:&TypedExpr)->bool {
+ match &e.kind {
+   TypedExprKind::DbRows{..}=>true,
+   TypedExprKind::HttpServeState{handler,initial}=>expr_uses_db(handler)||expr_uses_db(initial),
+   TypedExprKind::FileWrite{filename,content}=>expr_uses_db(filename)||expr_uses_db(content),
+   TypedExprKind::Record(fields)=>fields.iter().any(|(_,v)|expr_uses_db(v)),
+   TypedExprKind::RecordUpdate{record,value,..}=>expr_uses_db(record)||expr_uses_db(value),
+   TypedExprKind::Field{record,..}=>expr_uses_db(record),
+   TypedExprKind::Index{sequence,index}=>expr_uses_db(sequence)||expr_uses_db(index),
+   TypedExprKind::Sequence(items)=>items.iter().any(expr_uses_db),
+   TypedExprKind::Binary{left,right,..}=>expr_uses_db(left)||expr_uses_db(right),
+   TypedExprKind::Choice{condition,when_true,when_false}=>expr_uses_db(condition)||expr_uses_db(when_true)||expr_uses_db(when_false),
+   TypedExprKind::Call{callee,arguments}=>expr_uses_db(callee)||arguments.iter().any(expr_uses_db),
+   TypedExprKind::JsonRead{value,..}|TypedExprKind::JsonValid{value,..}|
+   TypedExprKind::JsonWrite{value,..}|TypedExprKind::CsvTyped{value,..}|
+   TypedExprKind::Markdown(value)|TypedExprKind::HttpServe(value)|
+   TypedExprKind::FileRead(value)|TypedExprKind::HttpGet(value)|
+   TypedExprKind::Sleep(value)|TypedExprKind::ArithEval(value)|
+   TypedExprKind::TextScalars(value)|TypedExprKind::TextWords(value)|
+   TypedExprKind::Histogram(value)|TypedExprKind::Length(value)|
+   TypedExprKind::Sum(value)|TypedExprKind::Unary{operand:value,..}|
+   TypedExprKind::Lambda{body:value,..}|TypedExprKind::Section{right:value,..}=>expr_uses_db(value),
+   _=>false
+ }
+}
+fn stmt_uses_db(s:&TypedStmt)->bool {
+ match &s.kind {
+   TypedStmtKind::Use{..}|TypedStmtKind::Import{..}=>false,
+   TypedStmtKind::Export{declaration}=>stmt_uses_db(declaration),
+   TypedStmtKind::Let{value,..}|TypedStmtKind::Assign{value,..}|
+   TypedStmtKind::Return(value)|TypedStmtKind::Expression(value)=>expr_uses_db(value),
+   TypedStmtKind::Function{body,..}|TypedStmtKind::While{body,..}=>body.iter().any(stmt_uses_db),
+   TypedStmtKind::If{condition,then_body,else_body}=>expr_uses_db(condition)||
+     then_body.iter().any(stmt_uses_db)||else_body.as_ref().is_some_and(|body|body.iter().any(stmt_uses_db))
+ }
+}
+
 pub fn emit(program:&TypedProgram,registry:&PackageRegistry)->Result<String,String>{
  let mut imported=BTreeMap::<String,()>::new();
  for stmt in &program.statements { if let TypedStmtKind::Use{package,..}=&stmt.kind {imported.insert(package.clone(),());}}
@@ -570,7 +620,8 @@ pub fn emit(program:&TypedProgram,registry:&PackageRegistry)->Result<String,Stri
  let requires_markdown=program.statements.iter().any(stmt_uses_markdown) ||
   imported.keys().any(|id|registry.packages.get(id)
     .is_some_and(|pkg|pkg.typed_source.statements.iter().any(stmt_uses_markdown)));
- let requires_json=program.statements.iter().any(stmt_uses_json) ||
+ let requires_db=program.statements.iter().any(stmt_uses_db);
+ let requires_json=requires_db || program.statements.iter().any(stmt_uses_json) ||
   imported.keys().any(|id|registry.packages.get(id)
     .is_some_and(|pkg|pkg.typed_source.statements.iter().any(stmt_uses_json)));
  let requires_text=program.statements.iter().any(stmt_uses_text) ||
@@ -767,6 +818,12 @@ const __hc_hist = input => {
 "#);
   }
   if requires_markdown {output.push_str(include_str!("markdown_prelude.js"));}
+  if requires_db {
+    output.push_str("import { DatabaseSync as __hc_DatabaseSync } from 'node:sqlite';\n");
+    output.push_str("import { lstatSync as __hc_lstatSync, realpathSync as __hc_realpathSync } from 'node:fs';\n");
+    output.push_str("import { isAbsolute as __hc_isAbsolute, join as __hc_join, dirname as __hc_dirname } from 'node:path';\n");
+    output.push_str(include_str!("db_read_prelude.js"));
+  }
   if requires_csv {output.push_str(include_str!("csv_parser_prelude.js"));}
   if requires_file {output.push_str(include_str!("file_read_prelude.js"));}
   if requires_file_write {
