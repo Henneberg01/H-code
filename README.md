@@ -6,6 +6,28 @@ Copyright © 2026 **Jonas Fogh Henneberg**, operating as **Fastsell.net** (CVR *
 
 **Project identity and durable language rules:** [H-CODE-PRINCIPLES.md](H-CODE-PRINCIPLES.md). Signs are source code — never only visual shortcuts.
 
+## Source code must be signs first
+
+H-Code is a **symbolic language**, not TypeScript with replacement characters.
+The primary executable notation is built around typed signs. New general
+operators include `↧` (stable numeric-key sorting) and `⎙` (output), in
+addition to `⇢`, `⌕`, `∑` and `⧉`. Conventional ASCII spellings exist for
+accessibility only. For any new programming feature, we require source code
+that demonstrates shorter, real computation **without** app-specific macros.
+
+```hcode
+≔ xs←⟦⦃name:"Ada",score:5⦄,⦃name:"Bo",score:9⦄⟧
+⎙(⤒(xs↧λr:r·score))
+```
+
+These are **development-branch capabilities**, not a released H-Code
+compiler guarantee. [Symbol-first M19.15 correction](compact/canonical20/SYMBOL-FIRST-M19-15.md)
+documents the source audit, locked evidence and remaining SQL syntax debt.
+The 70% source-character reduction across the original twenty workloads
+is a research objective, not an achieved project-wide result.
+
+
+
 ## Write H-Code with real signs
 
 These are executable H-Code programs using the same imported typed operation:

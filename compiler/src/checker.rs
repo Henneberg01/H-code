@@ -910,7 +910,7 @@ impl Checker {
             }
             ExprKind::Binary{op,left,right}=>{
                 let l=self.expression(left)?;
-                let r=if matches!(op,BinaryOp::Filter|BinaryOp::Map) &&
+                let r=if matches!(op,BinaryOp::Filter|BinaryOp::Map|BinaryOp::SortDesc) &&
                           matches!(&right.kind,ExprKind::Lambda{..}){
                     let element=self.fresh();
                     self.unify(&l.ty,&Type::Sequence(Box::new(element.clone())),left.span,
@@ -935,6 +935,14 @@ impl Checker {
                         let callback=Type::Function(vec![input],Box::new(output.clone()));
                         self.unify(&r.ty,&callback,right.span,"⇢ transformer must be unary")?;
                         Type::Sequence(Box::new(output))
+                    }
+                    BinaryOp::SortDesc=>{
+                        let item=self.fresh();
+                        let seq=Type::Sequence(Box::new(item.clone()));
+                        self.unify(&l.ty,&seq,left.span,"↧ requires a typed sequence")?;
+                        let callback=Type::Function(vec![item],Box::new(Type::Number));
+                        self.unify(&r.ty,&callback,right.span,"↧ key selector must return Number")?;
+                        seq
                     }
                     BinaryOp::Concat=>{
                         let elem=self.fresh();
