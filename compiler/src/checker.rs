@@ -109,6 +109,8 @@ pub enum TypedExprKind {
     ArithEval(Box<TypedExpr>),
     CsvTyped {schema:Type,value:Box<TypedExpr>},
     DbRows {schema:Type,database:Box<TypedExpr>,sql:Box<TypedExpr>,params:Box<TypedExpr>},
+    // Intrinsic record-table renderer: columns derived from real static row type.
+    DomRecordTable {selector:Box<TypedExpr>,rows:Box<TypedExpr>,schema:Type},
     Index { sequence:Box<TypedExpr>,index:Box<TypedExpr> },
     Length(Box<TypedExpr>),
     Sum(Box<TypedExpr>),
@@ -1092,6 +1094,34 @@ impl Checker {
                 (TypedExprKind::Binary{op:*op,left:Box::new(l),right:Box::new(r)},ty)
             }
             ExprKind::Call{callee,arguments}=>{
+                if matches!(&callee.kind,ExprKind::Identifier(name) if name=="dom_table") &&
+                   arguments.len()==2 {
+                    if !self.allow_print {
+                        return Err(Diagnostic::new("EFFECT",
+                            "⟙ typed table requires a browser application effect".into(),expr.span));
+                    }
+                    let selector=self.expression(&arguments[0])?;
+                    self.unify(&Type::String,&selector.ty,arguments[0].span,
+                        "⟙ table target must be String")?;
+                    let rows=self.expression(&arguments[1])?;
+                    let row_type=self.resolved(&rows.ty);
+                    let Type::Sequence(record_type)=row_type else {
+                        return Err(Diagnostic::new("TYPE",
+                            "⟙ requires a statically typed sequence of records".into(),arguments[1].span));
+                    };
+                    let Type::Record(fields)=*record_type else {
+                        return Err(Diagnostic::new("TYPE",
+                            "⟙ requires a typed record sequence".into(),arguments[1].span));
+                    };
+                    if fields.is_empty()||fields.len()>16||
+                       !fields.iter().all(|(_,ty)|matches!(ty,Type::String|Type::Number|Type::Bool)){
+                        return Err(Diagnostic::new("TYPE",
+                            "⟙ requires 1..16 scalar String/Number/Bool record fields".into(),arguments[1].span));
+                    }
+                    return Ok(TypedExpr{kind:TypedExprKind::DomRecordTable{
+                      selector:Box::new(selector),rows:Box::new(rows),schema:Type::Record(fields)
+                    },ty:Type::Unit,span:expr.span});
+                }
                 let called=self.expression(callee)?;
                 let mut args=Vec::new();
                 for argument in arguments {args.push(self.expression(argument)?);}
@@ -1178,6 +1208,11 @@ impl Checker {
             TypedExprKind::Call{callee,arguments}=>{
                 self.finalize_expr(callee)?;
                 for a in arguments{self.finalize_expr(a)?;}
+            }
+            TypedExprKind::DomRecordTable{selector,rows,schema}=>{
+                self.finalize_expr(selector)?;
+                self.finalize_expr(rows)?;
+                *schema=self.resolved(schema);
             }
             _=>{}
         }

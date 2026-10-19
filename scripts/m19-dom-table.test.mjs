@@ -74,3 +74,38 @@ test('general table rejects non-table targets and never interprets hostile HTML'
  assert.equal(f.target.children[2].children[1].children[0].textContent,'<img src=x onerror=1>');
  assert.equal(f.target.children[2].children[1].children[0].children.length,0);
 });
+
+test('⟙ typed records render from source without developer-authored headers or cell matrices',()=>{
+ const src=readFileSync(join(root,'compact/canonical20/programs/15-typed-table-b2a.hc'),'utf8');
+ const left=ui(),right=ui();
+ execute(src,{domHost:left.doc});
+ const folder=mkdtempSync(join(tmpdir(),'hcode-table-typed-'));
+ try{
+   const out=join(folder,'typed.mjs');
+   const file=join(root,'compact/canonical20/programs/15-typed-table-b2a.hc');
+   const compiled=spawnSync('cargo',['run','--quiet','--manifest-path','compiler/Cargo.toml','--',
+      'build',file,'--out',out],{cwd:root,encoding:'utf8',windowsHide:true,timeout:180000,maxBuffer:1048576});
+   assert.equal(compiled.status,0,compiled.stderr||compiled.stdout||String(compiled.error));
+   const esm=readFileSync(out,'utf8');
+   assert.match(esm,/__hc_dom_records/);
+   assert.doesNotMatch(esm,/__hc_dashboard/);
+   runInNewContext(esm,{document:right.doc,TextEncoder,console},{timeout:10000});
+   assert.equal(left.snapshot(),right.snapshot());
+   const [caption,thead,tbody]=left.target.children;
+   assert.equal(caption.textContent,'');
+   assert.deepEqual(thead.children[0].children.map(c=>c.textContent),['region','revenue']);
+   assert.equal(tbody.children.length,2);
+   assert.equal(tbody.children[0].children[0].textContent,'North');
+   assert.equal(tbody.children[0].children[1].textContent,'1200');
+   assert.equal(tbody.children[0].children[0].attributes.scope,'row');
+ }finally{rmSync(folder,{recursive:true,force:true});}
+});
+test('⟙ semantic table rejects non-scalar records and empty typed rows, without losing prior DOM',()=>{
+ const f=ui();
+ assert.throws(()=>execute('⟙("#results",⟦⟧);',{domHost:f.doc}),/empty|Cannot infer/);
+ assert.throws(()=>execute('⟙("#results",⟦⦃x:⟦1⟧⦄⟧);',{domHost:f.doc}),/scalar/);
+ execute('⟙("#results",⟦⦃region:"North",total:5⦄⟧);',{domHost:f.doc});
+ const old=f.snapshot();
+ assert.throws(()=>execute('⟙("#results",⟦⦃region:"North",total:5⦄,⦃region:123,total:6⦄⟧);',{domHost:f.doc}),/matching types|homogeneous|record.*must/);
+ assert.equal(old,f.snapshot());
+});
