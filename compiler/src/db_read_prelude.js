@@ -52,7 +52,11 @@ const __hc_db_rows=(name,sql,params,schema)=>{
         const value=raw[key];
         if(type==='b'&&(value===0||value===1))row[key]=value===1;
         else if(type==='n'){
-          if(!Number.isSafeInteger(value))throw TypeError('Database Number exceeds safe integer range');
+          // H-Code Number permits finite fractional SQL REAL values; integer
+          // values must still be exactly representable in IEEE-754.
+          if(typeof value!=='number'||!Number.isFinite(value)||
+             (Number.isInteger(value)&&!Number.isSafeInteger(value)))
+            throw TypeError('Database Number is non-finite or exceeds safe integer range');
           row[key]=value;
         }else if(type==='s'){
           if(typeof value!=='string'||!value.isWellFormed()||

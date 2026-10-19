@@ -74,6 +74,14 @@ test('Rust-generated ESM and independent JS interpreter query real SQLite identi
  assert.deepEqual(JSON.parse(run.stdout.trim()),reference(authored,dir));
  assert.deepEqual(JSON.parse(run.stdout.trim()),fixture.cases[0].expected.byRegion);
 }));
+test('generic SQL REAL and SQLite Bool values preserve native typed H-Code parity',()=>withDatabase(dir=>{
+ const expression='print(⤒(⧈⦃active:Bool,metric:Number⦄("orders.sqlite","SELECT 2.5 AS metric,1 AS active",⟦⟧)));';
+ const {run}=compiled(expression,dir);
+ assert.equal(run.status,0,run.stderr||String(run.error));
+ const expected=[{active:true,metric:2.5}];
+ assert.deepEqual(JSON.parse(run.stdout.trim()),expected);
+ assert.deepEqual(reference(expression,dir),expected);
+}));
 test('compiled host denies ungranted roots and rejects SQLite mutation SQL',()=>withDatabase(dir=>{
  const missing=compiled(authored,dir,false).run;
  assert.notEqual(missing.status,0,'No ambient database access permitted');
