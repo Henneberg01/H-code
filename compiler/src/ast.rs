@@ -41,6 +41,7 @@ pub struct Expr {
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum ExprKind {
+    StateTransaction {handler:Box<Expr>,initial:Box<Expr>},
     Crypto { operation:CryptoOp, arguments:Vec<Expr> },
     Number(String),
     String(String),

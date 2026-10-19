@@ -263,6 +263,12 @@ impl Parser {
                 }else{arguments.push(self.expression(8)?);}
                 ExprKind::Crypto{operation,arguments}
             }
+            TokenKind::StateTransaction=>{
+                self.index+=1;self.expect(&TokenKind::LeftParen)?;
+                let handler=self.expression(0)?;self.expect(&TokenKind::Comma)?;
+                let initial=self.expression(0)?;self.expect(&TokenKind::RightParen)?;
+                ExprKind::StateTransaction{handler:Box::new(handler),initial:Box::new(initial)}
+            }
             TokenKind::StdinText=>{self.index+=1;ExprKind::StdinText}
             TokenKind::ArithEval=>{self.index+=1;ExprKind::ArithEval(Box::new(self.expression(8)?))}
             TokenKind::FileRead=>{self.index+=1;ExprKind::FileRead(Box::new(self.expression(8)?))}

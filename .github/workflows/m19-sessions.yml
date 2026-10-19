@@ -1,0 +1,41 @@
+name: JFH-CODE M19.16 B2a symbolic sessions
+on:
+  workflow_dispatch:
+  push:
+    branches: ['feat/m19-canonical16-b2a-*']
+  pull_request:
+    branches: [main, feat/m19-canonical16-b1-crypto]
+    paths:
+      - 'compiler/**'
+      - 'prototype/**'
+      - 'runtime/string-transaction.mjs'
+      - 'compact/canonical20/candidates/16-session-engine-b2a.hc'
+      - 'scripts/m19-*transaction*'
+      - 'scripts/m19-session-engine.test.mjs'
+      - 'scripts/fixtures/session-entropy-preload.mjs'
+      - '.github/workflows/m19-sessions.yml'
+permissions:
+  contents: read
+jobs:
+  sessions:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Full Rust regression and native transaction types
+        run: cargo test --locked --manifest-path compiler/Cargo.toml
+      - name: Build the actual compiler
+        run: cargo build --locked --manifest-path compiler/Cargo.toml
+      - name: Original B0 oracle, real SQLite and both JFH-CODE engines
+        run: node --experimental-sqlite --experimental-strip-types --test scripts/canonical20-auth-contract.test.mjs scripts/m19-string-transaction.test.mjs scripts/m19-transaction-compiler.test.mjs scripts/m19-session-engine.test.mjs scripts/m19-crypto-compiler.test.mjs scripts/hcode-symbol-first-audit.test.mjs
+      - name: Reference interpreter regression
+        run: npm test
+      - name: Studio regression
+        run: npm run studio:test
