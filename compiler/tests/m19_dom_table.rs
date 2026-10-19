@@ -38,8 +38,8 @@ fn generic_table_is_lexically_reserved_and_rejects_bad_static_shapes(){
 
 #[test]
 fn typed_records_render_without_manual_headers_cell_arrays_or_domain_macros(){
- let source=r#"≔r←⟦⦃region:"North",revenue:1200⦄,⦃region:"South",revenue:900⦄⟧
- ⟙("#results",r)"#;
+ let source=r###"≔r←⟦⦃region:"North",revenue:1200⦄,⦃region:"South",revenue:900⦄⟧
+ ⟙("#results",r)"###;
  let compiled=compile(source,true).unwrap();
  assert!(compiled.contains("__hc_dom_records"),"Native typed record table must not lower to TypeScript authoring");
  assert!(compiled.contains("const __hc_dom_records"));
@@ -48,11 +48,11 @@ fn typed_records_render_without_manual_headers_cell_arrays_or_domain_macros(){
  assert_eq!(compiled,compile(&alias,true).unwrap(),"Literal glyph and ASCII alias must be identical");
  assert!(compile(source,false).is_err(),"Pure packages must not use DOM effects");
  for bad in [
-    r#"⟙("#results",⟦1,2⟧)"#,
-    r#"⟙("#results",⟦⦃x:⟦1⟧⦄⟧)"#,
-    r#"⟙(123,⟦⦃x:"v"⦄⟧)"#,
-    r#"⟙("#results",false)"#
+    r###"⟙("#results",⟦1,2⟧)"###,
+    r###"⟙("#results",⟦⦃x:⟦1⟧⦄⟧)"###,
+    r###"⟙(123,⟦⦃x:"v"⦄⟧)"###,
+    r###"⟙("#results",false)"###
  ]{assert!(compile(bad,true).is_err(),"Bad row type not rejected: {bad}");}
- let previous=r#"⟙("#results","My title",⟦"A"⟧,⟦⟦"B"⟧⟧);"#;
+ let previous=r###"⟙("#results","My title",⟦"A"⟧,⟦⟦"B"⟧⟧);"###;
  assert!(compile(previous,true).is_ok(),"Legacy four-argument typed table remains valid");
 }
