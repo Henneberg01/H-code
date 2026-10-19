@@ -26,7 +26,9 @@ class Store{
  file:string;
  data=new Map<string,Item>();
  private counter=0;
- constructor(private dir:string){
+ private dir:string;
+ constructor(dir:string){
+  this.dir=dir;
   this.file=join(storeRoot(dir),'items-state.json');
   if(!existsSync(this.file))return;
   const st=lstatSync(this.file);
