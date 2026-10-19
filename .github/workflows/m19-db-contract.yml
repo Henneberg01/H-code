@@ -1,0 +1,22 @@
+name: H-Code M19.15 B0 independent SQLite contract
+on:
+  pull_request:
+    branches: [main, 'feat/m19-canonical14-*']
+  push:
+    branches: ['feat/m19-canonical15-*']
+permissions:
+  contents: read
+jobs:
+  contract:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify SHA-locked real SQLite and independent TS correctness contract
+        run: node --experimental-sqlite --experimental-strip-types --test scripts/canonical20-db-contract.test.mjs
