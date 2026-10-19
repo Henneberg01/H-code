@@ -82,6 +82,16 @@ test('generic SQL REAL and SQLite Bool values preserve native typed H-Code parit
  assert.deepEqual(JSON.parse(run.stdout.trim()),expected);
  assert.deepEqual(reference(expression,dir),expected);
 }));
+test('parameterized SQLite statement treats hostile bound text strictly as data',()=>withDatabase(dir=>{
+ const source='print(⤒(⧈⦃amount:Number,region:String⦄("orders.sqlite",'+
+   '"SELECT amount_cents AS amount,region FROM orders WHERE region=?",'+
+   '⟦"North\u0027 OR 1=1 --"⟧)));';
+ const {run}=compiled(source,dir);
+ assert.equal(run.status,0,run.stderr||String(run.error));
+ assert.deepEqual(JSON.parse(run.stdout.trim()),[],
+   'A hostile bound parameter cannot select rows or mutate SQL semantics');
+ assert.deepEqual(reference(source,dir),[]);
+}));
 test('compiled host denies ungranted roots and rejects SQLite mutation SQL',()=>withDatabase(dir=>{
  const missing=compiled(authored,dir,false).run;
  assert.notEqual(missing.status,0,'No ambient database access permitted');
