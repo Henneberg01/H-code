@@ -57,10 +57,18 @@ npm test
 cargo test --manifest-path compiler/Cargo.toml
 npm run studio:test
 cargo run --manifest-path compiler/Cargo.toml -- run examples/hello_ascii.hc
+npm run language:test
 npm run studio
 ```
 
 Studio runs at **http://127.0.0.1:4317/** on the local computer. It can open, save, check, build and run JFH-CODE. It also supports reviewed AI code-edit proposals, optionally generated using a separately billed OpenAI API key. Using a ChatGPT subscription does not pay for the API.
+
+The development compiler also provides `hcodec test PATH` and the typed assertion
+sign `⊨(condition)` (ASCII alias `assert`). Test files use `.test.hc`, run through
+the real compiler, and fail on false conditions, missing assertions or timeouts.
+See [testing programs](docs/TESTING.md). `npm run test:example` runs an illustrative
+module-and-test comparison with TypeScript using Node 22+; it does not change or
+complete the frozen twenty-workload benchmark.
 
 ## Features
 

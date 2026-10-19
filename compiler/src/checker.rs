@@ -13,6 +13,7 @@ pub enum Type {
     Generic(String), // Rigid ∀ binder, not a mutable inference variable
     Variable(u32),
     BuiltinPrint,
+    BuiltinAssert,
 }
 impl Type {
     pub(crate) fn from_bound_name(name:&str,bound:&[String],span:Span)->Result<Type,Diagnostic>{
@@ -82,7 +83,7 @@ pub enum TypedStmtKind {
 pub struct TypedExpr { pub kind:TypedExprKind,pub ty:Type,pub span:Span }
 #[derive(Clone,Debug,PartialEq)]
 pub enum TypedExprKind {
-    Number(String),String(String),Bool(bool),Identifier(String),
+    Number(String),String(String),Bool(bool),Identifier(String),BuiltinAssert,
     OperationRef { id:String },
     Unary { op:UnaryOp,operand:Box<TypedExpr> },
     Binary { op:BinaryOp,left:Box<TypedExpr>,right:Box<TypedExpr> },
@@ -120,7 +121,7 @@ pub enum TypedExprKind {
 }
 
 #[derive(Clone)]
-struct Binding { ty:Type,assignable:bool }
+struct Binding { ty:Type,assignable:bool,builtin_assert:bool }
 struct ActiveFunction { expected:Type,saw_return:bool,generics:Vec<String> }
 
 
@@ -352,6 +353,7 @@ pub fn check(program:&Program, registry:&PackageRegistry, allow_print:bool)->Res
     };
     if allow_print {
         checker.declare("print",Type::BuiltinPrint,false,Span::new(1,1))?;
+        checker.declare("assert",Type::BuiltinAssert,false,Span::new(1,1))?;
         // Browser DOM capabilities are typed, general-purpose and denied to
         // pure signed packages and replayable CAS HTTP reducers.
         let str_=Type::String;
@@ -418,6 +420,11 @@ impl Checker {
         let a=self.resolved(left);let b=self.resolved(right);
         if a==b {return Ok(a);}
         match (&a,&b){
+            (Type::BuiltinAssert,Type::Function(_, _))|(Type::Function(_, _),Type::BuiltinAssert)=>{
+                let signature=Type::Function(vec![Type::Bool],Box::new(Type::Unit));
+                let other=if a==Type::BuiltinAssert {&b}else{&a};
+                self.unify(&signature,other,span,reason)
+            }
             (Type::Variable(id),other)|(other,Type::Variable(id))=>{
                 if self.occurs(*id,other){return Err(Diagnostic::new("TYPE",format!("{reason}: recursive type"),span));}
                 self.substitutions.insert(*id,other.clone()); Ok(other.clone())
@@ -449,9 +456,10 @@ impl Checker {
            (!self.allow_print || self.scopes.len()>1) {
             return Err(Diagnostic::new("TYPE","Reserved core browser DOM capability cannot be shadowed".into(),span));
         }
+        let builtin_assert=name=="assert" && ty==Type::BuiltinAssert && !assignable && self.scopes.len()==1;
         let scope=self.scopes.last_mut().expect("root scope exists");
         if scope.contains_key(name){return Err(Diagnostic::new("TYPE",format!("Duplicate declaration {name}"),span));}
-        scope.insert(name.into(),Binding{ty,assignable});Ok(())
+        scope.insert(name.into(),Binding{ty,assignable,builtin_assert});Ok(())
     }
     fn lookup(&self,name:&str,span:Span)->Result<Binding,Diagnostic>{
         self.scopes.iter().rev().find_map(|s|s.get(name)).cloned()
@@ -1026,8 +1034,10 @@ impl Checker {
             ExprKind::String(raw)=>(TypedExprKind::String(raw.clone()),Type::String),
             ExprKind::Bool(value)=>(TypedExprKind::Bool(*value),Type::Bool),
             ExprKind::Identifier(name)=>{
-                let ty=self.lookup(name,expr.span)?.ty;
-                (TypedExprKind::Identifier(name.clone()),ty)
+                let binding=self.lookup(name,expr.span)?;
+                let kind=if binding.builtin_assert {TypedExprKind::BuiltinAssert}
+                    else {TypedExprKind::Identifier(name.clone())};
+                (kind,binding.ty)
             }
             ExprKind::Operation{alias,name_or_glyph,is_glyph}=>{
                 let op=self.operation(alias,name_or_glyph,*is_glyph,expr.span)?;
@@ -1190,6 +1200,12 @@ impl Checker {
                 for argument in arguments {args.push(self.expression(argument)?);}
                 let resolved_callee=self.resolved(&called.ty);
                 let ty=if resolved_callee==Type::BuiltinPrint {
+                    Type::Unit
+                } else if resolved_callee==Type::BuiltinAssert {
+                    if args.len()!=1 {
+                        return Err(Diagnostic::new("TYPE","assert expects exactly one Bool".into(),expr.span));
+                    }
+                    self.unify(&Type::Bool,&args[0].ty,args[0].span,"assert expects exactly one Bool")?;
                     Type::Unit
                 } else {
                     let ret=self.fresh();

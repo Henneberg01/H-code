@@ -1,5 +1,5 @@
 //! M3 JavaScript backend. Emits only checked H-Code AST, never raw source interpolation.
-use std::collections::BTreeMap;
+use std::{cell::Cell,collections::BTreeMap};
 use crate::{ast::{BinaryOp,UnaryOp},checker::{TypedProgram,TypedStmt,TypedStmtKind,TypedExpr,TypedExprKind,Type},packages::PackageRegistry};
 
 fn q(s:&str)->String {serde_json::to_string(s).expect("serializable string")}
@@ -31,8 +31,9 @@ fn csv_schema(ty:&Type)->String {
   }).collect::<Vec<_>>().join(",");
   format!("[{fields}]")
 }
-struct Emitter { depth:usize }
+struct Emitter { depth:usize,assertion_used:Cell<bool> }
 impl Emitter {
+ fn new(depth:usize)->Self {Self{depth,assertion_used:Cell::new(false)}}
  fn ind(&self)->String {"  ".repeat(self.depth)}
  fn expr(&self,e:&TypedExpr)->String {
   match &e.kind {
@@ -98,6 +99,10 @@ impl Emitter {
       if matches!(e.ty,Type::BuiltinPrint) {"__hc_print".into()}
       else if matches!(s.as_str(),"dom_value"|"dom_text"|"dom_valid"|"dom_on"|"dom_attr"|"dom_list"|"dom_table"|"store_get"|"store_put"|"store_del")
         {format!("__hc_{s}")}else{name(s)},
+   TypedExprKind::BuiltinAssert=>{
+     self.assertion_used.set(true);
+     format!("((value) => __hc_assert(value, {}, {}))",e.span.line,e.span.column)
+   },
    TypedExprKind::OperationRef{id}=>format!("__hc_operations[{}]",q(id)),
    TypedExprKind::Unary{op,operand}=>format!("({}{})",match op{UnaryOp::Not=>"!",UnaryOp::Negate=>"-"},self.expr(operand)),
    TypedExprKind::Binary{op,left,right}=>{
@@ -130,7 +135,12 @@ impl Emitter {
    }
    TypedExprKind::Call{callee,arguments}=>{
     let args=arguments.iter().map(|x|self.expr(x)).collect::<Vec<_>>().join(", ");
-    if matches!(callee.ty,Type::BuiltinPrint){format!("__hc_print({args})")}else{format!("(__hc_tick(),{})({args})",self.expr(callee))}
+    if matches!(callee.ty,Type::BuiltinPrint){format!("__hc_print({args})")}
+    else if matches!(callee.kind,TypedExprKind::BuiltinAssert){
+      self.assertion_used.set(true);
+      format!("__hc_assert({args}, {}, {})",e.span.line,e.span.column)
+    }
+    else{format!("(__hc_tick(),{})({args})",self.expr(callee))}
    }
   }
  }
@@ -193,7 +203,7 @@ fn expr_uses_json(e:&TypedExpr)->bool {
    expr_uses_json(condition)||expr_uses_json(when_true)||expr_uses_json(when_false),
   TypedExprKind::Call{callee,arguments}=>expr_uses_json(callee)||arguments.iter().any(expr_uses_json),
   TypedExprKind::Number(_)|TypedExprKind::String(_)|TypedExprKind::Bool(_)|
-  TypedExprKind::Identifier(_)|TypedExprKind::OperationRef{..}|TypedExprKind::StdinText=>false
+  TypedExprKind::Identifier(_)|TypedExprKind::BuiltinAssert|TypedExprKind::OperationRef{..}|TypedExprKind::StdinText=>false
  }
 }
 fn stmt_uses_json(s:&TypedStmt)->bool {
@@ -233,7 +243,7 @@ fn expr_uses_markdown(e:&TypedExpr)->bool {
    expr_uses_markdown(condition)||expr_uses_markdown(when_true)||expr_uses_markdown(when_false),
   TypedExprKind::Call{callee,arguments}=>expr_uses_markdown(callee)||arguments.iter().any(expr_uses_markdown),
   TypedExprKind::Number(_)|TypedExprKind::String(_)|TypedExprKind::Bool(_)|
-  TypedExprKind::Identifier(_)|TypedExprKind::OperationRef{..}|TypedExprKind::StdinText=>false
+  TypedExprKind::Identifier(_)|TypedExprKind::BuiltinAssert|TypedExprKind::OperationRef{..}|TypedExprKind::StdinText=>false
  }
 }
 fn stmt_uses_markdown(s:&TypedStmt)->bool {
@@ -272,7 +282,7 @@ fn expr_uses_http_serve(e:&TypedExpr)->bool {
    expr_uses_http_serve(condition)||expr_uses_http_serve(when_true)||expr_uses_http_serve(when_false),
   TypedExprKind::Call{callee,arguments}=>expr_uses_http_serve(callee)||arguments.iter().any(expr_uses_http_serve),
   TypedExprKind::Number(_)|TypedExprKind::String(_)|TypedExprKind::Bool(_)|
-  TypedExprKind::Identifier(_)|TypedExprKind::OperationRef{..}|TypedExprKind::StdinText=>false
+  TypedExprKind::Identifier(_)|TypedExprKind::BuiltinAssert|TypedExprKind::OperationRef{..}|TypedExprKind::StdinText=>false
  }
 }
 fn stmt_uses_http_serve(s:&TypedStmt)->bool {
@@ -312,7 +322,7 @@ fn expr_uses_http_state(e:&TypedExpr)->bool {
    expr_uses_http_state(condition)||expr_uses_http_state(when_true)||expr_uses_http_state(when_false),
   TypedExprKind::Call{callee,arguments}=>expr_uses_http_state(callee)||arguments.iter().any(expr_uses_http_state),
   TypedExprKind::Number(_)|TypedExprKind::String(_)|TypedExprKind::Bool(_)|
-  TypedExprKind::Identifier(_)|TypedExprKind::OperationRef{..}|TypedExprKind::StdinText=>false
+  TypedExprKind::Identifier(_)|TypedExprKind::BuiltinAssert|TypedExprKind::OperationRef{..}|TypedExprKind::StdinText=>false
  }
 }
 fn stmt_uses_http_state(s:&TypedStmt)->bool {
@@ -352,7 +362,7 @@ fn expr_uses_text(e:&TypedExpr)->bool {
     expr_uses_text(condition)||expr_uses_text(when_true)||expr_uses_text(when_false),
   TypedExprKind::Call{callee,arguments}=>expr_uses_text(callee)||arguments.iter().any(expr_uses_text),
   TypedExprKind::Number(_)|TypedExprKind::String(_)|TypedExprKind::Bool(_)|
-  TypedExprKind::Identifier(_)|TypedExprKind::OperationRef{..}|TypedExprKind::StdinText=>false
+  TypedExprKind::Identifier(_)|TypedExprKind::BuiltinAssert|TypedExprKind::OperationRef{..}|TypedExprKind::StdinText=>false
  }
 }
 fn stmt_uses_text(s:&TypedStmt)->bool {
@@ -678,16 +688,18 @@ pub fn emit(program:&TypedProgram,registry:&PackageRegistry)->Result<String,Stri
    }
  }
  // Detect symbol usage before emitting shared runtime. Legacy output stays byte-identical.
- let application=Emitter{depth:0}.statements(&program.statements);
+ let mut application_emitter=Emitter::new(0);
+ let application=application_emitter.statements(&program.statements);
+ let requires_assert=application_emitter.assertion_used.get();
  let requires_sort=application.contains("__hc_sort_desc(") ||
    imported.keys().any(|id|registry.packages.get(id).is_some_and(|pkg|
-     Emitter{depth:0}.statements(&pkg.typed_source.statements).contains("__hc_sort_desc(")));
+     Emitter::new(0).statements(&pkg.typed_source.statements).contains("__hc_sort_desc(")));
  let requires_sort_text=application.contains("__hc_sort_text(") ||
    imported.keys().any(|id|registry.packages.get(id).is_some_and(|pkg|
-     Emitter{depth:0}.statements(&pkg.typed_source.statements).contains("__hc_sort_text(")));
+     Emitter::new(0).statements(&pkg.typed_source.statements).contains("__hc_sort_text(")));
  let requires_compare=requires_sort_text || application.contains("__hc_compare(") ||
    imported.keys().any(|id|registry.packages.get(id).is_some_and(|pkg|
-     Emitter{depth:0}.statements(&pkg.typed_source.statements).contains("__hc_compare(")));
+     Emitter::new(0).statements(&pkg.typed_source.statements).contains("__hc_compare(")));
  let mut output=String::from("// Generated by H-Code M3. ESM, no eval or source interpolation.\n'use strict';\n");
  if cli_flags&1!=0 {
    output.push_str("import {readSync as __hc_read_fd0} from 'node:fs';\n");
@@ -718,6 +730,9 @@ const __hc_stdin=()=>{
  }
 
  output.push_str("let __hc_fuel = 100000; let __hc_depth=0; const __hc_tick = () => { if (--__hc_fuel < 0) throw Error('H-Code instruction budget exceeded'); };\n");
+ if requires_assert {
+   output.push_str("let __hc_assertions=0;\nconst __hc_assert=(condition,line,column)=>{ __hc_tick(); if(__hc_cas_reducer_active)throw Error('Assertion effect denied in pure callback'); if(typeof condition!=='boolean')throw TypeError('assert expects exactly one Bool'); __hc_assertions++; if(!condition)throw Error('JFH-CODE assertion failed at '+line+':'+column); return null; };\n");
+ }
  output.push_str("let __hc_cas_reducer_active=false;\nconst __hc_print = (...xs) => { if(__hc_cas_reducer_active)throw Error('CAS reducer effect denied'); console.log(xs.map(x => x === null ? 'none' : String(x)).join(' ')); return null; };\n");
  if requires_compare { output.push_str("const __hc_compare = (a,b) => { __hc_tick(); if(typeof a==='number'&&typeof b==='number'&&Number.isFinite(a)&&Number.isFinite(b)) return a<b?-1:a>b?1:0; if(typeof a==='string'&&typeof b==='string'){ const left=[...a],right=[...b]; const limit=Math.min(left.length,right.length); for(let i=0;i<limit;i++){const d=left[i].codePointAt(0)-right[i].codePointAt(0); if(d)return d<0?-1:1;} return left.length<right.length?-1:left.length>right.length?1:0; } throw TypeError('Comparison expects Number or String'); };\n"); }
  output.push_str("const __hc_div = (a,b) => { if (b === 0) throw Error('Division by zero'); return a/b; };\n");
@@ -893,7 +908,7 @@ const __hc_hist = input => {
   let def=registry.packages.get(&pkg).ok_or_else(||format!("Unverified package {pkg}"))?;
   let object=pkg_name(&pkg);
   output.push_str(&format!("const {object} = (() => {{\n"));
-  let mut e=Emitter{depth:1};output.push_str(&e.statements(&def.typed_source.statements));
+  let mut e=Emitter::new(1);output.push_str(&e.statements(&def.typed_source.statements));
   output.push_str("  return Object.freeze({\n");
   for op in &def.operations {
    let named=name(&op.implementation);

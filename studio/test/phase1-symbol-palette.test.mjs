@@ -22,7 +22,7 @@ function loadPalette(){
  vm.runInNewContext(palette,{document:doc,el:()=>host,source,changed:()=>changed++,clearApproval:()=>cleared++});
  return {buttons:host.children,source,changes:()=>changed,approvalsCleared:()=>cleared};
 }
-const pairs=[['ƒ','fn'],['≔','let'],['↩','return'],['→','->'],['←','='],['⊤','true'],['⊥','false'],['∧','and'],['∨','or'],['¬','not'],['≡','=='],['≠','!='],['≤','<='],['≥','>='],['∷','::'],['▷','|>'],['∘','<<'],['◇','?'],['⟦','[['],['⟧',']]'],['⦃','{'],['⦄','}'],['·','.'],['⊞','<+'],['⤓','json_in'],['⤒','json_out'],['⫶','text_scalars'],['⟟','text_words'],['⧉','text_hist'],['⧄','file_read'],['⧇','csv_typed'],['⌨','stdin_text'],['⩚','arith_eval'],['⌗','#'],['⧺','++'],['∑','@+'],['⌕','@?'],['⇢','@>'],['λ','lambda'],['⊢','if'],['⊣','else'],['⟳','while'],['⇒','=>'],['↧','@v'],['↥','@^'],['⎙','print']];
+const pairs=[['ƒ','fn'],['≔','let'],['↩','return'],['→','->'],['←','='],['⊤','true'],['⊥','false'],['∧','and'],['∨','or'],['¬','not'],['≡','=='],['≠','!='],['≤','<='],['≥','>='],['∷','::'],['▷','|>'],['∘','<<'],['◇','?'],['⟦','[['],['⟧',']]'],['⦃','{'],['⦄','}'],['·','.'],['⊞','<+'],['⤓','json_in'],['⤒','json_out'],['⫶','text_scalars'],['⟟','text_words'],['⧉','text_hist'],['⧄','file_read'],['⧇','csv_typed'],['⌨','stdin_text'],['⩚','arith_eval'],['⌗','#'],['⧺','++'],['∑','@+'],['⌕','@?'],['⇢','@>'],['λ','lambda'],['⊢','if'],['⊣','else'],['⟳','while'],['⇒','=>'],['↧','@v'],['↥','@^'],['⎙','print'],['⊨','assert']];
 test('palette provides every existing language-level sign with correct accessible alias',()=>{
  const {buttons}=loadPalette();
  const found=buttons.map(b=>[b.children[0].textContent,b.children[1].textContent]);
@@ -48,6 +48,15 @@ test('click inserts actual sign at cursor without replacing source with JS',()=>
  sign.listeners.click();
  assert.equal(source.value,'x≤');
  assert.equal(changes(),1);
+});
+
+test('assertion sign can be inserted as actual executable source',()=>{
+ const {buttons,source}=loadPalette();
+ const button=buttons.find(b=>b.children[0].textContent==='⊨');
+ assert.ok(button,'⊨ must be selectable');
+ assert.equal(button.children[1].textContent,'assert');
+ button.listeners.click();
+ assert.equal(source.value,'x⊨');
 });
 
 test('inserting a sign invalidates stale AI edit approval even without an input event',()=>{

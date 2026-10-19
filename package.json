@@ -10,6 +10,8 @@
     "check": "node prototype/bin/hcode.mjs check examples/user_symbols.hc --lock hcode.lock.json",
     "studio": "node studio/server.mjs",
     "studio:test": "node --test studio/test/*.test.mjs",
+    "language:test": "cargo run --manifest-path compiler/Cargo.toml -- test examples/testing",
+    "test:example": "node scripts/native-test-example.mjs",
     "bench": "node studio/benchmark.mjs",
     "release:check": "node scripts/release-check.mjs",
     "phase1:measure": "node scripts/phase1-metrics.mjs",

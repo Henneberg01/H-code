@@ -12,7 +12,7 @@ export const CORE_GLYPHS = Object.freeze({
   '\u2237': '::', '\u25b7': '|>', '\u2218': '<<', '\u25c7': '?', '\u27e6': '[[', '\u27e7': ']]',
   '\u2983':'record-open', '\u2984':'record-close', '\u00b7':'field', '\u229e':'record-update',
   '\u2913':'json-read', '\u2914':'json-valid', '\u2912':'json-write',
-  '⟐':'dom_value', '⟑':'dom_text', '⟒':'dom_valid', '⟓':'dom_on', '⟔':'dom_attr', '⟘':'dom_list', '⟙':'dom_table', '⎙':'print',
+  '⟐':'dom_value', '⟑':'dom_text', '⟒':'dom_valid', '⟓':'dom_on', '⟔':'dom_attr', '⟘':'dom_list', '⟙':'dom_table', '⎙':'print', '⊨':'assert',
   '⟕':'store_get', '⟖':'store_put', '⟗':'store_del',
   '\u2af6':'text-scalars', '\u27df':'text-words', '\u29c9':'histogram', '\u224b':'markdown-tokens',
   '\u29c4':'file-read', '\u29c5':'file-write', '\u29c8':'db-rows', '\u290b':'http-get', '\u290a':'http-serve', '\u231b':'sleep-ms', '\u29c7':'csv-typed',
@@ -108,7 +108,7 @@ export function tokenize(source) {
     }
     if(Object.hasOwn(CORE_GLYPHS,c)){
       advance();const alias=CORE_GLYPHS[c];
-      emit(alias.startsWith('dom_')||alias.startsWith('store_')||alias==='print'?'ident':alias,alias,ln,col);continue;
+      emit(alias.startsWith('dom_')||alias.startsWith('store_')||alias==='print'||alias==='assert'?'ident':alias,alias,ln,col);continue;
     }
     const two=c+(peek(1)??'');
     if(TWO.has(two)){advance();advance();emit(two==='<+'?'record-update':two,two,ln,col);continue;}
@@ -535,6 +535,15 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
   const typedSequenceSchemas=new WeakMap();
   const step=()=>{if(++steps>maxSteps)throw Error('Execution step limit exceeded');};
   root.define('print',(...args)=>{if(pureDepth>0)throw Error('CAS reducer effect denied: print');stdout(args.map(x=>x===null?'none':String(x)).join(' '));return null;});
+  let assertions=0;
+  root.define('assert',(...args)=>{
+    step();
+    if(pureDepth>0)throw Error('Assertion effect denied in pure callback');
+    if(args.length!==1||typeof args[0]!=='boolean')throw TypeError('assert expects exactly one Bool');
+    assertions++;
+    if(!args[0])throw Error('JFH-CODE assertion failed');
+    return null;
+  });
 
   // Independent browser-host reference semantics. Unlike Rust generated ESM,
   // this interpreter receives an explicit host; no implicit document access.
@@ -1473,7 +1482,7 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
       throw Error('∀ declarations require a verified pure package source');
     stmt(statement,root);
   }
-  return {steps};
+  return {steps,assertions};
 }
 
 /**

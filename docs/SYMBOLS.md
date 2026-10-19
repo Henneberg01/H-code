@@ -41,6 +41,7 @@
 | 35 | ▦ | `packageAlias::operation` | **Demo package** | `demo.math@1.0.0::repeat2`, String to String |
 | 36 | ⊙ | `packageAlias::operation` | **Demo package** | `demo.math@1.0.0::is_positive`, Number to Bool |
 | 37 | ⊗ | `packageAlias::operation` | **Demo package** | `demo.math@1.0.0::factorial`, Number to Number |
+| 38 | ⊨ | `assert` | **Native testing development extension** | Effectful `Bool → Unit`; false fails execution, with exactly one Boolean argument |
 
 Note: The symbols in rows 34–37 have **no language-global meaning**. These bindings are examples provided by a specifically imported, versioned demonstration library. Any permitted nonreserved symbol can represent a different operation in a different package. Two packages exporting the same glyph require explicit qualified access.
 

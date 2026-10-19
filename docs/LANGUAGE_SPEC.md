@@ -103,3 +103,20 @@ The complete manifest format, creation walkthrough and security caveats are in [
 The executable M1 prototype does **not** support records, arrays, general modules, online package downloads, full static typechecking, arbitrary effectful user operations, foreign-function imports, async, source maps, WebAssembly, mobile apps, graphics, or a secure runtime sandbox.
 
 **Unresolved decisions:** numeric model, ownership/lifetimes, errors (`Result` vs exceptions), generics, import syntax, overloading, compile-time macros, async, native runtime and ABI stability. These must be settled or version-gated before production use.
+
+## Development extension: Boolean assertions
+
+The application builtin `⊨` (accessible ASCII `assert`) has type `Bool → Unit`.
+Calls require exactly one Boolean argument, evaluated once. True returns Unit;
+false raises a terminating assertion error. Rust enforces the signature
+statically and the JavaScript reference enforces it at runtime. The glyph lexes
+as the canonical `assert` identifier, including first-class references and
+ordinary nested lexical shadowing. Packages cannot replace the core glyph.
+
+Assertions are effectful and unavailable in pure package/module scopes.
+Runtime-enforced pure callbacks also deny indirect assertion effects. Compiled
+errors identify the call's source line/column, or the builtin-reference position
+for an indirect call. Programs without assertions require no added assertion
+runtime. The `hcodec test` command and execution/reporting contract are specified
+in [TESTING.md](TESTING.md). This extension does not change the historical M1
+limitations above or establish completion of the global reduction benchmark.

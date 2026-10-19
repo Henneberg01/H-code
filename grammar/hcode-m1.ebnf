@@ -29,4 +29,7 @@ user_glyph    = SYMBOL_CHARACTER ;
 (* SYMBOL_CHARACTER = one Unicode category-S codepoint, not a core glyph. *)
 (* Only imported, version-locked library symbols survive linking. *)
 (* Glyphs for core syntax are mapped to canonical ASCII tokens by the lexer. *)
+(* Development extension: ⊨ maps to IDENT "assert"; ordinary call grammar applies.
+   Application builtin signature: exactly one Bool argument -> Unit.
+   False throws; assertions are unavailable to pure libraries. See docs/TESTING.md. *)
 (* Details of allowed glyphs, types, collision handling: docs/LIBRARIES.md. *)

@@ -1,5 +1,11 @@
 # JFH-CODE change log
 
+## Unreleased — native program testing (2026-10-19)
+
+- Added the typed assertion sign `⊨` with accessible `assert` alias in the Rust compiler and JavaScript reference.
+- Added `hcodec test` with real module/package resolution, sorted `.test.hc` discovery, TAP reporting, per-file timeouts and bounded output. Empty runs and assertion-free files fail.
+- Added a numeric module/test example with an independently executable TypeScript comparison; this is groundwork for frozen workloads 18–20, not completion of the twenty-task 70% target.
+
 ## Unreleased — identity and paid licensing (2026-10-19)
 
 - Adopted JFH-CODE as the official product name while preserving technical compatibility identifiers and immutable benchmark sources.
