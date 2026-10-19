@@ -82,6 +82,7 @@ pub enum TypedStmtKind {
 pub struct TypedExpr { pub kind:TypedExprKind,pub ty:Type,pub span:Span }
 #[derive(Clone,Debug,PartialEq)]
 pub enum TypedExprKind {
+    StateTransaction {handler:Box<TypedExpr>,initial:Box<TypedExpr>},
     Crypto {operation:CryptoOp,arguments:Vec<TypedExpr>},
     Number(String),String(String),Bool(bool),Identifier(String),
     OperationRef { id:String },
@@ -137,7 +138,7 @@ fn cas_pure_expression<'a>(
             if *operation!=CryptoOp::Hash{return Err(denied());}
             for arg in arguments{cas_pure_expression(arg,functions,visiting)?;}
         },
-        ExprKind::FileRead(_)|ExprKind::FileWrite{..}|ExprKind::HttpGet(_)|
+        ExprKind::StateTransaction{..}|ExprKind::FileRead(_)|ExprKind::FileWrite{..}|ExprKind::HttpGet(_)|
         ExprKind::HttpServe(_)|ExprKind::HttpServeState{..}|ExprKind::Sleep(_)|
         ExprKind::StdinText|ExprKind::DbRows{..}|ExprKind::DbTable{..}=>return Err(denied()),
         ExprKind::Call{callee,arguments}=>{
@@ -243,13 +244,17 @@ fn check_cas_pure_reducers(program:&Program)->Result<(),Diagnostic>{
 // They may not mutate captures or perform I/O. Reuse the recursive CAS purity
 // rules to reject effects through named functions and nested calls, but keep
 // actual database/dashboard logic in user-authored H-Code.
-fn check_sort_key_purity(program:&Program)->Result<(),Diagnostic>{
+fn check_context_effects(program:&Program)->Result<(),Diagnostic>{
     let mut functions=HashMap::new();
     for stmt in &program.statements {
         let original=if let StmtKind::Export{declaration}=&stmt.kind{declaration.as_ref()}else{stmt};
         if let StmtKind::Function{name,..}=&original.kind{functions.insert(name.clone(),original);}
     }
-    fn scan_expr<'a>(node:&Expr,functions:&HashMap<String,&'a Stmt>)->Result<(),Diagnostic>{
+    fn scan_expr<'a>(node:&Expr,functions:&HashMap<String,&'a Stmt>,effects:&mut (bool,bool))->Result<(),Diagnostic>{
+        // Track source-wide synchronous transaction versus replay effects in
+        // the same exhaustive traversal, including dead branches and functions.
+        if matches!(node.kind,ExprKind::StateTransaction{..}){effects.0=true;}
+        if matches!(node.kind,ExprKind::HttpGet(_)|ExprKind::Sleep(_)|ExprKind::FileWrite{..}){effects.1=true;}
         if let ExprKind::Binary{op,right,..}=&node.kind {
           if matches!(op,BinaryOp::SortDesc|BinaryOp::SortTextAsc) {
             let denied=||Diagnostic::new("EFFECT",
@@ -277,7 +282,7 @@ fn check_sort_key_purity(program:&Program)->Result<(),Diagnostic>{
           }
         }
         match &node.kind {
-            ExprKind::Crypto{arguments,..}=>for arg in arguments{scan_expr(arg,functions)?;},
+            ExprKind::Crypto{arguments,..}=>for arg in arguments{scan_expr(arg,functions,effects)?;},
             ExprKind::FileRead(v)|ExprKind::HttpGet(v)|ExprKind::HttpServe(v)|
             ExprKind::Sleep(v)|ExprKind::ArithEval(v)|ExprKind::JsonWrite(v)|
             ExprKind::TextScalars(v)|ExprKind::TextWords(v)|ExprKind::Histogram(v)|
@@ -285,72 +290,76 @@ fn check_sort_key_purity(program:&Program)->Result<(),Diagnostic>{
             ExprKind::Unary{operand:v,..}|ExprKind::Lambda{body:v,..}|
             ExprKind::Section{right:v,..}|ExprKind::CsvTyped{value:v,..}|
             ExprKind::JsonRead{value:v,..}|ExprKind::JsonValid{value:v,..}=>{
-                scan_expr(v,functions)?;
+                scan_expr(v,functions,effects)?;
             },
             ExprKind::FileWrite{filename,content}=>{
-                scan_expr(filename,functions)?;scan_expr(content,functions)?;
+                scan_expr(filename,functions,effects)?;scan_expr(content,functions,effects)?;
             },
-            ExprKind::HttpServeState{handler,initial}=>{
-                scan_expr(handler,functions)?;scan_expr(initial,functions)?;
+            ExprKind::StateTransaction{handler,initial}|ExprKind::HttpServeState{handler,initial}=>{
+                scan_expr(handler,functions,effects)?;scan_expr(initial,functions,effects)?;
             },
             ExprKind::DbRows{database,sql,params,..}=>{
-                scan_expr(database,functions)?;scan_expr(sql,functions)?;scan_expr(params,functions)?;
+                scan_expr(database,functions,effects)?;scan_expr(sql,functions,effects)?;scan_expr(params,functions,effects)?;
             },
             ExprKind::DbTable{database,table,..}=>{
-                scan_expr(database,functions)?;scan_expr(table,functions)?;
+                scan_expr(database,functions,effects)?;scan_expr(table,functions,effects)?;
             },
-            ExprKind::Sequence(items)=>for item in items{scan_expr(item,functions)?;},
-            ExprKind::Record(fields)=>for (_,value) in fields{scan_expr(value,functions)?;},
-            ExprKind::Field{record,..}=>scan_expr(record,functions)?,
+            ExprKind::Sequence(items)=>for item in items{scan_expr(item,functions,effects)?;},
+            ExprKind::Record(fields)=>for (_,value) in fields{scan_expr(value,functions,effects)?;},
+            ExprKind::Field{record,..}=>scan_expr(record,functions,effects)?,
             ExprKind::RecordUpdate{record,value,..}=>{
-                scan_expr(record,functions)?;scan_expr(value,functions)?;
+                scan_expr(record,functions,effects)?;scan_expr(value,functions,effects)?;
             },
             ExprKind::Index{sequence,index}=>{
-                scan_expr(sequence,functions)?;scan_expr(index,functions)?;
+                scan_expr(sequence,functions,effects)?;scan_expr(index,functions,effects)?;
             },
             ExprKind::Binary{left,right,..}=>{
-                scan_expr(left,functions)?;scan_expr(right,functions)?;
+                scan_expr(left,functions,effects)?;scan_expr(right,functions,effects)?;
             },
             ExprKind::Choice{condition,when_true,when_false}=>{
-                scan_expr(condition,functions)?;
-                scan_expr(when_true,functions)?;
-                scan_expr(when_false,functions)?;
+                scan_expr(condition,functions,effects)?;
+                scan_expr(when_true,functions,effects)?;
+                scan_expr(when_false,functions,effects)?;
             },
             ExprKind::Call{callee,arguments}=>{
-                scan_expr(callee,functions)?;
-                for arg in arguments{scan_expr(arg,functions)?;}
+                scan_expr(callee,functions,effects)?;
+                for arg in arguments{scan_expr(arg,functions,effects)?;}
             },
             ExprKind::Number(_)|ExprKind::String(_)|ExprKind::Bool(_)|
             ExprKind::StdinText|ExprKind::Identifier(_)|ExprKind::Operation{..}=>{}
         }
         Ok(())
     }
-    fn scan_stmt<'a>(node:&Stmt,functions:&HashMap<String,&'a Stmt>)->Result<(),Diagnostic>{
+    fn scan_stmt<'a>(node:&Stmt,functions:&HashMap<String,&'a Stmt>,effects:&mut (bool,bool))->Result<(),Diagnostic>{
         match &node.kind {
             StmtKind::Let{value,..}|StmtKind::Assign{value,..}|
-            StmtKind::Return(value)|StmtKind::Expression(value)=>scan_expr(value,functions)?,
-            StmtKind::Function{body,..}=>for stmt in body{scan_stmt(stmt,functions)?;},
+            StmtKind::Return(value)|StmtKind::Expression(value)=>scan_expr(value,functions,effects)?,
+            StmtKind::Function{body,..}=>for stmt in body{scan_stmt(stmt,functions,effects)?;},
             StmtKind::While{condition,body}=>{
-                scan_expr(condition,functions)?;
-                for stmt in body{scan_stmt(stmt,functions)?;}
+                scan_expr(condition,functions,effects)?;
+                for stmt in body{scan_stmt(stmt,functions,effects)?;}
             },
             StmtKind::If{condition,then_body,else_body}=>{
-                scan_expr(condition,functions)?;
-                for stmt in then_body{scan_stmt(stmt,functions)?;}
-                if let Some(body)=else_body{for stmt in body{scan_stmt(stmt,functions)?;}}
+                scan_expr(condition,functions,effects)?;
+                for stmt in then_body{scan_stmt(stmt,functions,effects)?;}
+                if let Some(body)=else_body{for stmt in body{scan_stmt(stmt,functions,effects)?;}}
             },
-            StmtKind::Export{declaration}=>scan_stmt(declaration,functions)?,
+            StmtKind::Export{declaration}=>scan_stmt(declaration,functions,effects)?,
             StmtKind::Use{..}|StmtKind::Import{..}=>{}
         }
         Ok(())
     }
-    for stmt in &program.statements{scan_stmt(stmt,&functions)?;}
+    let mut effects=(false,false);
+    for stmt in &program.statements{scan_stmt(stmt,&functions,&mut effects)?;}
+    if effects.0&&effects.1{
+        return Err(Diagnostic::new("EFFECT","⥁ cannot combine with async replay effects".into(),Span::new(1,1)));
+    }
     Ok(())
 }
 
 pub fn check(program:&Program, registry:&PackageRegistry, allow_print:bool)->Result<TypedProgram,Diagnostic>{
     check_cas_pure_reducers(program)?;
-    check_sort_key_purity(program)?;
+    check_context_effects(program)?;
     let mut checker=Checker{
         scopes:vec![HashMap::new()],substitutions:HashMap::new(),fresh:0,
         imported:HashMap::new(),glyphs:HashMap::new(),active_function:None,
@@ -710,6 +719,17 @@ impl Checker {
                 }
                 let result=if *operation==CryptoOp::Verify{Type::Bool}else{Type::String};
                 (TypedExprKind::Crypto{operation:*operation,arguments:checked},result)
+            }
+            ExprKind::StateTransaction{handler,initial}=>{
+                if !self.allow_print{return Err(Diagnostic::new("EFFECT","⥁ transaction effect denied in pure package".into(),expr.span));}
+                let checked=if matches!(handler.kind,ExprKind::Lambda{..}){
+                    self.sequence_lambda(handler,Type::String)?
+                }else{self.expression(handler)?};
+                let value=self.expression(initial)?;
+                self.unify(&Type::String,&value.ty,initial.span,"⥁ initial requires String")?;
+                let result=Type::Record(vec![("state".into(),Type::String),("value".into(),Type::String)]);
+                self.unify(&Type::Function(vec![Type::String],Box::new(result)),&checked.ty,handler.span,"⥁ requires String -> state/value String record")?;
+                (TypedExprKind::StateTransaction{handler:Box::new(checked),initial:Box::new(value)},Type::String)
             }
             ExprKind::StdinText=>{
                 if !self.allow_print {
@@ -1275,7 +1295,7 @@ impl Checker {
             TypedExprKind::TextScalars(value)|TypedExprKind::TextWords(value)|TypedExprKind::Histogram(value)|TypedExprKind::Markdown(value)|TypedExprKind::HttpServe(value)|TypedExprKind::FileRead(value)|TypedExprKind::HttpGet(value)|TypedExprKind::Sleep(value)|TypedExprKind::ArithEval(value)=>self.finalize_expr(value)?,
             TypedExprKind::CsvTyped{value,..}=>self.finalize_expr(value)?,
             TypedExprKind::FileWrite{filename,content}=>{self.finalize_expr(filename)?;self.finalize_expr(content)?;},
-            TypedExprKind::HttpServeState{handler,initial}=>{self.finalize_expr(handler)?;self.finalize_expr(initial)?;},
+            TypedExprKind::StateTransaction{handler,initial}|TypedExprKind::HttpServeState{handler,initial}=>{self.finalize_expr(handler)?;self.finalize_expr(initial)?;},
             TypedExprKind::RecordUpdate{record,value,..}=>{self.finalize_expr(record)?;self.finalize_expr(value)?;},
             TypedExprKind::Index{sequence,index}=>{self.finalize_expr(sequence)?;self.finalize_expr(index)?;},
             TypedExprKind::Length(value)=>self.finalize_expr(value)?,

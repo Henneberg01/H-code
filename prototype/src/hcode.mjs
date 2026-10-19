@@ -5,6 +5,7 @@ import {readMarkdownTokens} from './markdown-reference.mjs';
 import {safeArithmetic,ArithmeticInputError} from './arithmetic-pure.mjs';
 import {sha256Text,cryptoText,canonicalMac,randomByteCount,entropyValue} from './crypto-reference.mjs';
 export const CORE_GLYPHS = Object.freeze({
+  '⥁':'state-transaction',
   '⌁':'crypto-hash','⊩':'crypto-sign','⊨':'crypto-verify','⚄':'crypto-random',
   '\u0192': 'fn', '\u2254': 'let', '\u21a9': 'return', '\u2192': '->',
   '\u2190': '=', '\u22a4': 'true', '\u22a5': 'false',
@@ -106,7 +107,7 @@ export function tokenize(source) {
     }
     if(letter(c)){
       let word='';while(alnum(peek()))word+=advance();
-      emit(word==='sha256_text'?'crypto-hash':word==='hmac_sign'?'crypto-sign':word==='hmac_verify'?'crypto-verify':word==='random_id'?'crypto-random':word==='json_in'?'json-read':word==='json_valid'?'json-valid':word==='json_out'?'json-write':word==='text_scalars'?'text-scalars':word==='text_words'?'text-words':word==='text_hist'?'histogram':word==='markdown_tokens'?'markdown-tokens':word==='file_read'?'file-read':word==='file_write'?'file-write':word==='http_get'?'http-get':word==='http_serve'?'http-serve':word==='sleep_ms'?'sleep-ms':word==='csv_typed'?'csv-typed':word==='db_rows'?'db-rows':word==='stdin_text'?'stdin-text':word==='arith_eval'?'arith-eval':(RESERVED.has(word)?word:'ident'),word,ln,col);continue;
+      emit(word==='state_transaction'?'state-transaction':word==='sha256_text'?'crypto-hash':word==='hmac_sign'?'crypto-sign':word==='hmac_verify'?'crypto-verify':word==='random_id'?'crypto-random':word==='json_in'?'json-read':word==='json_valid'?'json-valid':word==='json_out'?'json-write':word==='text_scalars'?'text-scalars':word==='text_words'?'text-words':word==='text_hist'?'histogram':word==='markdown_tokens'?'markdown-tokens':word==='file_read'?'file-read':word==='file_write'?'file-write':word==='http_get'?'http-get':word==='http_serve'?'http-serve':word==='sleep_ms'?'sleep-ms':word==='csv_typed'?'csv-typed':word==='db_rows'?'db-rows':word==='stdin_text'?'stdin-text':word==='arith_eval'?'arith-eval':(RESERVED.has(word)?word:'ident'),word,ln,col);continue;
     }
     if(Object.hasOwn(CORE_GLYPHS,c)){
       advance();const alias=CORE_GLYPHS[c];
@@ -263,7 +264,11 @@ class Parser {
   }
   expr(min=0){
     let left;
-    if(['crypto-hash','crypto-sign','crypto-verify','crypto-random'].includes(this.peek().type)){
+    if(this.accept('state-transaction')){
+      this.expect('(');const handler=this.expr();this.expect(',');const initial=this.expr();this.expect(')');
+      left={kind:'StateTransaction',handler,initial};
+    }
+    else if(['crypto-hash','crypto-sign','crypto-verify','crypto-random'].includes(this.peek().type)){
       const operation=this.t[this.i++].type.slice(7),args=[];
       if(operation==='sign'||operation==='verify'){
         this.expect('(');args.push(this.expr());this.expect(',');args.push(this.expr());
@@ -422,6 +427,7 @@ export function parse(source){return new Parser(tokenize(source)).program();}
 // Convert both glyph calls and ASCII package::operation calls to identical linked nodes.
 // No ambient global registry: only explicitly imported, exact-version packages are visible.
 export function linkProgram(ast, registry=new Map()) {
+  let hasTransaction=false,hasAsync=false;
   if(!(registry instanceof Map))throw new TypeError('registry must be a Map');
   const imported=new Map(), glyphs=new Map(), byID=new Map();
   const uses=ast.body.filter(n=>n.kind==='Use');
@@ -478,6 +484,10 @@ export function linkProgram(ast, registry=new Map()) {
     return null;
   };
   function expression(node){
+    if(node.kind==='StateTransaction'){
+      hasTransaction=true;return {...node,handler:expression(node.handler),initial:expression(node.initial)};
+    }
+    if(['HttpGet','Sleep','FileWrite'].includes(node.kind))hasAsync=true;
     if(node.kind==='Crypto')return {...node,args:node.args.map(expression)};
     if(node.kind==='GlyphOperation'||node.kind==='QualifiedOperation')return resolveRef(node);
     if(node.kind==='Unary')return {...node,value:expression(node.value)};
@@ -522,7 +532,9 @@ export function linkProgram(ast, registry=new Map()) {
       default:return n;
     }
   }
-  return {kind:'Program',body:ast.body.map(statement)};
+  const body=ast.body.map(statement);
+  if(hasTransaction&&hasAsync)throw new HCodeError('⥁ cannot combine with async replay effects');
+  return {kind:'Program',body};
 }
 
 class Scope {
@@ -540,13 +552,14 @@ class Scope {
 class ReturnSignal{constructor(value){this.value=value;}}
 const runtimeType=value=>value===null?'Unit':typeof value==='number'?'Number':typeof value==='string'?'String':typeof value==='boolean'?'Bool':'unsupported';
 
-export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=16384,registry=new Map(),readFile=null,readStdin=null,httpEffects=null,httpServe=null,httpServeState=null,sleepEffects=null,fileEffects=null,domHost=null,storageHost=null,dbHost=null,cryptoHost=null,entropyEffects=null}={}){
+export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=16384,registry=new Map(),readFile=null,readStdin=null,httpEffects=null,httpServe=null,httpServeState=null,sleepEffects=null,fileEffects=null,domHost=null,storageHost=null,dbHost=null,cryptoHost=null,entropyEffects=null,stateTransaction=null}={}){
   const root=new Scope(),operations=new Map(),operationSpecs=new Map(),loadedLibraries=new Set();let steps=0,stdinConsumed=false,httpIndex=0,sleepIndex=0,fileIndex=0,pureDepth=0,functionDepth=0,httpServerRegistered=false;
   // Preserve explicit H-Code structural record types for empty sequences;
   // JS arrays alone cannot identify an empty element type.
   const typedSequenceSchemas=new WeakMap();
   const entropyJournal=entropyEffects??[];
   let entropyIndex=0,entropyBytes=entropyJournal.reduce((n,x)=>n+x.bytes,0);
+  let transactionActive=false,transactionCalls=0;
   const step=()=>{if(++steps>maxSteps)throw Error('Execution step limit exceeded');};
   root.define('print',(...args)=>{if(pureDepth>0)throw Error('CAS reducer effect denied: print');stdout(args.map(x=>x===null?'none':String(x)).join(' '));return null;});
 
@@ -961,6 +974,24 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
   function expr(node,scope,expectedType=null,deferredEmpty=false){
     step();
     switch(node.kind){
+      case 'StateTransaction':{
+        if(pureDepth>0)throw Error('transaction effect denied in pure evaluation');
+        if(transactionActive)throw Error('nested transaction denied');
+        if(Array.isArray(httpEffects)||Array.isArray(sleepEffects)||Array.isArray(fileEffects))
+          throw Error('⥁ cannot use async replay');
+        const handler=expr(node.handler,scope),initial=expr(node.initial,scope);
+        if(typeof handler!=='function'||typeof initial!=='string'||!initial.isWellFormed()||Buffer.byteLength(initial)>1048576)
+          throw TypeError('Invalid transaction arguments');
+        if(typeof stateTransaction!=='function')throw Error('transaction capability denied');
+        if(++transactionCalls>64)throw Error('transaction budget exceeded');
+        transactionActive=true;
+        try{
+          const value=stateTransaction(handler,initial);
+          if(typeof value!=='string'||!value.isWellFormed()||Buffer.byteLength(value)>65536)
+            throw TypeError('Invalid transaction result value');
+          return value;
+        }finally{transactionActive=false;}
+      }
       case 'Crypto':{
         if(node.operation!=='hash'&&pureDepth>0)throw Error('crypto effect denied in pure evaluation');
         const args=node.args.map(x=>expr(x,scope));

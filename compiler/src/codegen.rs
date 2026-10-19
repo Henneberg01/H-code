@@ -36,6 +36,7 @@ impl Emitter {
  fn ind(&self)->String {"  ".repeat(self.depth)}
  fn expr(&self,e:&TypedExpr)->String {
   match &e.kind {
+   TypedExprKind::StateTransaction{handler,initial}=>format!("__hc_transaction({}, {})",self.expr(handler),self.expr(initial)),
    TypedExprKind::Crypto{operation,arguments}=>{
     let op=match operation{CryptoOp::Hash=>"hash",CryptoOp::Sign=>"sign",CryptoOp::Verify=>"verify",CryptoOp::Random=>"random"};
     let args=arguments.iter().map(|x|self.expr(x)).collect::<Vec<_>>().join(", ");
@@ -177,6 +178,7 @@ impl Emitter {
 // that require it. A new glyph must not inflate the runtime of unrelated code.
 fn expr_uses_json(e:&TypedExpr)->bool {
  match &e.kind {
+  TypedExprKind::StateTransaction{handler,initial}=>expr_uses_json(handler)||expr_uses_json(initial),
   TypedExprKind::Crypto{arguments,..}=>arguments.iter().any(expr_uses_json),
     TypedExprKind::DomRecordTable{selector,rows,..}=>expr_uses_json(selector)||expr_uses_json(rows),
    TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_json(database)||expr_uses_json(sql)||expr_uses_json(params),
@@ -218,6 +220,7 @@ fn stmt_uses_json(s:&TypedStmt)->bool {
 // the universal text/histogram primitives (including verified imported packages).
 fn expr_uses_markdown(e:&TypedExpr)->bool {
  match &e.kind {
+  TypedExprKind::StateTransaction{handler,initial}=>expr_uses_markdown(handler)||expr_uses_markdown(initial),
   TypedExprKind::Crypto{arguments,..}=>arguments.iter().any(expr_uses_markdown),
     TypedExprKind::DomRecordTable{selector,rows,..}=>expr_uses_markdown(selector)||expr_uses_markdown(rows),
    TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_markdown(database)||expr_uses_markdown(sql)||expr_uses_markdown(params),
@@ -260,6 +263,7 @@ fn stmt_uses_markdown(s:&TypedStmt)->bool {
 // the universal text/histogram primitives (including verified imported packages).
 fn expr_uses_http_serve(e:&TypedExpr)->bool {
  match &e.kind {
+  TypedExprKind::StateTransaction{handler,initial}=>expr_uses_http_serve(handler)||expr_uses_http_serve(initial),
   TypedExprKind::Crypto{arguments,..}=>arguments.iter().any(expr_uses_http_serve),
     TypedExprKind::DomRecordTable{selector,rows,..}=>expr_uses_http_serve(selector)||expr_uses_http_serve(rows),
    TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_http_serve(database)||expr_uses_http_serve(sql)||expr_uses_http_serve(params),
@@ -301,6 +305,7 @@ fn stmt_uses_http_serve(s:&TypedStmt)->bool {
 // the universal text/histogram primitives (including verified imported packages).
 fn expr_uses_http_state(e:&TypedExpr)->bool {
  match &e.kind {
+  TypedExprKind::StateTransaction{handler,initial}=>expr_uses_http_state(handler)||expr_uses_http_state(initial),
   TypedExprKind::Crypto{arguments,..}=>arguments.iter().any(expr_uses_http_state),
     TypedExprKind::DomRecordTable{selector,rows,..}=>expr_uses_http_state(selector)||expr_uses_http_state(rows),
    TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_http_state(database)||expr_uses_http_state(sql)||expr_uses_http_state(params),
@@ -343,6 +348,7 @@ fn stmt_uses_http_state(s:&TypedStmt)->bool {
 // the universal text/histogram primitives (including verified imported packages).
 fn expr_uses_text(e:&TypedExpr)->bool {
  match &e.kind {
+  TypedExprKind::StateTransaction{handler,initial}=>expr_uses_text(handler)||expr_uses_text(initial),
   TypedExprKind::Crypto{arguments,..}=>arguments.iter().any(expr_uses_text),
     TypedExprKind::DomRecordTable{selector,rows,..}=>expr_uses_text(selector)||expr_uses_text(rows),
    TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_text(database)||expr_uses_text(sql)||expr_uses_text(params),
@@ -384,6 +390,7 @@ fn stmt_uses_text(s:&TypedStmt)->bool {
 
 fn expr_uses_csv(e:&TypedExpr)->bool {
   match &e.kind {
+  TypedExprKind::StateTransaction{handler,initial}=>expr_uses_csv(handler)||expr_uses_csv(initial),
   TypedExprKind::Crypto{arguments,..}=>arguments.iter().any(expr_uses_csv),
     TypedExprKind::DomRecordTable{selector,rows,..}=>expr_uses_csv(selector)||expr_uses_csv(rows),
    TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_csv(database)||expr_uses_csv(sql)||expr_uses_csv(params),
@@ -424,6 +431,7 @@ fn stmt_uses_csv(s:&TypedStmt)->bool {
 }
 fn expr_uses_file(e:&TypedExpr)->bool {
   match &e.kind {
+  TypedExprKind::StateTransaction{handler,initial}=>expr_uses_file(handler)||expr_uses_file(initial),
   TypedExprKind::Crypto{arguments,..}=>arguments.iter().any(expr_uses_file),
     TypedExprKind::DomRecordTable{selector,rows,..}=>expr_uses_file(selector)||expr_uses_file(rows),
    TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_file(database)||expr_uses_file(sql)||expr_uses_file(params),
@@ -465,6 +473,7 @@ fn stmt_uses_file(s:&TypedStmt)->bool {
 // Link the network runtime only when a checked expression contains ⤋.
 fn expr_uses_http(e:&TypedExpr)->bool {
  match &e.kind {
+  TypedExprKind::StateTransaction{handler,initial}=>expr_uses_http(handler)||expr_uses_http(initial),
   TypedExprKind::Crypto{arguments,..}=>arguments.iter().any(expr_uses_http),
     TypedExprKind::DomRecordTable{selector,rows,..}=>expr_uses_http(selector)||expr_uses_http(rows),
    TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_http(database)||expr_uses_http(sql)||expr_uses_http(params),
@@ -506,6 +515,7 @@ fn stmt_uses_http(s:&TypedStmt)->bool {
 
 fn expr_uses_sleep(e:&TypedExpr)->bool {
  match &e.kind {
+  TypedExprKind::StateTransaction{handler,initial}=>expr_uses_sleep(handler)||expr_uses_sleep(initial),
   TypedExprKind::Crypto{arguments,..}=>arguments.iter().any(expr_uses_sleep),
     TypedExprKind::DomRecordTable{selector,rows,..}=>expr_uses_sleep(selector)||expr_uses_sleep(rows),
    TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_sleep(database)||expr_uses_sleep(sql)||expr_uses_sleep(params),
@@ -547,6 +557,7 @@ fn stmt_uses_sleep(s:&TypedStmt)->bool {
 
 fn expr_uses_file_write(e:&TypedExpr)->bool {
  match &e.kind {
+  TypedExprKind::StateTransaction{handler,initial}=>expr_uses_file_write(handler)||expr_uses_file_write(initial),
   TypedExprKind::Crypto{arguments,..}=>arguments.iter().any(expr_uses_file_write),
     TypedExprKind::DomRecordTable{selector,rows,..}=>expr_uses_file_write(selector)||expr_uses_file_write(rows),
    TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_file_write(database)||expr_uses_file_write(sql)||expr_uses_file_write(params),
@@ -587,16 +598,18 @@ fn stmt_uses_file_write(s:&TypedStmt)->bool {
 
 fn expr_cli_flags(e:&TypedExpr)->u8 {
   match &e.kind {
+  TypedExprKind::StateTransaction{handler,initial}=>32|expr_cli_flags(handler)|expr_cli_flags(initial),
+  TypedExprKind::HttpGet(v)|TypedExprKind::Sleep(v)=>64|expr_cli_flags(v),
   TypedExprKind::Crypto{operation,arguments}=>arguments.iter().fold(if *operation==CryptoOp::Hash{4}else{12},|flags,arg|flags|expr_cli_flags(arg)),
     TypedExprKind::DomRecordTable{selector,rows,..}=>expr_cli_flags(selector)|expr_cli_flags(rows),
     TypedExprKind::DbRows{database,sql,params,..}=>expr_cli_flags(database)|expr_cli_flags(sql)|expr_cli_flags(params),
     TypedExprKind::DbTable{database,table,..}=>expr_cli_flags(database)|expr_cli_flags(table),
     TypedExprKind::HttpServeState{handler,initial}=>expr_cli_flags(handler)|expr_cli_flags(initial),
     TypedExprKind::Markdown(v)|TypedExprKind::HttpServe(v)=>expr_cli_flags(v),
-    TypedExprKind::FileWrite{filename,content}=>expr_cli_flags(filename)|expr_cli_flags(content),
+    TypedExprKind::FileWrite{filename,content}=>64|expr_cli_flags(filename)|expr_cli_flags(content),
     TypedExprKind::StdinText=>1,
     TypedExprKind::ArithEval(v)=>2|expr_cli_flags(v),
-    TypedExprKind::FileRead(v)|TypedExprKind::HttpGet(v)|TypedExprKind::Sleep(v)|TypedExprKind::JsonRead{value:v,..}|TypedExprKind::JsonValid{value:v,..}|
+    TypedExprKind::FileRead(v)|TypedExprKind::JsonRead{value:v,..}|TypedExprKind::JsonValid{value:v,..}|
     TypedExprKind::JsonWrite{value:v,..}|TypedExprKind::CsvTyped{value:v,..}|
     TypedExprKind::TextScalars(v)|TypedExprKind::TextWords(v)|TypedExprKind::Histogram(v)|
     TypedExprKind::Length(v)|TypedExprKind::Sum(v)|TypedExprKind::Unary{operand:v,..}|
@@ -628,6 +641,7 @@ fn stmt_cli_flags(s:&TypedStmt)->u8 {
 
 fn expr_uses_db(e:&TypedExpr)->bool {
  match &e.kind {
+  TypedExprKind::StateTransaction{handler,initial}=>expr_uses_db(handler)||expr_uses_db(initial),
   TypedExprKind::Crypto{arguments,..}=>arguments.iter().any(expr_uses_db),
     TypedExprKind::DomRecordTable{selector,rows,..}=>expr_uses_db(selector)||expr_uses_db(rows),
    TypedExprKind::DbRows{..}|TypedExprKind::DbTable{..}=>true,
@@ -708,6 +722,7 @@ pub fn emit(program:&TypedProgram,registry:&PackageRegistry)->Result<String,Stri
  }
  // Detect symbol usage before emitting shared runtime. Legacy output stays byte-identical.
  let application=Emitter{depth:0}.statements(&program.statements);
+ if cli_flags&32!=0&&cli_flags&64!=0{return Err("⥁ cannot combine with async replay effects".into());}
  let requires_sort=application.contains("__hc_sort_desc(") ||
    imported.keys().any(|id|registry.packages.get(id).is_some_and(|pkg|
      Emitter{depth:0}.statements(&pkg.typed_source.statements).contains("__hc_sort_desc(")));
@@ -750,6 +765,10 @@ const __hc_stdin=()=>{
  output.push_str("let __hc_cas_reducer_active=false;\nconst __hc_print = (...xs) => { if(__hc_cas_reducer_active)throw Error('CAS reducer effect denied'); console.log(xs.map(x => x === null ? 'none' : String(x)).join(' ')); return null; };\n");
  if cli_flags&4!=0 {output.push_str(include_str!("crypto_prelude.js"));}
  if cli_flags&8!=0 {output.push_str(include_str!("crypto_effects_prelude.js"));}
+ if cli_flags&32!=0 {
+  output.push_str(include_str!("../../runtime/string-transaction.mjs"));
+  output.push_str(include_str!("transaction_prelude.js"));
+ }
  if requires_compare { output.push_str("const __hc_compare = (a,b) => { __hc_tick(); if(typeof a==='number'&&typeof b==='number'&&Number.isFinite(a)&&Number.isFinite(b)) return a<b?-1:a>b?1:0; if(typeof a==='string'&&typeof b==='string'){ const left=[...a],right=[...b]; const limit=Math.min(left.length,right.length); for(let i=0;i<limit;i++){const d=left[i].codePointAt(0)-right[i].codePointAt(0); if(d)return d<0?-1:1;} return left.length<right.length?-1:left.length>right.length?1:0; } throw TypeError('Comparison expects Number or String'); };\n"); }
  output.push_str("const __hc_div = (a,b) => { if (b === 0) throw Error('Division by zero'); return a/b; };\n");
  output.push_str("const __hc_mod = (a,b) => { if (b === 0) throw Error('Division by zero'); return a%b; };\n");

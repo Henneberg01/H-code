@@ -7,10 +7,10 @@ import {audit,inspect,codeOnly,activeSources} from './hcode-symbol-first-audit.m
 test('new crypto programs must lead with actual signs instead of ASCII crypto aliases',()=>{
  const dir=mkdtempSync(fileURLToPath(new URL('../.jfh-audit-',import.meta.url)));
  try{
-  writeFileSync(join(dir,'alias.hc'),'sha256_text "abc"; hmac_sign("k","m"); hmac_verify("k","m","s"); random_id 24;');
+  writeFileSync(join(dir,'alias.hc'),'sha256_text "abc"; hmac_sign("k","m"); hmac_verify("k","m","s"); random_id 24; state_transaction(step,"0");');
   const report=audit();
   assert.deepEqual(report.failing.filter(x=>x.path.endsWith('/alias.hc')).map(x=>x.word),
-   ['sha256_text','hmac_sign','hmac_verify','random_id']);
+   ['sha256_text','hmac_sign','hmac_verify','random_id','state_transaction']);
  }finally{rmSync(dir,{recursive:true,force:true});}
 });
 test('audit covers entire H-Code inventory and enforces active candidates without changing frozen tests',()=>{

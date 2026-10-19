@@ -1,0 +1,97 @@
+{
+  "schema": 1,
+  "milestone": "M19.16 B2a",
+  "status": "linux-verified-http-and-cross-platform-pending",
+  "verifiedAt": "2026-10-19T20:07:45.082028+00:00",
+  "testedSourceCommit": "9f2c6f92d9845dcf23a8014d637e2f8f9049b720",
+  "testedSourceTree": "5670e0a4065e0978d0b89a0ece4f3de6af7b3042",
+  "baseLocalCommit": "9587732",
+  "baseRemoteCommit": "d7af5de7e5eebfb3b71885032f7233af7c8cd541",
+  "environment": {
+    "os": "Ubuntu 24.04.3",
+    "host": "x86_64-unknown-linux-gnu",
+    "rustc": "1.91.1",
+    "cargo": "1.91.1",
+    "node": "v24.19.0"
+  },
+  "checks": [
+    {
+      "command": "cargo test --locked --manifest-path compiler/Cargo.toml",
+      "passed": 203,
+      "failed": 0,
+      "ignored": 0,
+      "targets": 48
+    },
+    {
+      "command": "npm test",
+      "passed": 181,
+      "failed": 0
+    },
+    {
+      "command": "npm run studio:test",
+      "passed": 16,
+      "failed": 0
+    },
+    {
+      "command": "node --test scripts/canonical20-auth-contract.test.mjs scripts/m19-string-transaction.test.mjs scripts/m19-transaction-compiler.test.mjs scripts/m19-session-engine.test.mjs scripts/m19-crypto-compiler.test.mjs scripts/m19-crypto-runtime.test.mjs scripts/hcode-symbol-first-audit.test.mjs scripts/test/release-policy.test.mjs",
+      "passed": 46,
+      "failed": 0
+    },
+    {
+      "command": "cargo build --locked --manifest-path compiler/Cargo.toml",
+      "exitCode": 0
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0
+    }
+  ],
+  "frozenGitBlobs": {
+    "compact/canonical20/cases/16-auth-sessions.json": "1861703aed80bcf4c324ad6519d8810a12bde765",
+    "compact/canonical20/idiomatic/16-auth-session-oracle.ts": "02dc03af5ea422afd5adc970f18d07f3411da142",
+    "compact/canonical20/workloads.json": "46653ef90ffb3e420fba4ddfbfac3c4cfd57f3b3"
+  },
+  "candidate": {
+    "path": "compact/canonical20/candidates/16-session-engine-b2a.hc",
+    "sha256": "ed5b86e6dcf51f8c667aa31d0dda6f998cd5b230dbe56969af7eb64153ae3a51",
+    "codepoints": 2564,
+    "utf8Bytes": 3152,
+    "globalReductionClaim": false
+  },
+  "redProof": [
+    "Native transaction/runtime tests failed before implementation",
+    "Session test suite failed for missing source, then 0/5 compiler cases passed before source correction",
+    "POSIX root permission and state_transaction sign-first audit regressions failed before fixes",
+    "Direct check regression accepted mixed effects before checker fix, then passed"
+  ],
+  "independentReview": {
+    "critical": 0,
+    "important": 0,
+    "minorFound": 1,
+    "minorFixed": 1,
+    "followupFocusedNodePassed": 17,
+    "followupFocusedRustPassed": 2
+  },
+  "executionNotes": [
+    "First full Rust attempts stopped on stale cached ELF artifacts missing executable bits. Restored executable bits and reran entire locked suite successfully.",
+    "No hosted run or Windows execution is represented by these local Linux counts."
+  ],
+  "hostedCi": {
+    "previousObservedRun": 39312786506,
+    "previousObservedReason": "GitHub account locked because of a billing issue",
+    "noBillingChangePerformed": true
+  },
+  "coverage": {
+    "complete": 15,
+    "total": 20,
+    "canonical16Complete": false
+  },
+  "pending": [
+    "B2b HTTP Cookie/Set-Cookie transport",
+    "Trusted production identity and clock integration",
+    "B3 full fixed-task parity and idiomatic TypeScript comparator",
+    "Hosted Ubuntu and Windows CI",
+    "Required security scans"
+  ],
+  "testedLocalSourceCommit": "e4f3aacc8ff41614b8a1099aa27a190a6f7004b0"
+}
