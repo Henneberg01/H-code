@@ -1,9 +1,27 @@
 use hcode_compiler::{checker::check, packages::{load_lockfile,PackageRegistry},parser::parse};
 use sha2::{Digest,Sha256};
 use serde_json::{json,Value};
-use std::{fs,path::{Path,PathBuf},time::{SystemTime,UNIX_EPOCH}};
+use std::{fs,path::{Path,PathBuf},time::{Duration,SystemTime,UNIX_EPOCH}};
 
 fn root()->PathBuf{Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap().to_path_buf()}
+
+// Windows Defender/file indexers can transiently open fixture sources without
+// FILE_SHARE_DELETE/WRITE, making fs::copy fail with ERROR_SHARING_VIOLATION (32).
+// Retry only that *specific transient OS error*, never checksum mismatches or
+// other filesystem failures. The production package loader is unchanged.
+fn copy_fixture(source:&Path,destination:&Path){
+    for attempt in 0..12_u64 {
+        match fs::copy(source,destination) {
+            Ok(_) => return,
+            Err(e) if cfg!(windows) && e.raw_os_error()==Some(32) && attempt<11=>{
+                std::thread::sleep(Duration::from_millis(25*(attempt+1)));
+            },
+            Err(e)=>panic!("Cannot copy fixture {} -> {}: {e}",
+                           source.display(),destination.display())
+        }
+    }
+    unreachable!("retry loop returns on both success and fatal failure")
+}
 struct TempPackage{dir:PathBuf,lock:Value}
 impl Drop for TempPackage{fn drop(&mut self){let _=fs::remove_dir_all(&self.dir);}}
 impl TempPackage {
@@ -12,8 +30,8 @@ impl TempPackage {
   let dir=std::env::temp_dir().join(format!("hcode-phase1-{}-{tick}",std::process::id()));
   fs::create_dir_all(dir.join("packages/demo.math")).unwrap();
   let r=root();
-  fs::copy(r.join("packages/demo.math/manifest.json"),dir.join("packages/demo.math/manifest.json")).unwrap();
-  fs::copy(r.join("packages/demo.math/lib.hc"),dir.join("packages/demo.math/lib.hc")).unwrap();
+  copy_fixture(&r.join("packages/demo.math/manifest.json"),&dir.join("packages/demo.math/manifest.json"));
+  copy_fixture(&r.join("packages/demo.math/lib.hc"),&dir.join("packages/demo.math/lib.hc"));
   let lock:Value=serde_json::from_slice(&fs::read(r.join("hcode.lock.json")).unwrap()).unwrap();
   let mut s=Self{dir,lock};s.refresh();s
  }
