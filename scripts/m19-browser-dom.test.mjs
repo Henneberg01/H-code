@@ -94,3 +94,12 @@ test('DOM capabilities fail closed on absent host, dangerous attribute and HTML 
  assert.equal(f.nodes.get('#email-error').attributes.size,0);
  assert.throws(()=>execute('⟐("#missing");',{domHost:f.domHost}),/not found/);
 });
+
+test('real browser fixture supplies required/email controls and accessible error output',()=>{
+ const html=readFileSync(join(root,'compact/canonical20/programs/13-form-validation-ui.html'),'utf8');
+ assert.match(html,/<form id="contact-form"[^>]*novalidate>/);
+ assert.match(html,/<input id="email"[^>]*type="email" required/);
+ assert.match(html,/aria-describedby="email-error"/);
+ assert.match(html,/id="email-error" role="alert" aria-live="polite"/);
+ assert.match(html,/script type="module" src="\.\/13-form-validation-ui\.mjs"/);
+});
