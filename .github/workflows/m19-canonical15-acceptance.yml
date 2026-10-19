@@ -1,0 +1,27 @@
+name: H-Code M19.15 B6 independent Canonical15 acceptance verifier
+on:
+  push:
+    branches: ['feat/m19-canonical15-b6-*']
+  pull_request:
+    branches: [main,'feat/m19-canonical15-b5-*']
+permissions:
+  contents: read
+jobs:
+  accept-15:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest,windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: dtolnay/rust-toolchain@stable
+      - id: chrome
+        uses: browser-actions/setup-chrome@v2
+      - name: Rerun all original and SQL-free Rust H-Code JS TS SQLite cases and real Chrome acceptance
+        env:
+          HCODE_CHROME: ${{ steps.chrome.outputs.chrome-path }}
+        run: node scripts/canonical20-verify-15.mjs
