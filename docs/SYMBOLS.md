@@ -226,3 +226,27 @@ names are derived from exact scalar String/Number/Bool schema types. The
 runtime is explicitly host-permissioned and bounded, never created on
 demand. String comparisons have source-defined Unicode scalar ordering.
 This feature must pass independent Rust/JS/real SQLite parity before merge.
+
+## M19.15 B4 candidate — stable Unicode text ordering in one H-Code sign
+
+**↥** (accessible alias `@^`) sorts any typed sequence by a user-authored
+unary **String** key in ascending Unicode scalar-value order. The comparison
+uses the same semantics as existing H-Code String relational operators, not
+JavaScript's UTF-16 sort. Repeated keys preserve their input order. Only one
+key evaluation per record; no mutation of the input. The key runs within
+the same effect-isolation boundary as **↧**, so I/O and mutable captures
+are forbidden even through dynamic callback variables.
+
+```hcode
+≔ xs←⟦⦃name:"West",revenue:20⦄,⦃name:"North",revenue:30⦄⟧
+⎙(⤒(xs↥λr:r·name))
+```
+
+Combine ascending labels with descending revenue using two *general*
+sign operations: `(groups↥λg:g·region)↧λg:g·revenueCents`.
+This precisely resolves tied totals alphabetically, including non-BMP
+Unicode strings, without a dedicated dashboard or SQL ordering macro.
+
+`↥` is proposed in M19.15 B4 and only becomes mainline language syntax
+after exact-head Windows/Ubuntu Rust+JS and regression checks are green.
+ASCII `@^` remains compatible but is not primary developer source.

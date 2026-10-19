@@ -15,7 +15,7 @@ pub struct Token { pub kind: TokenKind, pub span: Span }
 pub enum TokenKind {
     Fn, Let, Return, If, Else, While, Then, Forall, Use, Import, Export, As, True, False, And, Or, Not,
     Identifier(String), Number(String), String(String), Glyph(char),
-    LeftParen, RightParen, LeftBrace, RightBrace, RecOpen, RecClose, Field, RecordUpdate, JsonRead, JsonValid, JsonWrite, TextScalars, TextWords, Histogram, Markdown, FileRead, FileWrite, HttpGet, HttpServe, Sleep, CsvTyped, DbRows, StdinText, ArithEval, Comma, Semicolon, Colon, DoubleColon, Pipe, Compose, Choice, Lambda, SeqOpen, SeqClose, SeqLength, SeqConcat, Sum, Filter, Map, SortDesc,
+    LeftParen, RightParen, LeftBrace, RightBrace, RecOpen, RecClose, Field, RecordUpdate, JsonRead, JsonValid, JsonWrite, TextScalars, TextWords, Histogram, Markdown, FileRead, FileWrite, HttpGet, HttpServe, Sleep, CsvTyped, DbRows, StdinText, ArithEval, Comma, Semicolon, Colon, DoubleColon, Pipe, Compose, Choice, Lambda, SeqOpen, SeqClose, SeqLength, SeqConcat, Sum, Filter, Map, SortDesc, SortTextAsc,
     Assign, Arrow, Plus, Minus, Star, Slash, Percent,
     Equal, NotEqual, Less, Greater, LessEqual, GreaterEqual, Eof,
 }
@@ -160,7 +160,7 @@ pub fn lex(source: &str) -> Result<Vec<Token>, Diagnostic> {
             '⌛'=>Some(TokenKind::Sleep),'⧇'=>Some(TokenKind::CsvTyped),'⧈'=>Some(TokenKind::DbRows),
             '⌨'=>Some(TokenKind::StdinText),'⩚'=>Some(TokenKind::ArithEval),
             '⌗'=>Some(TokenKind::SeqLength),'⧺'=>Some(TokenKind::SeqConcat),
-            '∑'=>Some(TokenKind::Sum),'⌕'=>Some(TokenKind::Filter),'⇢'=>Some(TokenKind::Map),'↧'=>Some(TokenKind::SortDesc),'λ'=>Some(TokenKind::Lambda),'∀'=>Some(TokenKind::Forall),
+            '∑'=>Some(TokenKind::Sum),'⌕'=>Some(TokenKind::Filter),'⇢'=>Some(TokenKind::Map),'↧'=>Some(TokenKind::SortDesc),'↥'=>Some(TokenKind::SortTextAsc),'λ'=>Some(TokenKind::Lambda),'∀'=>Some(TokenKind::Forall),
             _=>None,
         };
         if let Some(kind)=core { advance(&mut pos,&mut line,&mut column); result.push(Token{kind,span}); continue; }
@@ -178,6 +178,7 @@ pub fn lex(source: &str) -> Result<Vec<Token>, Diagnostic> {
             ('@',Some('?'))=>Some(TokenKind::Filter),
             ('@',Some('>'))=>Some(TokenKind::Map),
             ('@',Some('v'))=>Some(TokenKind::SortDesc),
+            ('@',Some('^'))=>Some(TokenKind::SortTextAsc),
             ('=',Some('='))=>Some(TokenKind::Equal),
             ('!',Some('='))=>Some(TokenKind::NotEqual),
             ('<',Some('='))=>Some(TokenKind::LessEqual),

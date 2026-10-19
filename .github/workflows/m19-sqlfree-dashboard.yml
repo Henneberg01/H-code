@@ -1,0 +1,29 @@
+name: H-Code M19.15 B4 SQL-free full dashboard and Unicode sorts
+on:
+  push:
+    branches: ['feat/m19-canonical15-*']
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  dashboard:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Rust glyph, typechecking, effect purity and conditional runtime
+        run: cargo test --manifest-path compiler/Cargo.toml --test m19_sort_text
+      - name: Independent Unicode scalar interpreter versus compiled Rust
+        run: node --test scripts/m19-sort-text.test.mjs
+      - name: SQL-free H-Code and source-locked original H-Code versus TypeScript
+        run: node --experimental-sqlite --experimental-strip-types --test scripts/m19-sqlfree-dashboard.test.mjs
+      - name: Full source audit
+        run: node --test scripts/hcode-symbol-first-audit.test.mjs
