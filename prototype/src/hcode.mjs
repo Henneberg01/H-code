@@ -499,7 +499,12 @@ export function linkProgram(ast, registry=new Map()) {
 
 class Scope {
   constructor(parent=null){this.parent=parent;this.values=new Map();this.annotations=new Map();this.returnType=parent?.returnType??null;this.genericBindings=parent?.genericBindings??new Map();}
-  define(name,value,type=null){if(this.values.has(name))throw Error(`Duplicate name ${name}`);this.values.set(name,value);this.annotations.set(name,type);}
+  define(name,value,type=null){
+    if(this.parent&&['dom_value','dom_text','dom_valid','dom_on','dom_attr'].includes(name))
+      throw Error('Reserved core browser DOM capability cannot be shadowed');
+    if(this.values.has(name))throw Error(`Duplicate name ${name}`);
+    this.values.set(name,value);this.annotations.set(name,type);
+  }
   find(name){if(this.values.has(name))return this;if(this.parent)return this.parent.find(name);throw Error(`Unknown name ${name}`);}
   get(name){return this.find(name).values.get(name);}
   assign(name,value){this.find(name).values.set(name,value);}
