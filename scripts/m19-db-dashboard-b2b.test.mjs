@@ -101,7 +101,8 @@ test('denied SQLite capability is a hard error, never synthetic fixture data',()
  assert.throws(()=>execute(source,{readStdin:()=>request(fixture.cases[0])}),/database capability denied/);
 }));
 test('untrusted user date strings remain bound query values',()=>withDb(dir=>{
- const bad={from:"2026-01-01' OR 1=1 --",to:'2026-02-01'};
+ // Bound upper-limit SQL-like text must not turn into executable OR 1=1.
+ const bad={from:'2026-01-01',to:"2026-01-01' OR 1=1 --"};
  const native=compile(dir);
  const response=executeNative(native,dir,bad);
  assert.equal(response.status,0,response.stderr||String(response.error));
