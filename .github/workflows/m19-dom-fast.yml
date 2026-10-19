@@ -2,7 +2,7 @@ name: H-Code M19.13 fast browser DOM conformance
 on:
   push:
     branches:
-      - feat/m19-canonical13-b1-browser-dom
+      - 'feat/m19-canonical13-*'
 permissions:
   contents: read
 jobs:
@@ -35,5 +35,9 @@ jobs:
         id: chrome
       - name: Real Chromium HTML5 controls, keyboard-compatible events and screen-reader feedback
         run: npm run m19:browser-real
+        env:
+          HCODE_CHROME: ${{ steps.chrome.outputs.chrome-path }}
+      - name: Independent idiomatic TypeScript versus generated H-Code on same real DOM events
+        run: npm run m19:browser-compare
         env:
           HCODE_CHROME: ${{ steps.chrome.outputs.chrome-path }}

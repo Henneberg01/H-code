@@ -57,7 +57,8 @@
     "benchmark20:measure12": "node --test scripts/canonical20-measure-12.test.mjs",
     "benchmark20:idiomatic12": "node --test scripts/canonical20-idiomatic-12.test.mjs",
     "m19:browser-dom": "node --test scripts/m19-browser-dom.test.mjs",
-    "m19:browser-real": "node --test scripts/m19-browser-dom-real.test.mjs"
+    "m19:browser-real": "node --test scripts/m19-browser-dom-real.test.mjs",
+    "m19:browser-compare": "node --test scripts/m19-browser-ui-compare.test.mjs"
   },
   "engines": {
     "node": ">=20"
