@@ -63,6 +63,9 @@ jobs:
         if: ${{ success() || failure() }}
       - run: npm run studio:test
         if: ${{ success() || failure() }}
+      - name: Verify H-Code sign-first source policy and immutable benchmarks
+        run: npm run signs:check
+        if: ${{ success() || failure() }}
       - run: npm run phase1:test
         if: ${{ success() || failure() }}
       - run: npm run compact:test
