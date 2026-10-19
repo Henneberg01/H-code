@@ -530,6 +530,9 @@ const runtimeType=value=>value===null?'Unit':typeof value==='number'?'Number':ty
 
 export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=16384,registry=new Map(),readFile=null,readStdin=null,httpEffects=null,httpServe=null,httpServeState=null,sleepEffects=null,fileEffects=null,domHost=null,storageHost=null,dbHost=null}={}){
   const root=new Scope(),operations=new Map(),operationSpecs=new Map(),loadedLibraries=new Set();let steps=0,stdinConsumed=false,httpIndex=0,sleepIndex=0,fileIndex=0,pureDepth=0,functionDepth=0,httpServerRegistered=false;
+  // Preserve explicit H-Code structural record types for empty sequences;
+  // JS arrays alone cannot identify an empty element type.
+  const typedSequenceSchemas=new WeakMap();
   const step=()=>{if(++steps>maxSteps)throw Error('Execution step limit exceeded');};
   root.define('print',(...args)=>{if(pureDepth>0)throw Error('CAS reducer effect denied: print');stdout(args.map(x=>x===null?'none':String(x)).join(' '));return null;});
 
@@ -601,13 +604,26 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
   root.define('dom_table',(...args)=>{
     if(args.length===2){
       const [selector,records]=args;
-      if(!Array.isArray(records)||records.length<1||records.length>1000)
-        throw TypeError('⟙ typed rows require 1..1000 records; empty state must be handled explicitly');
+      if(!Array.isArray(records)||records.length>1000)
+        throw TypeError('⟙ typed rows require 0..1000 records');
       const first=records[0];
-      if(!first||typeof first!=='object'||Array.isArray(first)||
-         Object.getPrototypeOf(first)!==null)
-        throw TypeError('⟙ requires a genuine H-Code record sequence');
-      const keys=Object.keys(first).sort();
+      let keys;
+      if(records.length===0){
+        const recordSchema=typedSequenceSchemas.get(records);
+        if(!recordSchema)
+          throw TypeError('⟙ empty records require an explicit ⟦Record⟧ annotation');
+        const fields=recordAnnotationFields(recordSchema);
+        if(fields.length<1||fields.length>16||
+           !fields.every(([name,type])=>/^[A-Za-z_][A-Za-z0-9_]*$/.test(name)&&
+             ['String','Number','Bool'].includes(type)))
+          throw TypeError('⟙ requires 1..16 scalar record columns');
+        keys=fields.map(([name])=>name).sort();
+      }else{
+        if(!first||typeof first!=='object'||Array.isArray(first)||
+           Object.getPrototypeOf(first)!==null)
+          throw TypeError('⟙ requires a genuine H-Code record sequence');
+        keys=Object.keys(first).sort();
+      }
       if(keys.length<1||keys.length>16||!keys.every(key=>/^[A-Za-z_][A-Za-z0-9_]*$/.test(key)))
         throw TypeError('⟙ requires 1..16 named record columns');
       const values=records.map(record=>{
@@ -1345,6 +1361,8 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
         const annotation=concretize(node.annotation??null,scope.genericBindings);
         const val=expr(node.value,scope,annotation);
         requireType(val,annotation);
+        if(Array.isArray(val)&&annotation?.startsWith('⟦⦃')&&annotation.endsWith('⦄⟧'))
+          typedSequenceSchemas.set(val,annotation.slice(1,-1));
         scope.define(node.name,val,annotation);
         break;
       }
@@ -1354,6 +1372,8 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
         const type=binding.annotations.get(node.name);
         const val=expr(node.value,scope,type);
         requireType(val,type);
+        if(Array.isArray(val)&&type?.startsWith('⟦⦃')&&type.endsWith('⦄⟧'))
+          typedSequenceSchemas.set(val,type.slice(1,-1));
         scope.assign(node.name,val);
         break;
       }

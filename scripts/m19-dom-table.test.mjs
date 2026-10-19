@@ -109,3 +109,23 @@ test('⟙ semantic table rejects non-scalar records and empty typed rows, withou
  assert.throws(()=>execute('⟙("#results",⟦⦃region:"North",total:5⦄,⦃region:123,total:6⦄⟧);',{domHost:f.doc}),/matching types|homogeneous|record.*must/);
  assert.equal(old,f.snapshot());
 });
+
+test('⟙ typed empty record sequence preserves real column headers in both H-Code engines',()=>{
+ const src=readFileSync(join(root,'compact/canonical20/programs/15-typed-table-empty.hc'),'utf8');
+ const js=ui(),native=ui();
+ execute(src,{domHost:js.doc});
+ const dir=mkdtempSync(join(tmpdir(),'hcode-dom-empty-'));
+ try{
+  const out=join(dir,'empty.mjs');
+  const built=spawnSync('cargo',['run','--quiet','--manifest-path','compiler/Cargo.toml','--',
+    'build',join(root,'compact/canonical20/programs/15-typed-table-empty.hc'),
+    '--out',out],{cwd:root,windowsHide:true,encoding:'utf8',timeout:180000,maxBuffer:1048576});
+  assert.equal(built.status,0,built.stderr||built.stdout||String(built.error));
+  runInNewContext(readFileSync(out,'utf8'),{document:native.doc,TextEncoder,console},{timeout:10000});
+  assert.equal(js.snapshot(),native.snapshot());
+  const table=js.target.children;
+  assert.deepEqual(table[1].children[0].children.map(v=>v.textContent),['region','revenue']);
+  assert.equal(table[2].children.length,0);
+  assert.throws(()=>execute('⟙("#results",⟦⟧)',{domHost:js.doc}),/explicit ⟦Record⟧ annotation/);
+ }finally{rmSync(dir,{recursive:true,force:true});}
+});

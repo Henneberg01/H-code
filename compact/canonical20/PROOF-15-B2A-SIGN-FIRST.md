@@ -18,10 +18,11 @@ Example H-Code:
 
 This works for any record names. All data are inert textContent nodes in
 accessible THEAD/TBODY structures; no markup interpolation. Bounds and type
-checks prevent unsafe cells. Both renderers deliberately reject empty
-2-operand sequences because the independent interpreter presently lacks
-static metadata for empty records; the full database dashboard must add
-a general empty-state type protocol rather than silently omit headings.
+checks prevent unsafe cells. Both renderers also accept **typed empty records** with zero body rows.
+The compiled Rust program uses its native static record type; the independent
+interpreter preserves an explicit H-Code `⟦Record⟧` annotation on an empty
+sequence. Unannotated empty sequences remain rejected rather than silently
+inventing headings. This works without app-specific dashboard fallbacks.
 
 This B2a contract is **not a complete database dashboard**: it has no
 real database-backed Chromium integration, dynamic date range or grouping.
