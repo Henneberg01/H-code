@@ -231,8 +231,107 @@ fn check_cas_pure_reducers(program:&Program)->Result<(),Diagnostic>{
     Ok(())
 }
 
+// Sorting callbacks execute once per element, in a deterministic source order.
+// They may not mutate captures or perform I/O. Reuse the recursive CAS purity
+// rules to reject effects through named functions and nested calls, but keep
+// actual database/dashboard logic in user-authored H-Code.
+fn check_sort_key_purity(program:&Program)->Result<(),Diagnostic>{
+    let mut functions=HashMap::new();
+    for stmt in &program.statements {
+        let original=if let StmtKind::Export{declaration}=&stmt.kind{declaration.as_ref()}else{stmt};
+        if let StmtKind::Function{name,..}=&original.kind{functions.insert(name.clone(),original);}
+    }
+    fn scan_expr<'a>(node:&Expr,functions:&HashMap<String,&'a Stmt>)->Result<(),Diagnostic>{
+        if let ExprKind::Binary{op:BinaryOp::SortDesc,right,..}=&node.kind {
+            let denied=||Diagnostic::new("EFFECT",
+                "↧ requires a statically known effect-free key (no I/O or mutation)".into(),right.span);
+            let mut visiting=Vec::new();
+            match &right.kind {
+                ExprKind::Identifier(name)=>{
+                    let def=functions.get(name).ok_or_else(denied)?;
+                    let StmtKind::Function{body,..}=&def.kind else{return Err(denied());};
+                    visiting.push(name.clone());
+                    for stmt in body{
+                        cas_pure_statement(stmt,functions,&mut visiting).map_err(|_|denied())?;
+                    }
+                },
+                ExprKind::Lambda{..}|ExprKind::Section{..}|ExprKind::Operation{..}=>{
+                    cas_pure_expression(right,functions,&mut visiting).map_err(|_|denied())?;
+                },
+                _=>return Err(denied())
+            }
+        }
+        match &node.kind {
+            ExprKind::FileRead(v)|ExprKind::HttpGet(v)|ExprKind::HttpServe(v)|
+            ExprKind::Sleep(v)|ExprKind::ArithEval(v)|ExprKind::JsonWrite(v)|
+            ExprKind::TextScalars(v)|ExprKind::TextWords(v)|ExprKind::Histogram(v)|
+            ExprKind::Markdown(v)|ExprKind::Length(v)|ExprKind::Sum(v)|
+            ExprKind::Unary{operand:v,..}|ExprKind::Lambda{body:v,..}|
+            ExprKind::Section{right:v,..}|ExprKind::CsvTyped{value:v,..}|
+            ExprKind::JsonRead{value:v,..}|ExprKind::JsonValid{value:v,..}=>{
+                scan_expr(v,functions)?;
+            },
+            ExprKind::FileWrite{filename,content}=>{
+                scan_expr(filename,functions)?;scan_expr(content,functions)?;
+            },
+            ExprKind::HttpServeState{handler,initial}=>{
+                scan_expr(handler,functions)?;scan_expr(initial,functions)?;
+            },
+            ExprKind::DbRows{database,sql,params,..}=>{
+                scan_expr(database,functions)?;scan_expr(sql,functions)?;scan_expr(params,functions)?;
+            },
+            ExprKind::Sequence(items)=>for item in items{scan_expr(item,functions)?;},
+            ExprKind::Record(fields)=>for (_,value) in fields{scan_expr(value,functions)?;},
+            ExprKind::Field{record,..}=>scan_expr(record,functions)?,
+            ExprKind::RecordUpdate{record,value,..}=>{
+                scan_expr(record,functions)?;scan_expr(value,functions)?;
+            },
+            ExprKind::Index{sequence,index}=>{
+                scan_expr(sequence,functions)?;scan_expr(index,functions)?;
+            },
+            ExprKind::Binary{left,right,..}=>{
+                scan_expr(left,functions)?;scan_expr(right,functions)?;
+            },
+            ExprKind::Choice{condition,when_true,when_false}=>{
+                scan_expr(condition,functions)?;
+                scan_expr(when_true,functions)?;
+                scan_expr(when_false,functions)?;
+            },
+            ExprKind::Call{callee,arguments}=>{
+                scan_expr(callee,functions)?;
+                for arg in arguments{scan_expr(arg,functions)?;}
+            },
+            ExprKind::Number(_)|ExprKind::String(_)|ExprKind::Bool(_)|
+            ExprKind::StdinText|ExprKind::Identifier(_)|ExprKind::Operation{..}=>{}
+        }
+        Ok(())
+    }
+    fn scan_stmt<'a>(node:&Stmt,functions:&HashMap<String,&'a Stmt>)->Result<(),Diagnostic>{
+        match &node.kind {
+            StmtKind::Let{value,..}|StmtKind::Assign{value,..}|
+            StmtKind::Return(value)|StmtKind::Expression(value)=>scan_expr(value,functions)?,
+            StmtKind::Function{body,..}=>for stmt in body{scan_stmt(stmt,functions)?;},
+            StmtKind::While{condition,body}=>{
+                scan_expr(condition,functions)?;
+                for stmt in body{scan_stmt(stmt,functions)?;}
+            },
+            StmtKind::If{condition,then_body,else_body}=>{
+                scan_expr(condition,functions)?;
+                for stmt in then_body{scan_stmt(stmt,functions)?;}
+                if let Some(body)=else_body{for stmt in body{scan_stmt(stmt,functions)?;}}
+            },
+            StmtKind::Export{declaration}=>scan_stmt(declaration,functions)?,
+            StmtKind::Use{..}|StmtKind::Import{..}=>{}
+        }
+        Ok(())
+    }
+    for stmt in &program.statements{scan_stmt(stmt,&functions)?;}
+    Ok(())
+}
+
 pub fn check(program:&Program, registry:&PackageRegistry, allow_print:bool)->Result<TypedProgram,Diagnostic>{
     check_cas_pure_reducers(program)?;
+    check_sort_key_purity(program)?;
     let mut checker=Checker{
         scopes:vec![HashMap::new()],substitutions:HashMap::new(),fresh:0,
         imported:HashMap::new(),glyphs:HashMap::new(),active_function:None,

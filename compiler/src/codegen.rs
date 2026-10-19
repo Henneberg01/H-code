@@ -657,6 +657,7 @@ pub fn emit(program:&TypedProgram,registry:&PackageRegistry)->Result<String,Stri
 let __hc_stdin_used=false;
 const __hc_stdin=()=>{
   __hc_tick();
+  if(__hc_cas_reducer_active)throw Error('↧ key effect denied: stdin');
   if(__hc_stdin_used)throw Error('stdin already consumed');
   __hc_stdin_used=true;
   const b=Buffer.allocUnsafe(4096),chunks=[];
@@ -694,7 +695,7 @@ const __hc_stdin=()=>{
   output.push_str("const __hc_filter = (xs,fn) => { __hc_seq(xs); if (typeof fn!=='function') throw Error('⌕ requires a unary predicate'); const output=[]; for (const item of xs) { __hc_tick(); const keep=fn(item); if (typeof keep!=='boolean') throw Error('⌕ predicate must return Bool'); if (keep) output.push(item); if (output.length>16384) throw Error('Sequence allocation limit exceeded'); } return __hc_seq(output); };\n");
   output.push_str("const __hc_map = (xs,fn) => { __hc_seq(xs); if (typeof fn!=='function') throw Error('⇢ requires a unary transform'); const output=[]; for (const item of xs) { __hc_tick(); output.push(fn(item)); if (output.length>16384) throw Error('Sequence allocation limit exceeded'); } return __hc_seq(output); };\n");
   if requires_sort {
-    output.push_str("const __hc_sort_desc=(xs,fn)=>{ __hc_seq(xs); if(typeof fn!=='function')throw TypeError('↧ requires a unary numeric key'); const keyed=xs.map((item,index)=>{ __hc_tick(); const key=fn(item); if(typeof key!=='number'||!Number.isFinite(key))throw TypeError('↧ key must return a finite Number'); return {item,index,key}; }); keyed.sort((a,b)=>{ __hc_tick(); return a.key>b.key?-1:a.key<b.key?1:a.index-b.index; }); return __hc_seq(keyed.map(v=>v.item)); };\n");
+    output.push_str("const __hc_sort_desc=(xs,fn)=>{ __hc_seq(xs); if(typeof fn!=='function')throw TypeError('↧ requires a unary numeric key'); const keyed=xs.map((item,index)=>{ __hc_tick(); const previous=__hc_cas_reducer_active; __hc_cas_reducer_active=true; let key; try{key=fn(item);}finally{__hc_cas_reducer_active=previous;} if(typeof key!=='number'||!Number.isFinite(key))throw TypeError('↧ key must return a finite Number'); return {item,index,key}; }); keyed.sort((a,b)=>{ __hc_tick(); return a.key>b.key?-1:a.key<b.key?1:a.index-b.index; }); return __hc_seq(keyed.map(v=>v.item)); };\n");
   }
   if requires_json {
   // A deterministic, bounded JSON boundary shared in meaning with the JS reference.
@@ -837,7 +838,7 @@ const __hc_hist = input => {
   if requires_file {output.push_str(include_str!("file_read_prelude.js"));}
   if requires_file_write {
     output.push_str(include_str!("../../runtime/file-write.mjs"));
-    output.push_str("\nlet __hc_file_writer;\nconst __hc_file_write=(name,content)=>{\n  __hc_tick();\n  if(!__hc_file_writer)__hc_file_writer=createFileWriteCapability({root:process.env.HCODE_FILE_WRITE_ROOT});\n  return __hc_file_writer.write(name,content);\n};\n");
+    output.push_str("\nlet __hc_file_writer;\nconst __hc_file_write=(name,content)=>{\n  __hc_tick();\n  if(__hc_cas_reducer_active)throw Error('↧ key effect denied: file write');\n  if(!__hc_file_writer)__hc_file_writer=createFileWriteCapability({root:process.env.HCODE_FILE_WRITE_ROOT});\n  return __hc_file_writer.write(name,content);\n};\n");
   }
   if requires_http {output.push_str(include_str!("http_get_prelude.js"));}
   if requires_http_serve {output.push_str(include_str!("http_serve_prelude.js"));}

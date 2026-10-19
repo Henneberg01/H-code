@@ -898,6 +898,7 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
     step();
     switch(node.kind){
       case 'StdinText':{
+        if(pureDepth>0)throw Error('↧ key effect denied: stdin');
         if(stdinConsumed)throw new ArithmeticInputError('stdin already consumed');
         stdinConsumed=true;
         if(typeof readStdin!=='function')throw new ArithmeticInputError('stdin capability denied');
@@ -1006,6 +1007,7 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
         throw new PendingFileWriteEffect(filename,content,index,byteLength);
       }
       case 'FileRead':{
+        if(pureDepth>0)throw Error('↧ key effect denied: file read');
         const path=expr(node.value,scope);
         if(typeof path!=='string')throw Error('⧄ requires String file name');
         if(typeof readFile!=='function')throw Error('H-Code file-read capability denied');
@@ -1209,7 +1211,9 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
           if(typeof key!=='function')throw TypeError('↧ requires a unary numeric key');
           const keyed=sequence.map((item,index)=>{
             step();
-            const k=key(item);
+            pureDepth++;
+            let k;
+            try{k=key(item);}finally{pureDepth--;}
             if(typeof k!=='number'||!Number.isFinite(k))
               throw TypeError('↧ key must return a finite Number');
             return {item,index,key:k};

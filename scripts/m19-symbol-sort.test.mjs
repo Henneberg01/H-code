@@ -53,3 +53,22 @@ test('real Rust-generated Node ESM and independent H-Code interpreter sort ident
    assert.deepEqual(native.stdout.trim().split(/\r?\n/),runReference(literal));
  }finally{rmSync(dir,{recursive:true,force:true});}
 });
+
+test('↧ denies all callback host effects in interpreter before host I/O is touched',()=>{
+ const stdout=[],files=[],stdin=[];
+ assert.throws(()=>execute('⟦1,2⟧↧λx:⎙(x);',{stdout:x=>stdout.push(x)}),
+   /CAS reducer effect denied/);
+ assert.deepEqual(stdout,[],'No output from failed sort selector');
+ assert.throws(()=>execute('⟦1,2⟧↧λx:⧄"secret";',{
+  readFile:path=>{files.push(path);return 'data';}
+ }),/↧ key effect denied: file read/);
+ assert.deepEqual(files,[],'File host must not be invoked');
+ assert.throws(()=>execute('⟦1,2⟧↧λx:⌨;',{
+  readStdin:()=>{stdin.push(1);return '1';}
+ }),/↧ key effect denied: stdin/);
+ assert.deepEqual(stdin,[],'Stdin host must not be consumed');
+});
+test('↧ retains numeric sorting with pure named H-Code functions',()=>{
+ const source='ƒ score(n:Number)→Number ↩n*2; ⎙(⤒(⟦3,1,2⟧↧score));';
+ assert.deepEqual(runReference(source),['[3,2,1]']);
+});
