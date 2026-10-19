@@ -3,7 +3,9 @@ import {specializeCall,checkSpecializedReturn,typeToString} from './package-v3-s
 import {decodeTypedCSV} from './csv-pure.mjs';
 import {readMarkdownTokens} from './markdown-reference.mjs';
 import {safeArithmetic,ArithmeticInputError} from './arithmetic-pure.mjs';
+import {sha256Text,cryptoText,canonicalMac,randomByteCount,entropyValue} from './crypto-reference.mjs';
 export const CORE_GLYPHS = Object.freeze({
+  '⌁':'crypto-hash','⊩':'crypto-sign','⊨':'crypto-verify','⚄':'crypto-random',
   '\u0192': 'fn', '\u2254': 'let', '\u21a9': 'return', '\u2192': '->',
   '\u2190': '=', '\u22a4': 'true', '\u22a5': 'false',
   '\u2227': 'and', '\u2228': 'or', '\u00ac': 'not',
@@ -104,7 +106,7 @@ export function tokenize(source) {
     }
     if(letter(c)){
       let word='';while(alnum(peek()))word+=advance();
-      emit(word==='json_in'?'json-read':word==='json_valid'?'json-valid':word==='json_out'?'json-write':word==='text_scalars'?'text-scalars':word==='text_words'?'text-words':word==='text_hist'?'histogram':word==='markdown_tokens'?'markdown-tokens':word==='file_read'?'file-read':word==='file_write'?'file-write':word==='http_get'?'http-get':word==='http_serve'?'http-serve':word==='sleep_ms'?'sleep-ms':word==='csv_typed'?'csv-typed':word==='db_rows'?'db-rows':word==='stdin_text'?'stdin-text':word==='arith_eval'?'arith-eval':(RESERVED.has(word)?word:'ident'),word,ln,col);continue;
+      emit(word==='sha256_text'?'crypto-hash':word==='hmac_sign'?'crypto-sign':word==='hmac_verify'?'crypto-verify':word==='random_id'?'crypto-random':word==='json_in'?'json-read':word==='json_valid'?'json-valid':word==='json_out'?'json-write':word==='text_scalars'?'text-scalars':word==='text_words'?'text-words':word==='text_hist'?'histogram':word==='markdown_tokens'?'markdown-tokens':word==='file_read'?'file-read':word==='file_write'?'file-write':word==='http_get'?'http-get':word==='http_serve'?'http-serve':word==='sleep_ms'?'sleep-ms':word==='csv_typed'?'csv-typed':word==='db_rows'?'db-rows':word==='stdin_text'?'stdin-text':word==='arith_eval'?'arith-eval':(RESERVED.has(word)?word:'ident'),word,ln,col);continue;
     }
     if(Object.hasOwn(CORE_GLYPHS,c)){
       advance();const alias=CORE_GLYPHS[c];
@@ -261,7 +263,16 @@ class Parser {
   }
   expr(min=0){
     let left;
-    if(this.accept('not'))left={kind:'Unary',operator:'not',value:this.expr(8)};
+    if(['crypto-hash','crypto-sign','crypto-verify','crypto-random'].includes(this.peek().type)){
+      const operation=this.t[this.i++].type.slice(7),args=[];
+      if(operation==='sign'||operation==='verify'){
+        this.expect('(');args.push(this.expr());this.expect(',');args.push(this.expr());
+        if(operation==='verify'){this.expect(',');args.push(this.expr());}
+        this.expect(')');
+      }else args.push(this.expr(8));
+      left={kind:'Crypto',operation,args};
+    }
+    else if(this.accept('not'))left={kind:'Unary',operator:'not',value:this.expr(8)};
     else if(this.accept('-'))left={kind:'Unary',operator:'-',value:this.expr(8)};
     else if(this.accept('stdin-text'))left={kind:'StdinText'};
     else if(this.accept('arith-eval'))left={kind:'ArithEval',value:this.expr(8)};
@@ -467,6 +478,7 @@ export function linkProgram(ast, registry=new Map()) {
     return null;
   };
   function expression(node){
+    if(node.kind==='Crypto')return {...node,args:node.args.map(expression)};
     if(node.kind==='GlyphOperation'||node.kind==='QualifiedOperation')return resolveRef(node);
     if(node.kind==='Unary')return {...node,value:expression(node.value)};
     if(node.kind==='Sequence')return {...node,items:node.items.map(expression)};
@@ -528,11 +540,13 @@ class Scope {
 class ReturnSignal{constructor(value){this.value=value;}}
 const runtimeType=value=>value===null?'Unit':typeof value==='number'?'Number':typeof value==='string'?'String':typeof value==='boolean'?'Bool':'unsupported';
 
-export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=16384,registry=new Map(),readFile=null,readStdin=null,httpEffects=null,httpServe=null,httpServeState=null,sleepEffects=null,fileEffects=null,domHost=null,storageHost=null,dbHost=null}={}){
+export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=16384,registry=new Map(),readFile=null,readStdin=null,httpEffects=null,httpServe=null,httpServeState=null,sleepEffects=null,fileEffects=null,domHost=null,storageHost=null,dbHost=null,cryptoHost=null,entropyEffects=null}={}){
   const root=new Scope(),operations=new Map(),operationSpecs=new Map(),loadedLibraries=new Set();let steps=0,stdinConsumed=false,httpIndex=0,sleepIndex=0,fileIndex=0,pureDepth=0,functionDepth=0,httpServerRegistered=false;
   // Preserve explicit H-Code structural record types for empty sequences;
   // JS arrays alone cannot identify an empty element type.
   const typedSequenceSchemas=new WeakMap();
+  const entropyJournal=entropyEffects??[];
+  let entropyIndex=0,entropyBytes=entropyJournal.reduce((n,x)=>n+x.bytes,0);
   const step=()=>{if(++steps>maxSteps)throw Error('Execution step limit exceeded');};
   root.define('print',(...args)=>{if(pureDepth>0)throw Error('CAS reducer effect denied: print');stdout(args.map(x=>x===null?'none':String(x)).join(' '));return null;});
 
@@ -947,6 +961,35 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
   function expr(node,scope,expectedType=null,deferredEmpty=false){
     step();
     switch(node.kind){
+      case 'Crypto':{
+        if(node.operation!=='hash'&&pureDepth>0)throw Error('crypto effect denied in pure evaluation');
+        const args=node.args.map(x=>expr(x,scope));
+        if(node.operation==='hash')return sha256Text(args[0]);
+        const method=node.operation;
+        if(method==='random'){
+          const bytes=randomByteCount(args[0]),previous=entropyJournal[entropyIndex++];
+          if(previous){
+            if(previous.bytes!==bytes)throw Error('crypto entropy replay mismatch');
+            return previous.value;
+          }
+          if(entropyJournal.length>=64||entropyBytes+bytes>4096)throw Error('crypto entropy budget exceeded');
+        }else{
+          if(typeof args[0]!=='string')throw TypeError('crypto key alias requires String');
+          cryptoText(args[1]);
+          if(method==='verify'&&typeof args[2]!=='string')throw TypeError('crypto MAC requires String');
+        }
+        if(!cryptoHost||typeof cryptoHost[method]!=='function')throw Error('crypto capability denied');
+        let result;
+        try{result=cryptoHost[method](...args);}
+        catch(error){throw Error(error?.code==='JFH_CRYPTO_DENIED'?'crypto capability denied':'crypto host operation failed');}
+        if(method==='sign'&&!canonicalMac(result))throw Error('Invalid crypto MAC result');
+        if(method==='verify'&&typeof result!=='boolean')throw Error('Invalid crypto verification result');
+        if(method==='random'){
+          entropyValue(result,args[0]);
+          entropyJournal.push(Object.freeze({bytes:args[0],value:result}));entropyBytes+=args[0];
+        }
+        return result;
+      }
       case 'StdinText':{
         if(pureDepth>0)throw Error('↧ key effect denied: stdin');
         if(stdinConsumed)throw new ArithmeticInputError('stdin already consumed');
@@ -1502,7 +1545,7 @@ export async function executeAsync(source,options={}){
     throw RangeError('Invalid bounded H-Code HTTP request limit');
   const registry=options.registry??new Map();
   const program=linkProgram(parse(source),registry);
-  const journal=[],sleepJournal=[],fileJournal=[];
+  const journal=[],sleepJournal=[],fileJournal=[],entropyJournal=[];
   let totalFileBytes=0;
   let totalSleepMs=0,totalHttpRequests=0;
   let cachedStdin=false,stdinValue;
@@ -1518,7 +1561,7 @@ export async function executeAsync(source,options={}){
   for(;;){
     const lines=[];
     try{
-      const result=evaluate(program,{...options,registry,readStdin,readFile,httpEffects:journal,sleepEffects:sleepJournal,fileEffects:fileJournal,stdout:line=>lines.push(line)});
+      const result=evaluate(program,{...options,registry,readStdin,readFile,httpEffects:journal,sleepEffects:sleepJournal,fileEffects:fileJournal,entropyEffects:entropyJournal,stdout:line=>lines.push(line)});
       for(const line of lines)options.stdout?.(line);
       return {...result,httpRequests:totalHttpRequests,sleeps:sleepJournal.length,totalSleepMs,fileWrites:fileJournal.length,totalFileBytes};
     }catch(error){

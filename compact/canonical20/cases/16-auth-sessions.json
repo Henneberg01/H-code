@@ -1,0 +1,74 @@
+{
+  "schema": 1,
+  "workload": "16-auth-sessions",
+  "originalAcceptance": "issue/rotate/revoke a signed session using deterministic fixture identity",
+  "capabilities": [
+    "cryptography",
+    "http-server",
+    "persistent-session"
+  ],
+  "status": "b0-independent-correctness-fixture-only",
+  "note": "All signing keys and deterministic session IDs are test-only. Production IDs MUST use an OS CSPRNG and signed-cookie secrets MUST be host supplied.",
+  "signingKeyHex": "4242424242424242424242424242424242424242424242424242424242424242",
+  "baseEpoch": 1700000000,
+  "identities": [
+    "fixture-user-a",
+    "fixture-user-b"
+  ],
+  "sessionIds": [
+    "ABCDEFGHIJKLMNOPQRSTUVWX",
+    "ZYXWVUTSRQPONMLKJIHGFEDC",
+    "abcdefghijklmnopqrstuvwx",
+    "0123456789abcdefghijklmn"
+  ],
+  "cases": [
+    {
+      "id": "issue-and-inspect",
+      "identity": "fixture-user-a",
+      "sid": 0,
+      "issuedAt": 1700000000,
+      "ttlSeconds": 120,
+      "inspectAt": 1700000010,
+      "expect": {
+        "valid": true,
+        "identity": "fixture-user-a",
+        "expiresAt": 1700000120
+      }
+    },
+    {
+      "id": "rotate-revokes-previous",
+      "oldSid": 0,
+      "newSid": 1,
+      "rotatedAt": 1700000050,
+      "checkAt": 1700000051,
+      "expectOldValid": false,
+      "expectNewIdentity": "fixture-user-a",
+      "expectExpiry": 1700000120
+    },
+    {
+      "id": "explicit-revoke",
+      "sid": 1,
+      "revokedAt": 1700000080,
+      "checkAt": 1700000081,
+      "expectValid": false
+    },
+    {
+      "id": "expiry-at-boundary",
+      "identity": "fixture-user-b",
+      "sid": 2,
+      "issuedAt": 1700000200,
+      "ttlSeconds": 5,
+      "checkAt": 1700000205,
+      "expectValid": false
+    },
+    {
+      "id": "persist-through-restart",
+      "identity": "fixture-user-a",
+      "sid": 3,
+      "issuedAt": 1700000300,
+      "ttlSeconds": 300,
+      "checkAt": 1700000301,
+      "expectIdentity": "fixture-user-a"
+    }
+  ]
+}
