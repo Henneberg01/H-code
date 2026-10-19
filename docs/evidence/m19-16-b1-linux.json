@@ -1,0 +1,82 @@
+{
+  "schema": 1,
+  "milestone": "M19.16 B1",
+  "status": "linux-verified-cross-platform-pending",
+  "verifiedAt": "2026-10-19T19:47:48.668146+00:00",
+  "testedSourceCommit": "55639225d1d84a369a09ca95f17a92cdeabb9835",
+  "testedSourceTree": "6ba85337f425e60a4b249807dc0b8392bda6e6db",
+  "environment": {
+    "os": "Ubuntu 24.04.3",
+    "host": "x86_64-unknown-linux-gnu",
+    "rustc": "1.91.1 (ed61e7d7e)",
+    "cargo": "1.91.1",
+    "node": "v24.19.0"
+  },
+  "checks": [
+    {
+      "command": "cargo test --locked --manifest-path compiler/Cargo.toml",
+      "passed": 201,
+      "failed": 0,
+      "ignored": 0,
+      "targets": 47
+    },
+    {
+      "command": "cargo test --locked --manifest-path compiler/Cargo.toml --test m19_crypto",
+      "passed": 4,
+      "subsetOfFullRust": true
+    },
+    {
+      "command": "cargo build --manifest-path compiler/Cargo.toml",
+      "exitCode": 0
+    },
+    {
+      "command": "node --test scripts/m19-crypto-compiler.test.mjs",
+      "passed": 5,
+      "failed": 0
+    },
+    {
+      "command": "node --test scripts/canonical20-auth-contract.test.mjs scripts/m19-crypto-runtime.test.mjs",
+      "passed": 14,
+      "failed": 0
+    }
+  ],
+  "redProof": {
+    "sourceCommit": "c103834dd48e2773d2dad13da92bd3b556ad2991",
+    "testSource": "compiler/tests/m19_crypto.rs",
+    "passed": 0,
+    "failed": 4,
+    "expectedFailure": true
+  },
+  "hostedCi": {
+    "run": 39312786506,
+    "url": "https://github.com/Henneberg01/H-code/actions/runs/39312786506",
+    "observedJobSteps": 0,
+    "reason": "GitHub account locked because of a billing issue",
+    "noBillingChangePerformed": true
+  },
+  "pending": [
+    "Windows execution",
+    "hosted Ubuntu CI",
+    "required security scans",
+    "full Canonical16 H-Code session implementation and benchmark proof"
+  ],
+  "coverage": {
+    "verified": 15,
+    "total": 20,
+    "global70PercentProven": false
+  },
+  "sourceSha256": {
+    "compiler/src/ast.rs": "e338863fd77bb703d862ad0feb30227079cfa56286d2937cf82a6f0e75de3d2b",
+    "compiler/src/lexer.rs": "1fd4e07962f8390bc5bd1a72c7c0c8b6bf35f6b0d15e547078cb4052b37d1170",
+    "compiler/src/parser.rs": "871dd3d16a6f2d8e71739cb97a297e94c1e1fa4b6c3d2a76c21724039743876a",
+    "compiler/src/checker.rs": "dbdac59249056735c9304f890ba7d6c9ef4279e668360e306a679e994ae87e4f",
+    "compiler/src/codegen.rs": "b1c0f24422097831bcb39a5b89b4faa20498ad3b1982d378498f05a11b8b4ec4",
+    "compiler/src/crypto_prelude.js": "9f594ed4154f73c6b2bd5fa5cbb89a3366fe34be52333fca9835daa7fd33cdee",
+    "compiler/src/crypto_effects_prelude.js": "4bcbfbec2640830d7c05b6f47e45099fc3affdbc22a0e592e3e7ffbefb79c17c",
+    "prototype/src/hcode.mjs": "cb76010806a5e3e92328be3ec927fedbb5f7faeb7ac0e318c64961c8b6521dac",
+    "prototype/src/crypto-reference.mjs": "d9c3e950b13089195b2eb1dc9c5cf2b19715c0b3cda4518b9167a56741b5b22f",
+    "compiler/tests/m19_crypto.rs": "b06cf9fe37f36381def838a736b69facb37ed42d78517dc238b3e376db47c515",
+    "scripts/m19-crypto-compiler.test.mjs": "c5b4f696211e92a8b32b4d80e7d3e79fec5d37012974972702b7cb00f37209e9",
+    "compiler/Cargo.lock": "a1afb51feafc6d6149ad275fde47d144a8e415ed1d86ce345912240f3e1a2d14"
+  }
+}

@@ -2,8 +2,8 @@
 
 Oprindelig status 2026-10-19: konkret design til ejergennemgang.
 Aktuel status 2026-10-20: ejeren har bedt os tage de tekniske valg og arbejde
-videre. B1-kandidaten er implementeret; Rust- og platformverifikation er
-fortsat udestående. Se `docs/M19-16-CRYPTO.md` for faktisk testevidens.
+videre. B1-kandidaten er implementeret og verificeret med lokal Rust-kompilering
+og compilerparitet på Linux; Windows og hosted CI er fortsat udestående. Se `docs/M19-16-CRYPTO.md` for faktisk testevidens.
 
 ## Formål og afgrænsning
 

@@ -1,6 +1,6 @@
 # JFH-CODE M19.16 B1 — native cryptographic signs
 
-**Candidate implementation; not merged, released or Rust/compiler-verified.**
+**Candidate implementation: Linux Rust/compiler verification passed; Windows and hosted CI remain pending. Not merged or released.**
 
 The owner's direction is capability breadth comparable to TypeScript,
 expressed as JFH-CODE signs carrying general-purpose typed semantics.
@@ -50,7 +50,9 @@ to `execute` or `executeAsync`. Its key snapshot remains private to the host.
 
 ## Verification actually performed
 
-Local environment: Node v24.19.0, Linux.
+Local environment: Node v24.19.0, Ubuntu 24.04 x86_64, Rust/Cargo 1.91.1.
+Reproducible evidence: `docs/evidence/m19-16-b1-linux.json`; compiler dependencies
+are pinned in `compiler/Cargo.lock`.
 
 | Check | Observed result |
 |---|---|
@@ -60,21 +62,30 @@ Local environment: Node v24.19.0, Linux.
 | `node --test scripts/canonical20-auth-contract.test.mjs` | 10/10 passed |
 | `node --test scripts/hcode-symbol-first-audit.test.mjs` | 4/4 passed |
 | `node --test scripts/test/release-policy.test.mjs` | 6/6 passed |
+| `cargo test --locked --manifest-path compiler/Cargo.toml` | 201/201 passed across 47 test targets, no ignored tests |
+| `cargo test --manifest-path compiler/Cargo.toml --test m19_crypto` | 4/4 passed (included in the full 201) |
+| `cargo build --manifest-path compiler/Cargo.toml` | passed |
+| `node --test scripts/m19-crypto-compiler.test.mjs` | 5/5 actual Rust-generated ESM/reference parity tests passed |
 | `git diff --check` | passed |
 
-The newly added tests were observed failing before reference implementation
-and before extending the source-policy gate, then passing. The first Rust
-conformance tests were committed before the Rust production changes, but
-could not execute: this workspace has no Rust toolchain. Initial GitHub
-Actions jobs on `8ac1d319f91f05bf354b802567f906cda830c3c1` ended in failure
-with **zero started steps** and unavailable job logs. The cause is not
-established. This is not evidence of a Rust code-test failure or pass.
+The reference and source-policy tests were observed failing before their
+fixes, then passing. Once the local Rust toolchain became available, the
+new Rust tests also failed as expected (0 passed, 4 failed) against the original pre-feature
+`c103834` compiler, then passed 4/4 against the implementation. The
+actual Rust compiler tests, complete Rust suite, CLI build and generated
+ESM/reference tests all passed. The two previously pending Important review
+fixes are now covered by actual compiler execution, including cryptography
+and nested JSON appearing only in a while condition.
 
-Required pending checks are the actual Rust test suite/build, real compiled
-ESM ↔ reference execution (`scripts/m19-crypto-compiler.test.mjs`), Windows
-and Ubuntu CI, and any required repository security scans. A focused
-cross-platform workflow is supplied in `.github/workflows/m19-crypto.yml`.
-Standalone Node prelude tests do not substitute for compiling the emitter.
+Hosted CI remains blocked before execution. The public job page for
+[run 39312786506](https://github.com/Henneberg01/H-code/actions/runs/39312786506)
+reports: **“The job was not started because your account is locked due to a
+billing issue.”** No payment, account-setting change or workflow rerun was
+performed. The previous lack of logs is explained by zero started job steps.
+
+Windows execution, hosted Ubuntu CI and required repository security scans
+remain pending. Local Linux success does not substitute for those platform
+checks. The focused workflow uses `--locked` for reproducibility.
 
 ## Remaining session work and measurement
 
@@ -95,8 +106,8 @@ linkage for while-condition operands, and custom-host acceptance of
 noncanonical MAC input. The interpreter boundary regression was observed
 failing, then passing after canonical validation was added. Every conditional
 runtime detector now visits while conditions, with new Rust compile/output
-and real compiler-execution regressions supplied; those Rust tests remain
-unexecuted for the environment reasons above. The reviewer independently
+and real compiler-execution regressions supplied. These Rust tests now pass
+on local Linux, including both previously identified compiler regressions. The reviewer independently
 confirmed the entropy budget survives 64 asynchronous replay suspensions.
 The historical design now identifies the current implementation status and
 JFH-CODE normative principles.
