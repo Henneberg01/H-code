@@ -103,3 +103,27 @@ The complete manifest format, creation walkthrough and security caveats are in [
 The executable M1 prototype does **not** support records, arrays, general modules, online package downloads, full static typechecking, arbitrary effectful user operations, foreign-function imports, async, source maps, WebAssembly, mobile apps, graphics, or a secure runtime sandbox.
 
 **Unresolved decisions:** numeric model, ownership/lifetimes, errors (`Result` vs exceptions), generics, import syntax, overloading, compile-time macros, async, native runtime and ABI stability. These must be settled or version-gated before production use.
+
+
+## M19 experimental sign-first data and ordering extensions (not M1)
+
+**Typed database table projection:** `⧈⦃field:Type,...⦄(db,table)`
+uses a distinct Rust AST for two-operand, read-only relational projection
+of named String, Number or Bool SQLite columns. All requested field names
+must be safe identifiers. Actual SQL is a **generic backend detail** and
+is not handwritten H-Code. The existing three-operand `⧈(db,sql,params)`
+syntax remains as a low-level, bounded, parameterized SQL escape hatch.
+Both forms require the same explicitly granted database read effect and
+return fully typed sequences of records; unknown fields, data type
+mismatch and SQL-looking table names fail closed.
+
+**Comparison semantics:** for typed operands `a` and `b`, `a<b`,
+`a>b`, `a≤b` and `a≥b` accept matching finite Number operands or
+matching String operands. String ordering is lexicographic by Unicode
+scalar code points, not locale collation or JavaScript UTF-16 code units.
+Mixed String/Number or Bool comparisons are static type errors. UTF-8
+byte counts and source-code character counts remain separate metrics.
+
+These are candidate language semantics on a development branch and do
+not alter the original M1 prototype contract or SHA-frozen benchmark
+source files. See docs/H-CODE-SIGN-FIRST-REMEDIATION.md for proof gates.
