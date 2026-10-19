@@ -59,6 +59,8 @@
     "m19:browser-dom": "node --test scripts/m19-browser-dom.test.mjs",
     "m19:browser-real": "node --test scripts/m19-browser-dom-real.test.mjs",
     "m19:browser-compare": "node --test scripts/m19-browser-ui-compare.test.mjs",
+    "m19:browser-storage": "node --test scripts/m19-browser-storage.test.mjs",
+    "m19:browser-storage-real": "node --test scripts/m19-browser-storage-real.test.mjs",
     "benchmark20:verify13": "node scripts/canonical20-verify-13.mjs"
   },
   "engines": {
