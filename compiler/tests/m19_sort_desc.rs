@@ -36,7 +36,7 @@ fn numeric_keys_required_and_nonsequence_rejected(){
  }
 }
 #[test]
-fn pure_symbol_is_available_in typed_function_and_signed_code(){
+fn pure_symbol_is_available_in_typed_function_and_signed_code(){
  let source=String::from(r#"ƒ order(xs:⟦Number⟧)→⟦Number⟧ ↩ xs⇣λx:x
 print(⤒order(⟦3,1,2⟧))"#);
  assert!(generate(&source,true).is_ok());
