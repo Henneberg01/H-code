@@ -47,7 +47,7 @@ fn typed_general_sort_can_rank_strings_and_records_by_numbers(){
 fn sort_callbacks_are_statically_checked_for_transitive_effects(){
  for source in [
   r#"ƒ noisy(n:Number)→Number { ⎙(n); ↩n } ⎙(⤒(⟦1,2⟧↧noisy));"#,
-  r#"ƒ noisy(n:Number)→Number { ⎙(n); ↩n } ƒ key(n:Number)→Number ↩noisy(n) ⎙(⤒(⟦1,2⟧↧key));"#,
+  r#"ƒ noisy(n:Number)→Number { ⎙(n); ↩n } ƒ key(n:Number)→Number ↩noisy(n); ⎙(⤒(⟦1,2⟧↧key));"#,
   r#"≔counter←0 ƒ bump(n:Number)→Number { counter←counter+1; ↩n } ⎙(⤒(⟦1,2⟧↧bump));"#,
   r#"≔nums←⟦1,2⟧↧λn:⌗(⫶⌨);"#,
   r#"≔nums←⟦1,2⟧↧λn:⌗(⫶(⧄"secret"));"#,
