@@ -239,6 +239,17 @@ pub fn check(program:&Program, registry:&PackageRegistry, allow_print:bool)->Res
     };
     if allow_print {
         checker.declare("print",Type::BuiltinPrint,false,Span::new(1,1))?;
+        // Browser DOM capabilities are typed, general-purpose and denied to
+        // pure signed packages and replayable CAS HTTP reducers.
+        let str_=Type::String;
+        let unit=Type::Unit;
+        let bool_=Type::Bool;
+        checker.declare("dom_value",Type::Function(vec![str_.clone()],Box::new(str_.clone())),false,Span::new(1,1))?;
+        checker.declare("dom_text",Type::Function(vec![str_.clone(),str_.clone()],Box::new(unit.clone())),false,Span::new(1,1))?;
+        checker.declare("dom_valid",Type::Function(vec![str_.clone()],Box::new(bool_.clone())),false,Span::new(1,1))?;
+        checker.declare("dom_on",Type::Function(vec![str_.clone(),str_.clone(),
+            Type::Function(vec![str_.clone()],Box::new(bool_.clone()))],Box::new(unit.clone())),false,Span::new(1,1))?;
+        checker.declare("dom_attr",Type::Function(vec![str_.clone(),str_.clone(),str_],Box::new(unit)),false,Span::new(1,1))?;
     }
     checker.imports(program,registry)?;
     checker.predeclare(&program.statements)?;
@@ -309,6 +320,10 @@ impl Checker {
     fn push(&mut self){self.scopes.push(HashMap::new());}
     fn pop(&mut self){self.scopes.pop();}
     fn declare(&mut self,name:&str,ty:Type,assignable:bool,span:Span)->Result<(),Diagnostic>{
+        if matches!(name,"dom_value"|"dom_text"|"dom_valid"|"dom_on"|"dom_attr") &&
+           (!self.allow_print || self.scopes.len()>1) {
+            return Err(Diagnostic::new("TYPE","Reserved core browser DOM capability cannot be shadowed".into(),span));
+        }
         let scope=self.scopes.last_mut().expect("root scope exists");
         if scope.contains_key(name){return Err(Diagnostic::new("TYPE",format!("Duplicate declaration {name}"),span));}
         scope.insert(name.into(),Binding{ty,assignable});Ok(())

@@ -12,6 +12,7 @@ export const CORE_GLYPHS = Object.freeze({
   '\u2237': '::', '\u25b7': '|>', '\u2218': '<<', '\u25c7': '?', '\u27e6': '[[', '\u27e7': ']]',
   '\u2983':'record-open', '\u2984':'record-close', '\u00b7':'field', '\u229e':'record-update',
   '\u2913':'json-read', '\u2914':'json-valid', '\u2912':'json-write',
+  '⟐':'dom_value', '⟑':'dom_text', '⟒':'dom_valid', '⟓':'dom_on', '⟔':'dom_attr',
   '\u2af6':'text-scalars', '\u27df':'text-words', '\u29c9':'histogram', '\u224b':'markdown-tokens',
   '\u29c4':'file-read', '\u29c5':'file-write', '\u290b':'http-get', '\u290a':'http-serve', '\u231b':'sleep-ms', '\u29c7':'csv-typed',
   '\u2328':'stdin-text', '\u2a5a':'arith-eval', '\u2317': '#', '\u29fa': '++', '\u2211': '@+', '\u2315': '@?', '\u21e2': '@>', '\u03bb': 'lambda', '\u2200': 'forall'
@@ -105,7 +106,8 @@ export function tokenize(source) {
       emit(word==='json_in'?'json-read':word==='json_valid'?'json-valid':word==='json_out'?'json-write':word==='text_scalars'?'text-scalars':word==='text_words'?'text-words':word==='text_hist'?'histogram':word==='markdown_tokens'?'markdown-tokens':word==='file_read'?'file-read':word==='file_write'?'file-write':word==='http_get'?'http-get':word==='http_serve'?'http-serve':word==='sleep_ms'?'sleep-ms':word==='csv_typed'?'csv-typed':word==='stdin_text'?'stdin-text':word==='arith_eval'?'arith-eval':(RESERVED.has(word)?word:'ident'),word,ln,col);continue;
     }
     if(Object.hasOwn(CORE_GLYPHS,c)){
-      advance();const alias=CORE_GLYPHS[c];emit(alias,alias,ln,col);continue;
+      advance();const alias=CORE_GLYPHS[c];
+      emit(alias.startsWith('dom_')?'ident':alias,alias,ln,col);continue;
     }
     const two=c+(peek(1)??'');
     if(TWO.has(two)){advance();advance();emit(two==='<+'?'record-update':two,two,ln,col);continue;}
@@ -497,7 +499,12 @@ export function linkProgram(ast, registry=new Map()) {
 
 class Scope {
   constructor(parent=null){this.parent=parent;this.values=new Map();this.annotations=new Map();this.returnType=parent?.returnType??null;this.genericBindings=parent?.genericBindings??new Map();}
-  define(name,value,type=null){if(this.values.has(name))throw Error(`Duplicate name ${name}`);this.values.set(name,value);this.annotations.set(name,type);}
+  define(name,value,type=null){
+    if(this.parent&&['dom_value','dom_text','dom_valid','dom_on','dom_attr'].includes(name))
+      throw Error('Reserved core browser DOM capability cannot be shadowed');
+    if(this.values.has(name))throw Error(`Duplicate name ${name}`);
+    this.values.set(name,value);this.annotations.set(name,type);
+  }
   find(name){if(this.values.has(name))return this;if(this.parent)return this.parent.find(name);throw Error(`Unknown name ${name}`);}
   get(name){return this.find(name).values.get(name);}
   assign(name,value){this.find(name).values.set(name,value);}
@@ -505,10 +512,74 @@ class Scope {
 class ReturnSignal{constructor(value){this.value=value;}}
 const runtimeType=value=>value===null?'Unit':typeof value==='number'?'Number':typeof value==='string'?'String':typeof value==='boolean'?'Bool':'unsupported';
 
-export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=16384,registry=new Map(),readFile=null,readStdin=null,httpEffects=null,httpServe=null,httpServeState=null,sleepEffects=null,fileEffects=null}={}){
+export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=16384,registry=new Map(),readFile=null,readStdin=null,httpEffects=null,httpServe=null,httpServeState=null,sleepEffects=null,fileEffects=null,domHost=null}={}){
   const root=new Scope(),operations=new Map(),operationSpecs=new Map(),loadedLibraries=new Set();let steps=0,stdinConsumed=false,httpIndex=0,sleepIndex=0,fileIndex=0,pureDepth=0,functionDepth=0,httpServerRegistered=false;
   const step=()=>{if(++steps>maxSteps)throw Error('Execution step limit exceeded');};
   root.define('print',(...args)=>{if(pureDepth>0)throw Error('CAS reducer effect denied: print');stdout(args.map(x=>x===null?'none':String(x)).join(' '));return null;});
+
+  // Independent browser-host reference semantics. Unlike Rust generated ESM,
+  // this interpreter receives an explicit host; no implicit document access.
+  const domTarget=selector=>{
+    step();
+    if(pureDepth>0)throw Error('DOM effect denied in CAS reducer');
+    if(typeof selector!=='string'||selector.length<1||selector.length>256||!selector.isWellFormed())
+      throw TypeError('DOM selector must be well-formed String (1..256)');
+    if(!domHost||typeof domHost.querySelector!=='function')
+      throw Error('Browser DOM capability unavailable');
+    const element=domHost.querySelector(selector);
+    if(!element)throw Error('DOM target not found');
+    return element;
+  };
+  const domBounded=(value,max=16384)=>{
+    if(typeof value!=='string'||!value.isWellFormed()||
+       new TextEncoder().encode(value).length>max)
+      throw TypeError('DOM text must be bounded well-formed String');
+    return value;
+  };
+  root.define('dom_value',selector=>{
+    const element=domTarget(selector);
+    const value=typeof element.value==='string'?element.value:element.textContent;
+    return domBounded(value??'');
+  });
+  root.define('dom_text',(selector,value)=>{
+    domTarget(selector).textContent=domBounded(value);
+    return null;
+  });
+  root.define('dom_valid',selector=>{
+    const el=domTarget(selector);
+    if(typeof el.checkValidity!=='function')throw TypeError('DOM target has no native constraint validation');
+    const valid=el.checkValidity();
+    if(typeof valid!=='boolean')throw TypeError('DOM validity must be Bool');
+    return valid;
+  });
+  root.define('dom_attr',(selector,attribute,value)=>{
+    const el=domTarget(selector);
+    if(typeof attribute!=='string'||
+       !/^(?:aria-[a-z][a-z0-9-]*|role|title|data-hcode-[a-z0-9-]+)$/.test(attribute))
+      throw TypeError('DOM attribute not in safe accessibility/data allowlist');
+    if(typeof el.setAttribute!=='function')throw TypeError('DOM attribute setter unavailable');
+    el.setAttribute(attribute,domBounded(value,2048));
+    return null;
+  });
+  let domListeners=0;
+  root.define('dom_on',(selector,eventName,handler)=>{
+    const el=domTarget(selector);
+    if(!['input','change','submit','click','blur','focus'].includes(eventName))
+      throw TypeError('DOM event name is not permitted');
+    if(typeof handler!=='function')throw TypeError('DOM event handler must be a function');
+    if(typeof el.addEventListener!=='function')throw TypeError('DOM target cannot receive events');
+    if(domListeners>=256)throw RangeError('DOM listener budget exceeded');
+    el.addEventListener(eventName,event=>{
+      step();
+      const value=event?.target&&typeof event.target.value==='string'?event.target.value:'';
+      const accepted=handler(domBounded(value));
+      if(typeof accepted!=='boolean')throw TypeError('DOM event handler must return Bool');
+      if(!accepted&&event?.cancelable&&typeof event.preventDefault==='function')event.preventDefault();
+    },{passive:false});
+    domListeners++;
+    return null;
+  });
+
   const truth=v=>{if(typeof v!=='boolean')throw Error('Condition must be Boolean');return v;};
   // The parser emits ⦃name:Type,...⦄. Split top-level commas without
   // losing recursively nested sequence/record types.
