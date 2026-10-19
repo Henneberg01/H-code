@@ -1,0 +1,24 @@
+name: H-Code M19.13 fast browser DOM conformance
+on:
+  push:
+    branches:
+      - feat/m19-canonical13-b1-browser-dom
+permissions:
+  contents: read
+jobs:
+  browser-dom:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Rust native typed browser DOM
+        run: cargo test --manifest-path compiler/Cargo.toml --test m19_browser_dom
+      - name: Rust generated JS versus independent H-Code DOM reference
+        run: npm run m19:browser-dom
