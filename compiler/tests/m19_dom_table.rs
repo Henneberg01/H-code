@@ -56,3 +56,15 @@ fn typed_records_render_without_manual_headers_cell_arrays_or_domain_macros(){
  let previous=r###"⟙("#results","My title",⟦"A"⟧,⟦⟦"B"⟧⟧);"###;
  assert!(compile(previous,true).is_ok(),"Legacy four-argument typed table remains valid");
 }
+
+#[test]
+fn typed_empty_record_table_has_real_static_schema_and_no_browser_special_case(){
+ let source=r###"≔rows:⟦⦃region:String,revenue:Number⦄⟧←⟦⟧
+ ⟙("#results",rows)"###;
+ let esm=compile(source,true).expect("Explicitly typed empty record table must compile");
+ assert!(esm.contains("__hc_dom_records"));
+ assert!(esm.contains("region")&&esm.contains("revenue"));
+ assert!(!esm.contains("node:sqlite"));
+ assert!(compile(r###"⟙("#results",⟦⟧)"###,true).is_err(),
+   "An untyped empty sequence has no statically known table columns");
+}

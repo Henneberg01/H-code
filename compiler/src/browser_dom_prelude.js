@@ -152,8 +152,8 @@ const __hc_dom_records=(selector,records,schema)=>{
   if(!Array.isArray(schema)||schema[0]!=='o'||!Array.isArray(schema[1])||
      schema[1].length<1||schema[1].length>16)
     throw TypeError('⟙ requires statically checked record columns');
-  if(!Array.isArray(records)||records.length<1||records.length>1000)
-    throw TypeError('⟙ typed rows require 1..1000 records; empty state must be handled explicitly');
+  if(!Array.isArray(records)||records.length>1000)
+    throw TypeError('⟙ typed rows require 0..1000 records');
   const fields=schema[1],columns=fields.map(([name])=>name);
   const matrix=records.map(record=>{
     __hc_tick();

@@ -288,9 +288,14 @@ class Parser {
       const schema=this.typeName();
       this.expect('(');
       const database=this.expr();this.expect(',');
-      const sql=this.expr();this.expect(',');
-      const params=this.expr();this.expect(')');
-      left={kind:'DbRows',schema,database,sql,params};
+      const tableOrSql=this.expr();
+      if(this.accept(',')){
+        const params=this.expr();this.expect(')');
+        left={kind:'DbRows',schema,database,sql:tableOrSql,params};
+      }else{
+        this.expect(')');
+        left={kind:'DbTable',schema,database,table:tableOrSql};
+      }
     }
     else if(this.accept('text-scalars'))left={kind:'TextScalars',value:this.expr(8)};
     else if(this.accept('text-words'))left={kind:'TextWords',value:this.expr(8)};
@@ -470,6 +475,7 @@ export function linkProgram(ast, registry=new Map()) {
     if(node.kind==='JsonRead'||node.kind==='JsonValid'||node.kind==='JsonWrite'||node.kind==='TextScalars'||node.kind==='TextWords'||node.kind==='Histogram'||node.kind==='Markdown'||node.kind==='FileRead'||node.kind==='HttpGet'||node.kind==='HttpServe'||node.kind==='Sleep'||node.kind==='CsvTyped'||node.kind==='ArithEval')return {...node,value:expression(node.value)};
     if(node.kind==='FileWrite')return {...node,filename:expression(node.filename),content:expression(node.content)};
     if(node.kind==='DbRows')return {...node,database:expression(node.database),sql:expression(node.sql),params:expression(node.params)};
+    if(node.kind==='DbTable')return {...node,database:expression(node.database),table:expression(node.table)};
     if(node.kind==='HttpServeState')return {...node,handler:expression(node.handler),initial:expression(node.initial)};
     if(node.kind==='RecordUpdate')return {...node,record:expression(node.record),value:expression(node.value)};
     if(node.kind==='Index')return {...node,sequence:expression(node.sequence),index:expression(node.index)};
@@ -524,6 +530,9 @@ const runtimeType=value=>value===null?'Unit':typeof value==='number'?'Number':ty
 
 export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=16384,registry=new Map(),readFile=null,readStdin=null,httpEffects=null,httpServe=null,httpServeState=null,sleepEffects=null,fileEffects=null,domHost=null,storageHost=null,dbHost=null}={}){
   const root=new Scope(),operations=new Map(),operationSpecs=new Map(),loadedLibraries=new Set();let steps=0,stdinConsumed=false,httpIndex=0,sleepIndex=0,fileIndex=0,pureDepth=0,functionDepth=0,httpServerRegistered=false;
+  // Preserve explicit H-Code structural record types for empty sequences;
+  // JS arrays alone cannot identify an empty element type.
+  const typedSequenceSchemas=new WeakMap();
   const step=()=>{if(++steps>maxSteps)throw Error('Execution step limit exceeded');};
   root.define('print',(...args)=>{if(pureDepth>0)throw Error('CAS reducer effect denied: print');stdout(args.map(x=>x===null?'none':String(x)).join(' '));return null;});
 
@@ -595,13 +604,26 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
   root.define('dom_table',(...args)=>{
     if(args.length===2){
       const [selector,records]=args;
-      if(!Array.isArray(records)||records.length<1||records.length>1000)
-        throw TypeError('⟙ typed rows require 1..1000 records; empty state must be handled explicitly');
+      if(!Array.isArray(records)||records.length>1000)
+        throw TypeError('⟙ typed rows require 0..1000 records');
       const first=records[0];
-      if(!first||typeof first!=='object'||Array.isArray(first)||
-         Object.getPrototypeOf(first)!==null)
-        throw TypeError('⟙ requires a genuine H-Code record sequence');
-      const keys=Object.keys(first).sort();
+      let keys;
+      if(records.length===0){
+        const recordSchema=typedSequenceSchemas.get(records);
+        if(!recordSchema)
+          throw TypeError('⟙ empty records require an explicit ⟦Record⟧ annotation');
+        const fields=recordAnnotationFields(recordSchema);
+        if(fields.length<1||fields.length>16||
+           !fields.every(([name,type])=>/^[A-Za-z_][A-Za-z0-9_]*$/.test(name)&&
+             ['String','Number','Bool'].includes(type)))
+          throw TypeError('⟙ requires 1..16 scalar record columns');
+        keys=fields.map(([name])=>name).sort();
+      }else{
+        if(!first||typeof first!=='object'||Array.isArray(first)||
+           Object.getPrototypeOf(first)!==null)
+          throw TypeError('⟙ requires a genuine H-Code record sequence');
+        keys=Object.keys(first).sort();
+      }
       if(keys.length<1||keys.length>16||!keys.every(key=>/^[A-Za-z_][A-Za-z0-9_]*$/.test(key)))
         throw TypeError('⟙ requires 1..16 named record columns');
       const values=records.map(record=>{
@@ -1043,6 +1065,26 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
         if(typeof data!=='string')throw Error('Host file-read must return UTF-8 String');
         return data;
       }
+      case 'DbTable':{
+        // A real typed relational table effect, not user-authored SQL.
+        const table=expr(node.table,scope);
+        if(typeof table!=='string'||!/^[A-Za-z_][A-Za-z0-9_]{0,63}$/.test(table))
+          throw TypeError('⧈ table name must be a safe database identifier');
+        if(!node.schema.startsWith('⦃')||!node.schema.endsWith('⦄'))
+          throw TypeError('⧈ table requires a concrete record schema');
+        const fields=recordAnnotationFields(node.schema);
+        if(fields.length<1||fields.length>64||
+           !fields.every(([key,type])=>/^[A-Za-z_][A-Za-z0-9_]{0,63}$/.test(key)&&
+             ['String','Number','Bool'].includes(type)))
+          throw TypeError('⧈ table fields must be 1..64 scalar identifiers');
+        const columns=fields.map(([key])=>'__hc_t."'+key+'"');
+        const ordering=fields.map(([key,type])=>'__hc_t."'+key+'"'+
+          (type==='String'||type==='s'?' COLLATE BINARY':'')+' ASC');
+        const sql='SELECT '+columns.join(',')+' FROM "'+table+'" AS __hc_t'+
+          ' ORDER BY '+ordering.join(',');
+        return expr({kind:'DbRows',schema:node.schema,database:node.database,
+          sql:{kind:'Literal',value:sql},params:{kind:'Sequence',items:[]}},scope,expectedType);
+      }
       case 'DbRows':{
         step();
         if(pureDepth>0||functionDepth>0)throw Error('⧈ database effect denied in a pure function');
@@ -1282,6 +1324,10 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
         if(op==='==')return typeof a===typeof b&&a===b;
         if(op==='!=')return !(typeof a===typeof b&&a===b);
         if(op==='+'&&typeof a==='string'&&typeof b==='string')return a+b;
+        if(['<','>','<=','>='].includes(op)&&typeof a==='string'&&typeof b==='string'){
+          const compare=unicodeCompare(a,b); // stable Unicode scalar order
+          return op==='<'?compare<0:op==='>'?compare>0:op==='<='?compare<=0:compare>=0;
+        }
         if(['+','-','*','/','%','<','>','<=','>='].includes(op)){
           if(typeof a!=='number'||typeof b!=='number')throw Error(`${op} expects Numbers`);
           if((op==='/'||op==='%')&&b===0)throw Error('Division by zero');
@@ -1315,6 +1361,8 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
         const annotation=concretize(node.annotation??null,scope.genericBindings);
         const val=expr(node.value,scope,annotation);
         requireType(val,annotation);
+        if(Array.isArray(val)&&annotation?.startsWith('⟦⦃')&&annotation.endsWith('⦄⟧'))
+          typedSequenceSchemas.set(val,annotation.slice(1,-1));
         scope.define(node.name,val,annotation);
         break;
       }
@@ -1324,6 +1372,8 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
         const type=binding.annotations.get(node.name);
         const val=expr(node.value,scope,type);
         requireType(val,type);
+        if(Array.isArray(val)&&type?.startsWith('⟦⦃')&&type.endsWith('⦄⟧'))
+          typedSequenceSchemas.set(val,type.slice(1,-1));
         scope.assign(node.name,val);
         break;
       }

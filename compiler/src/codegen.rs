@@ -73,6 +73,7 @@ impl Emitter {
     TypedExprKind::Sleep(value)=>format!("(await __hc_sleep({}))",self.expr(value)),
     TypedExprKind::CsvTyped{schema,value}=>format!("__hc_csv_typed({}, {})",self.expr(value),csv_schema(schema)),
     TypedExprKind::DbRows{schema,database,sql,params}=>format!("__hc_db_rows({}, {}, {}, {})",self.expr(database),self.expr(sql),self.expr(params),json_schema(schema)),
+    TypedExprKind::DbTable{schema,database,table}=>format!("__hc_db_table({}, {}, {})",self.expr(database),self.expr(table),json_schema(schema)),
     TypedExprKind::StdinText=>"__hc_stdin()".into(),
     TypedExprKind::ArithEval(value)=>format!("__hc_arith({})",self.expr(value)),
     TypedExprKind::Lambda{parameter,body}=>format!("(({}) => ({}))",name(parameter),self.expr(body)),
@@ -102,6 +103,10 @@ impl Emitter {
    TypedExprKind::Binary{op,left,right}=>{
     let a=self.expr(left);let b=self.expr(right);
     match op {
+     BinaryOp::Less if matches!(&left.ty,Type::String)=>format!("(__hc_compare({a},{b}) < 0)"),
+     BinaryOp::Greater if matches!(&left.ty,Type::String)=>format!("(__hc_compare({a},{b}) > 0)"),
+     BinaryOp::LessEqual if matches!(&left.ty,Type::String)=>format!("(__hc_compare({a},{b}) <= 0)"),
+     BinaryOp::GreaterEqual if matches!(&left.ty,Type::String)=>format!("(__hc_compare({a},{b}) >= 0)"),
      BinaryOp::Filter=>format!("__hc_filter({a},{b})"),
      BinaryOp::Map=>format!("__hc_map({a},{b})"),
      BinaryOp::SortDesc=>format!("__hc_sort_desc({a},{b})"),
@@ -168,6 +173,7 @@ fn expr_uses_json(e:&TypedExpr)->bool {
  match &e.kind {
     TypedExprKind::DomRecordTable{selector,rows,..}=>expr_uses_json(selector)||expr_uses_json(rows),
    TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_json(database)||expr_uses_json(sql)||expr_uses_json(params),
+    TypedExprKind::DbTable{database,table,..}=>expr_uses_json(database)||expr_uses_json(table),
   TypedExprKind::HttpServeState{handler,initial}=>expr_uses_json(handler)||expr_uses_json(initial),
   TypedExprKind::Markdown(value)|TypedExprKind::HttpServe(value)=>expr_uses_json(value),
   TypedExprKind::FileWrite{filename,content}=>expr_uses_json(filename)||expr_uses_json(content),
@@ -206,6 +212,7 @@ fn expr_uses_markdown(e:&TypedExpr)->bool {
  match &e.kind {
     TypedExprKind::DomRecordTable{selector,rows,..}=>expr_uses_markdown(selector)||expr_uses_markdown(rows),
    TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_markdown(database)||expr_uses_markdown(sql)||expr_uses_markdown(params),
+    TypedExprKind::DbTable{database,table,..}=>expr_uses_markdown(database)||expr_uses_markdown(table),
   TypedExprKind::HttpServeState{handler,initial}=>expr_uses_markdown(handler)||expr_uses_markdown(initial),
   TypedExprKind::Markdown(_)=>true,
   TypedExprKind::HttpServe(value)=>expr_uses_markdown(value),
@@ -245,6 +252,7 @@ fn expr_uses_http_serve(e:&TypedExpr)->bool {
  match &e.kind {
     TypedExprKind::DomRecordTable{selector,rows,..}=>expr_uses_http_serve(selector)||expr_uses_http_serve(rows),
    TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_http_serve(database)||expr_uses_http_serve(sql)||expr_uses_http_serve(params),
+    TypedExprKind::DbTable{database,table,..}=>expr_uses_http_serve(database)||expr_uses_http_serve(table),
   TypedExprKind::HttpServe(_)|TypedExprKind::HttpServeState{..}=>true,
   TypedExprKind::Markdown(value)=>expr_uses_http_serve(value),
   TypedExprKind::FileWrite{filename,content}=>expr_uses_http_serve(filename)||expr_uses_http_serve(content),
@@ -283,6 +291,7 @@ fn expr_uses_http_state(e:&TypedExpr)->bool {
  match &e.kind {
     TypedExprKind::DomRecordTable{selector,rows,..}=>expr_uses_http_state(selector)||expr_uses_http_state(rows),
    TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_http_state(database)||expr_uses_http_state(sql)||expr_uses_http_state(params),
+    TypedExprKind::DbTable{database,table,..}=>expr_uses_http_state(database)||expr_uses_http_state(table),
   TypedExprKind::HttpServeState{..}=>true,
   TypedExprKind::HttpServe(value)=>expr_uses_http_state(value),
   TypedExprKind::Markdown(value)=>expr_uses_http_state(value),
@@ -322,6 +331,7 @@ fn expr_uses_text(e:&TypedExpr)->bool {
  match &e.kind {
     TypedExprKind::DomRecordTable{selector,rows,..}=>expr_uses_text(selector)||expr_uses_text(rows),
    TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_text(database)||expr_uses_text(sql)||expr_uses_text(params),
+    TypedExprKind::DbTable{database,table,..}=>expr_uses_text(database)||expr_uses_text(table),
   TypedExprKind::HttpServeState{handler,initial}=>expr_uses_text(handler)||expr_uses_text(initial),
   TypedExprKind::Markdown(value)|TypedExprKind::HttpServe(value)=>expr_uses_text(value),
   TypedExprKind::FileWrite{filename,content}=>expr_uses_text(filename)||expr_uses_text(content),
@@ -360,6 +370,7 @@ fn expr_uses_csv(e:&TypedExpr)->bool {
   match &e.kind {
     TypedExprKind::DomRecordTable{selector,rows,..}=>expr_uses_csv(selector)||expr_uses_csv(rows),
    TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_csv(database)||expr_uses_csv(sql)||expr_uses_csv(params),
+    TypedExprKind::DbTable{database,table,..}=>expr_uses_csv(database)||expr_uses_csv(table),
   TypedExprKind::HttpServeState{handler,initial}=>expr_uses_csv(handler)||expr_uses_csv(initial),
   TypedExprKind::Markdown(value)|TypedExprKind::HttpServe(value)=>expr_uses_csv(value),
   TypedExprKind::FileWrite{filename,content}=>expr_uses_csv(filename)||expr_uses_csv(content),
@@ -397,6 +408,7 @@ fn expr_uses_file(e:&TypedExpr)->bool {
   match &e.kind {
     TypedExprKind::DomRecordTable{selector,rows,..}=>expr_uses_file(selector)||expr_uses_file(rows),
    TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_file(database)||expr_uses_file(sql)||expr_uses_file(params),
+    TypedExprKind::DbTable{database,table,..}=>expr_uses_file(database)||expr_uses_file(table),
   TypedExprKind::HttpServeState{handler,initial}=>expr_uses_file(handler)||expr_uses_file(initial),
   TypedExprKind::Markdown(value)|TypedExprKind::HttpServe(value)=>expr_uses_file(value),
   TypedExprKind::FileWrite{filename,content}=>expr_uses_file(filename)||expr_uses_file(content),
@@ -435,6 +447,7 @@ fn expr_uses_http(e:&TypedExpr)->bool {
  match &e.kind {
     TypedExprKind::DomRecordTable{selector,rows,..}=>expr_uses_http(selector)||expr_uses_http(rows),
    TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_http(database)||expr_uses_http(sql)||expr_uses_http(params),
+    TypedExprKind::DbTable{database,table,..}=>expr_uses_http(database)||expr_uses_http(table),
   TypedExprKind::HttpServeState{handler,initial}=>expr_uses_http(handler)||expr_uses_http(initial),
   TypedExprKind::Markdown(value)|TypedExprKind::HttpServe(value)=>expr_uses_http(value),
   TypedExprKind::FileWrite{filename,content}=>expr_uses_http(filename)||expr_uses_http(content),
@@ -473,6 +486,7 @@ fn expr_uses_sleep(e:&TypedExpr)->bool {
  match &e.kind {
     TypedExprKind::DomRecordTable{selector,rows,..}=>expr_uses_sleep(selector)||expr_uses_sleep(rows),
    TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_sleep(database)||expr_uses_sleep(sql)||expr_uses_sleep(params),
+    TypedExprKind::DbTable{database,table,..}=>expr_uses_sleep(database)||expr_uses_sleep(table),
   TypedExprKind::HttpServeState{handler,initial}=>expr_uses_sleep(handler)||expr_uses_sleep(initial),
   TypedExprKind::Markdown(value)|TypedExprKind::HttpServe(value)=>expr_uses_sleep(value),
   TypedExprKind::FileWrite{filename,content}=>expr_uses_sleep(filename)||expr_uses_sleep(content),
@@ -511,6 +525,7 @@ fn expr_uses_file_write(e:&TypedExpr)->bool {
  match &e.kind {
     TypedExprKind::DomRecordTable{selector,rows,..}=>expr_uses_file_write(selector)||expr_uses_file_write(rows),
    TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_file_write(database)||expr_uses_file_write(sql)||expr_uses_file_write(params),
+    TypedExprKind::DbTable{database,table,..}=>expr_uses_file_write(database)||expr_uses_file_write(table),
   TypedExprKind::HttpServeState{handler,initial}=>expr_uses_file_write(handler)||expr_uses_file_write(initial),
   TypedExprKind::Markdown(value)|TypedExprKind::HttpServe(value)=>expr_uses_file_write(value),
   TypedExprKind::FileWrite{..}=>true,
@@ -548,6 +563,7 @@ fn expr_cli_flags(e:&TypedExpr)->u8 {
   match &e.kind {
     TypedExprKind::DomRecordTable{selector,rows,..}=>expr_cli_flags(selector)|expr_cli_flags(rows),
     TypedExprKind::DbRows{database,sql,params,..}=>expr_cli_flags(database)|expr_cli_flags(sql)|expr_cli_flags(params),
+    TypedExprKind::DbTable{database,table,..}=>expr_cli_flags(database)|expr_cli_flags(table),
     TypedExprKind::HttpServeState{handler,initial}=>expr_cli_flags(handler)|expr_cli_flags(initial),
     TypedExprKind::Markdown(v)|TypedExprKind::HttpServe(v)=>expr_cli_flags(v),
     TypedExprKind::FileWrite{filename,content}=>expr_cli_flags(filename)|expr_cli_flags(content),
@@ -585,7 +601,7 @@ fn stmt_cli_flags(s:&TypedStmt)->u8 {
 fn expr_uses_db(e:&TypedExpr)->bool {
  match &e.kind {
     TypedExprKind::DomRecordTable{selector,rows,..}=>expr_uses_db(selector)||expr_uses_db(rows),
-   TypedExprKind::DbRows{..}=>true,
+   TypedExprKind::DbRows{..}|TypedExprKind::DbTable{..}=>true,
    TypedExprKind::HttpServeState{handler,initial}=>expr_uses_db(handler)||expr_uses_db(initial),
    TypedExprKind::FileWrite{filename,content}=>expr_uses_db(filename)||expr_uses_db(content),
    TypedExprKind::Record(fields)=>fields.iter().any(|(_,v)|expr_uses_db(v)),
@@ -665,6 +681,9 @@ pub fn emit(program:&TypedProgram,registry:&PackageRegistry)->Result<String,Stri
  let requires_sort=application.contains("__hc_sort_desc(") ||
    imported.keys().any(|id|registry.packages.get(id).is_some_and(|pkg|
      Emitter{depth:0}.statements(&pkg.typed_source.statements).contains("__hc_sort_desc(")));
+ let requires_compare=application.contains("__hc_compare(") ||
+   imported.keys().any(|id|registry.packages.get(id).is_some_and(|pkg|
+     Emitter{depth:0}.statements(&pkg.typed_source.statements).contains("__hc_compare(")));
  let mut output=String::from("// Generated by H-Code M3. ESM, no eval or source interpolation.\n'use strict';\n");
  if cli_flags&1!=0 {
    output.push_str("import {readSync as __hc_read_fd0} from 'node:fs';\n");
@@ -696,6 +715,7 @@ const __hc_stdin=()=>{
 
  output.push_str("let __hc_fuel = 100000; let __hc_depth=0; const __hc_tick = () => { if (--__hc_fuel < 0) throw Error('H-Code instruction budget exceeded'); };\n");
  output.push_str("let __hc_cas_reducer_active=false;\nconst __hc_print = (...xs) => { if(__hc_cas_reducer_active)throw Error('CAS reducer effect denied'); console.log(xs.map(x => x === null ? 'none' : String(x)).join(' ')); return null; };\n");
+ if requires_compare { output.push_str("const __hc_compare = (a,b) => { __hc_tick(); if(typeof a==='number'&&typeof b==='number'&&Number.isFinite(a)&&Number.isFinite(b)) return a<b?-1:a>b?1:0; if(typeof a==='string'&&typeof b==='string'){ const left=[...a],right=[...b]; const limit=Math.min(left.length,right.length); for(let i=0;i<limit;i++){const d=left[i].codePointAt(0)-right[i].codePointAt(0); if(d)return d<0?-1:1;} return left.length<right.length?-1:left.length>right.length?1:0; } throw TypeError('Comparison expects Number or String'); };\n"); }
  output.push_str("const __hc_div = (a,b) => { if (b === 0) throw Error('Division by zero'); return a/b; };\n");
  output.push_str("const __hc_mod = (a,b) => { if (b === 0) throw Error('Division by zero'); return a%b; };\n");
  output.push_str("const __hc_compose = (outer,inner) => { if (typeof outer !== 'function' || typeof inner !== 'function') throw Error('Composition expects unary functions'); return (x) => { __hc_tick(); return outer(inner(x)); }; };\n");
