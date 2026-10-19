@@ -153,7 +153,9 @@ test('two-operand table read and ASCII alias have identical typed result',()=>wi
  assert.equal(glyph[0].amount_cents,0);
 }));
 test('generic table projection denies injected identifiers and schema mismatches',()=>withDatabase(dir=>{
- const path='print(⤒⧈⦃region:String⦄("orders.sqlite","orders;DELETE"));';
+ // Dynamic table names compile as String but are refused by the host.
+ // SQL-looking *literal* names are already rejected statically by Rust.
+ const path='≔t←"orders;DELETE";print(⤒⧈⦃region:String⦄("orders.sqlite",t));';
  assert.throws(()=>reference(path,dir),/safe database identifier/);
  const compiledBad=compiled(path,dir).run;
  assert.notEqual(compiledBad.status,0);
@@ -192,3 +194,11 @@ test('source-locked sign-first H-Code and independent idiomatic TypeScript are e
    hcodeUtf8Bytes:Buffer.byteLength(source),typescriptUtf8Bytes:Buffer.byteLength(comparator),
    benchmarkScope:'one paired B1 primitive, not Canonical15 dashboard and not global 70%'}));
 }));
+
+test('source glyph comparisons order ISO date strings and Unicode code points, not UTF-16 code units',()=>{
+ const output=[];
+ execute('print("2026-01-01"<"2026-02-01");print("😀"<"é");print("é">"a");print(2<3);',
+   {stdout:v=>output.push(v)});
+ assert.deepEqual(output,['true','false','true','true']);
+ assert.throws(()=>execute('print("a"<3);'),/expects Numbers|matching String|Number or String/);
+});

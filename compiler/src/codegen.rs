@@ -103,6 +103,10 @@ impl Emitter {
    TypedExprKind::Binary{op,left,right}=>{
     let a=self.expr(left);let b=self.expr(right);
     match op {
+     BinaryOp::Less=>format!("(__hc_compare({a},{b}) < 0)"),
+     BinaryOp::Greater=>format!("(__hc_compare({a},{b}) > 0)"),
+     BinaryOp::LessEqual=>format!("(__hc_compare({a},{b}) <= 0)"),
+     BinaryOp::GreaterEqual=>format!("(__hc_compare({a},{b}) >= 0)"),
      BinaryOp::Filter=>format!("__hc_filter({a},{b})"),
      BinaryOp::Map=>format!("__hc_map({a},{b})"),
      BinaryOp::Concat=>format!("__hc_concat({a},{b})"),
@@ -686,6 +690,7 @@ const __hc_stdin=()=>{
 
  output.push_str("let __hc_fuel = 100000; let __hc_depth=0; const __hc_tick = () => { if (--__hc_fuel < 0) throw Error('H-Code instruction budget exceeded'); };\n");
  output.push_str("let __hc_cas_reducer_active=false;\nconst __hc_print = (...xs) => { if(__hc_cas_reducer_active)throw Error('CAS reducer effect denied'); console.log(xs.map(x => x === null ? 'none' : String(x)).join(' ')); return null; };\n");
+ output.push_str("const __hc_compare = (a,b) => { __hc_tick(); if(typeof a==='number'&&typeof b==='number'&&Number.isFinite(a)&&Number.isFinite(b)) return a<b?-1:a>b?1:0; if(typeof a==='string'&&typeof b==='string'){ const left=[...a],right=[...b]; const limit=Math.min(left.length,right.length); for(let i=0;i<limit;i++){const d=left[i].codePointAt(0)-right[i].codePointAt(0); if(d)return d<0?-1:1;} return left.length<right.length?-1:left.length>right.length?1:0; } throw TypeError('Comparison expects Number or String'); };\n");
  output.push_str("const __hc_div = (a,b) => { if (b === 0) throw Error('Division by zero'); return a/b; };\n");
  output.push_str("const __hc_mod = (a,b) => { if (b === 0) throw Error('Division by zero'); return a%b; };\n");
  output.push_str("const __hc_compose = (outer,inner) => { if (typeof outer !== 'function' || typeof inner !== 'function') throw Error('Composition expects unary functions'); return (x) => { __hc_tick(); return outer(inner(x)); }; };\n");

@@ -74,3 +74,12 @@ fn symbol_first_table_projection_is_generic_typed_and_compatible_with_legacy_sql
  ]{assert!(compile(bad,false).is_err(),"Wrongly accepted {bad}");}
  assert!(compile(glyph,true).is_err(),"Pure packages may never read databases");
 }
+
+#[test]
+fn string_relations_are_native_typed_unicode_order_not_javascript_syntax(){
+ let js=compile(r#"print("2026-01-01"<"2026-02-01");print("😀"<"é");"#,false).unwrap();
+ assert!(js.contains("__hc_compare"),"Unicode scalar ordering requires a real runtime operation");
+ assert!(compile(r#"print("a"<3);"#,false).is_err());
+ assert!(compile(r#"print(true<false);"#,false).is_err());
+ assert!(compile(r#"print("2026-01-01"<"2026-02-01");"#,false).is_ok());
+}

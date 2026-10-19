@@ -1210,6 +1210,10 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
         if(op==='==')return typeof a===typeof b&&a===b;
         if(op==='!=')return !(typeof a===typeof b&&a===b);
         if(op==='+'&&typeof a==='string'&&typeof b==='string')return a+b;
+        if(['<','>','<=','>='].includes(op)&&typeof a==='string'&&typeof b==='string'){
+          const compare=unicodeCompare(a,b); // stable Unicode scalar order
+          return op==='<'?compare<0:op==='>'?compare>0:op==='<='?compare<=0:compare>=0;
+        }
         if(['+','-','*','/','%','<','>','<=','>='].includes(op)){
           if(typeof a!=='number'||typeof b!=='number')throw Error(`${op} expects Numbers`);
           if((op==='/'||op==='%')&&b===0)throw Error('Division by zero');

@@ -994,8 +994,20 @@ impl Checker {
                         Type::Number
                     }
                     BinaryOp::Less|BinaryOp::Greater|BinaryOp::LessEqual|BinaryOp::GreaterEqual=>{
-                        self.unify(&Type::Number,&l.ty,expr.span,"Comparison expects Number")?;
-                        self.unify(&Type::Number,&r.ty,expr.span,"Comparison expects Number")?;
+                        // H-Code order is defined on Number OR Unicode scalar String.
+                        // ISO dates can therefore be compared in native sign-first
+                        // expressions; mismatched types still fail at compile time.
+                        let operand=self.unify(&l.ty,&r.ty,expr.span,
+                            "Comparison expects Number or matching String")?;
+                        match self.resolved(&operand) {
+                            Type::Number|Type::String=>{},
+                            Type::Variable(_)=>{
+                                self.unify(&Type::Number,&operand,expr.span,
+                                    "Comparison expects Number or String")?;
+                            },
+                            _=>return Err(Diagnostic::new("TYPE",
+                                "Comparison expects Number or String".into(),expr.span))
+                        }
                         Type::Bool
                     }
                     BinaryOp::Equal|BinaryOp::NotEqual=>{
