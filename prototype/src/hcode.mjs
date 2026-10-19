@@ -15,11 +15,11 @@ export const CORE_GLYPHS = Object.freeze({
   '⟐':'dom_value', '⟑':'dom_text', '⟒':'dom_valid', '⟓':'dom_on', '⟔':'dom_attr', '⟘':'dom_list',
   '⟕':'store_get', '⟖':'store_put', '⟗':'store_del',
   '\u2af6':'text-scalars', '\u27df':'text-words', '\u29c9':'histogram', '\u224b':'markdown-tokens',
-  '\u29c4':'file-read', '\u29c5':'file-write', '\u290b':'http-get', '\u290a':'http-serve', '\u231b':'sleep-ms', '\u29c7':'csv-typed',
+  '\u29c4':'file-read', '\u29c5':'file-write', '\u29c8':'db-rows', '\u290b':'http-get', '\u290a':'http-serve', '\u231b':'sleep-ms', '\u29c7':'csv-typed',
   '\u2328':'stdin-text', '\u2a5a':'arith-eval', '\u2317': '#', '\u29fa': '++', '\u2211': '@+', '\u2315': '@?', '\u21e2': '@>', '\u03bb': 'lambda', '\u2200': 'forall'
 });
 export const RESERVED_USER_GLYPHS = new Set(['\u2205', '\u2200', '\u2208', ...Object.keys(CORE_GLYPHS)]);
-const RESERVED = new Set(['fn','let','return','true','false','if','else','while','and','or','not','use','as','lambda','forall','json_in','json_valid','json_out','text_scalars','text_words','text_hist','markdown_tokens','file_read','file_write','http_get','http_serve','sleep_ms','csv_typed','stdin_text','arith_eval']);
+const RESERVED = new Set(['fn','let','return','true','false','if','else','while','and','or','not','use','as','lambda','forall','json_in','json_valid','json_out','text_scalars','text_words','text_hist','markdown_tokens','file_read','file_write','http_get','http_serve','sleep_ms','csv_typed','db_rows','stdin_text','arith_eval']);
 const TWO = new Set(['==','!=','<=','>=','->','::','|>','<<','[[',']]','++','@+','@?','@>','=>','<+']);
 const ONE = new Set(['+','-','*','/','%','<','>','=','(',')','{','}',',',';',':','?','#','.']);
 const ILLEGAL = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]|\p{Default_Ignorable_Code_Point}/u;
@@ -104,7 +104,7 @@ export function tokenize(source) {
     }
     if(letter(c)){
       let word='';while(alnum(peek()))word+=advance();
-      emit(word==='json_in'?'json-read':word==='json_valid'?'json-valid':word==='json_out'?'json-write':word==='text_scalars'?'text-scalars':word==='text_words'?'text-words':word==='text_hist'?'histogram':word==='markdown_tokens'?'markdown-tokens':word==='file_read'?'file-read':word==='file_write'?'file-write':word==='http_get'?'http-get':word==='http_serve'?'http-serve':word==='sleep_ms'?'sleep-ms':word==='csv_typed'?'csv-typed':word==='stdin_text'?'stdin-text':word==='arith_eval'?'arith-eval':(RESERVED.has(word)?word:'ident'),word,ln,col);continue;
+      emit(word==='json_in'?'json-read':word==='json_valid'?'json-valid':word==='json_out'?'json-write':word==='text_scalars'?'text-scalars':word==='text_words'?'text-words':word==='text_hist'?'histogram':word==='markdown_tokens'?'markdown-tokens':word==='file_read'?'file-read':word==='file_write'?'file-write':word==='http_get'?'http-get':word==='http_serve'?'http-serve':word==='sleep_ms'?'sleep-ms':word==='csv_typed'?'csv-typed':word==='db_rows'?'db-rows':word==='stdin_text'?'stdin-text':word==='arith_eval'?'arith-eval':(RESERVED.has(word)?word:'ident'),word,ln,col);continue;
     }
     if(Object.hasOwn(CORE_GLYPHS,c)){
       advance();const alias=CORE_GLYPHS[c];
@@ -284,6 +284,14 @@ class Parser {
       const schema=this.typeName();
       left={kind:'CsvTyped',schema,value:this.expr(8)};
     }
+    else if(this.accept('db-rows')){
+      const schema=this.typeName();
+      this.expect('(');
+      const database=this.expr();this.expect(',');
+      const sql=this.expr();this.expect(',');
+      const params=this.expr();this.expect(')');
+      left={kind:'DbRows',schema,database,sql,params};
+    }
     else if(this.accept('text-scalars'))left={kind:'TextScalars',value:this.expr(8)};
     else if(this.accept('text-words'))left={kind:'TextWords',value:this.expr(8)};
     else if(this.accept('histogram'))left={kind:'Histogram',value:this.expr(8)};
@@ -461,6 +469,7 @@ export function linkProgram(ast, registry=new Map()) {
     if(node.kind==='Field')return {...node,record:expression(node.record)};
     if(node.kind==='JsonRead'||node.kind==='JsonValid'||node.kind==='JsonWrite'||node.kind==='TextScalars'||node.kind==='TextWords'||node.kind==='Histogram'||node.kind==='Markdown'||node.kind==='FileRead'||node.kind==='HttpGet'||node.kind==='HttpServe'||node.kind==='Sleep'||node.kind==='CsvTyped'||node.kind==='ArithEval')return {...node,value:expression(node.value)};
     if(node.kind==='FileWrite')return {...node,filename:expression(node.filename),content:expression(node.content)};
+    if(node.kind==='DbRows')return {...node,database:expression(node.database),sql:expression(node.sql),params:expression(node.params)};
     if(node.kind==='HttpServeState')return {...node,handler:expression(node.handler),initial:expression(node.initial)};
     if(node.kind==='RecordUpdate')return {...node,record:expression(node.record),value:expression(node.value)};
     if(node.kind==='Index')return {...node,sequence:expression(node.sequence),index:expression(node.index)};
@@ -513,7 +522,7 @@ class Scope {
 class ReturnSignal{constructor(value){this.value=value;}}
 const runtimeType=value=>value===null?'Unit':typeof value==='number'?'Number':typeof value==='string'?'String':typeof value==='boolean'?'Bool':'unsupported';
 
-export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=16384,registry=new Map(),readFile=null,readStdin=null,httpEffects=null,httpServe=null,httpServeState=null,sleepEffects=null,fileEffects=null,domHost=null,storageHost=null}={}){
+export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=16384,registry=new Map(),readFile=null,readStdin=null,httpEffects=null,httpServe=null,httpServeState=null,sleepEffects=null,fileEffects=null,domHost=null,storageHost=null,dbHost=null}={}){
   const root=new Scope(),operations=new Map(),operationSpecs=new Map(),loadedLibraries=new Set();let steps=0,stdinConsumed=false,httpIndex=0,sleepIndex=0,fileIndex=0,pureDepth=0,functionDepth=0,httpServerRegistered=false;
   const step=()=>{if(++steps>maxSteps)throw Error('Execution step limit exceeded');};
   root.define('print',(...args)=>{if(pureDepth>0)throw Error('CAS reducer effect denied: print');stdout(args.map(x=>x===null?'none':String(x)).join(' '));return null;});
@@ -951,6 +960,45 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
         const data=readFile(path);
         if(typeof data!=='string')throw Error('Host file-read must return UTF-8 String');
         return data;
+      }
+      case 'DbRows':{
+        step();
+        if(pureDepth>0||functionDepth>0)throw Error('⧈ database effect denied in a pure function');
+        if(!node.schema.startsWith('⦃')||!node.schema.endsWith('⦄'))
+          throw TypeError('⧈ requires an explicit record schema');
+        const fields=recordAnnotationFields(node.schema);
+        if(fields.length===0||fields.length>64||!fields.every(([,ty])=>['String','Number','Bool'].includes(ty)))
+          throw TypeError('⧈ requires 1..64 scalar String/Number/Bool fields');
+        const database=expr(node.database,scope);
+        const sql=expr(node.sql,scope);
+        const params=expr(node.params,scope,'⟦String⟧');
+        if(typeof database!=='string'||!/^[A-Za-z0-9][A-Za-z0-9._-]{0,100}\.sqlite$/.test(database)||
+           database.includes('..'))
+          throw TypeError('⧈ database name must be an explicitly granted SQLite basename');
+        if(typeof sql!=='string'||!sql.isWellFormed()||new TextEncoder().encode(sql).length>8192||
+           !/^\s*SELECT\s/i.test(sql)||/[;]|--|\/\*/.test(sql))
+          throw TypeError('⧈ requires a single read-only SELECT statement');
+        if(!Array.isArray(params)||params.length>16||
+          !params.every(p=>typeof p==='string'&&p.isWellFormed()&&new TextEncoder().encode(p).length<=4096))
+          throw TypeError('⧈ bind parameters must be bounded ⟦String⟧');
+        if(!dbHost||typeof dbHost.query!=='function')throw Error('⧈ database capability denied: inject a trusted DB host');
+        // Database backend is injected and independently implemented by the host.
+        const rows=dbHost.query(database,sql,params);
+        if(!Array.isArray(rows)||rows.length>1000)throw RangeError('⧈ database row limit exceeded');
+        const prepared=rows.map(row=>{
+          if(row===null||typeof row!=='object'||Array.isArray(row))throw TypeError('⧈ database record shape mismatch');
+          const record=Object.create(null);
+          for(const [key,ty] of fields){
+            if(!Object.hasOwn(row,key))throw TypeError('⧈ database record missing field '+key);
+            const raw=row[key];
+            record[key]=ty==='Bool'&&(raw===0||raw===1)?raw===1:raw;
+          }
+          if(Object.keys(row).length!==fields.length)throw TypeError('⧈ database record has unexpected columns');
+          return record;
+        });
+        if(new TextEncoder().encode(JSON.stringify(prepared)).length>1048576)
+          throw RangeError('⧈ database result byte limit exceeded');
+        return jsonReadCheck(prepared,'⟦'+node.schema+'⟧');
       }
       case 'CsvTyped':{
         if(!node.schema.startsWith('⦃')||!node.schema.endsWith('⦄'))

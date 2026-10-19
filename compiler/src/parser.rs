@@ -270,6 +270,18 @@ impl Parser {
             }
             TokenKind::Sleep=>{self.index+=1;ExprKind::Sleep(Box::new(self.expression(8)?))}
             TokenKind::CsvTyped=>{self.index+=1;let schema=self.type_name()?;ExprKind::CsvTyped{schema,value:Box::new(self.expression(8)?)}}
+            TokenKind::DbRows=>{
+                self.index+=1;
+                let schema=self.type_name()?;
+                self.expect(&TokenKind::LeftParen)?;
+                let database=self.expression(0)?;
+                self.expect(&TokenKind::Comma)?;
+                let sql=self.expression(0)?;
+                self.expect(&TokenKind::Comma)?;
+                let params=self.expression(0)?;
+                self.expect(&TokenKind::RightParen)?;
+                ExprKind::DbRows{schema,database:Box::new(database),sql:Box::new(sql),params:Box::new(params)}
+            }
             TokenKind::TextScalars=>{self.index+=1;ExprKind::TextScalars(Box::new(self.expression(8)?))}
             TokenKind::TextWords=>{self.index+=1;ExprKind::TextWords(Box::new(self.expression(8)?))}
             TokenKind::Histogram=>{self.index+=1;ExprKind::Histogram(Box::new(self.expression(8)?))}
