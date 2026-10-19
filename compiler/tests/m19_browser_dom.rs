@@ -39,3 +39,10 @@ fn ascii_and_symbol_browser_operations_are_same_compiler_semantics(){
  let b=compile("dom_text(\"#out\",dom_value(\"#email\"));",true).unwrap();
  assert_eq!(a,b);
 }
+
+#[test]
+fn browser_intrinsic_names_cannot_be_shadowed_by_user_parameters(){
+ let source="fn bad(dom_value:String)->String { return dom_value; } print(bad(\"x\"));";
+ let err=compile(source,true).unwrap_err();
+ assert!(err.contains("Reserved core browser DOM capability"),"{err}");
+}
