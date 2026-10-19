@@ -2,7 +2,7 @@
 use hcode_compiler::{checker::check,codegen::emit,packages::{load_lockfile,PackageRegistry},parser::parse};
 use serde_json::{json,Value};
 use sha2::{Digest,Sha256};
-use std::{fs,path::{Path,PathBuf},process::Command,time::{SystemTime,UNIX_EPOCH}};
+use std::{fs,path::{Path,PathBuf},process::Command,time::{Duration,SystemTime,UNIX_EPOCH}};
 
 fn root()->PathBuf{Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap().to_path_buf()}
 fn sha(bytes:&[u8])->String{format!("{:x}",Sha256::digest(bytes))}
@@ -17,6 +17,23 @@ fn run(source:&str,reg:&PackageRegistry)->Result<String,String>{
     if !child.status.success(){return Err(String::from_utf8_lossy(&child.stderr).to_string());}
     Ok(String::from_utf8_lossy(&child.stdout).replace("\r\n","\n"))
 }
+
+// Rust test fixtures are read while Windows AV/indexers may briefly lock
+// their files. Retry only Windows ERROR_SHARING_VIOLATION (32), with a bounded
+// delay; never retry hash/contract failures or alter production package loading.
+fn copy_fixture(source:&Path,destination:&Path){
+    for attempt in 0..12_u64 {
+        match fs::copy(source,destination) {
+            Ok(_) => return,
+            Err(e) if cfg!(windows) && e.raw_os_error()==Some(32) && attempt<11 => {
+                std::thread::sleep(Duration::from_millis(25*(attempt+1)));
+            },
+            Err(e) => panic!("Cannot copy M16 fixture {} -> {}: {e}",
+                             source.display(),destination.display())
+        }
+    }
+    unreachable!("copy either succeeded or returned a permanent failure")
+}
 struct Fixture{path:PathBuf,lock:Value}
 impl Drop for Fixture{fn drop(&mut self){let _=fs::remove_dir_all(&self.path);}}
 impl Fixture{
@@ -25,7 +42,7 @@ impl Fixture{
         let path=std::env::temp_dir().join(format!("hcode-m16-{}-{nanos}",std::process::id()));
         fs::create_dir_all(path.join("packages/vec.math")).unwrap();
         for name in ["manifest.json","lib.hc"] {
-            fs::copy(root().join("packages/vec.math").join(name),path.join("packages/vec.math").join(name)).unwrap();
+            copy_fixture(&root().join("packages/vec.math").join(name),&path.join("packages/vec.math").join(name));
         }
         let lock:Value=serde_json::from_slice(&fs::read(root().join("hcode.m16.lock.json")).unwrap()).unwrap();
         Self{path,lock}
@@ -149,8 +166,8 @@ fn qualified_glyphs_disambiguate_two_imported_v2_packages(){
     let mut f=Fixture::new();
     let other=f.path.join("packages/vec.other");
     fs::create_dir_all(&other).unwrap();
-    fs::copy(f.manifest_path(),other.join("manifest.json")).unwrap();
-    fs::copy(f.source_path(),other.join("lib.hc")).unwrap();
+    copy_fixture(&f.manifest_path(),&other.join("manifest.json"));
+    copy_fixture(&f.source_path(),&other.join("lib.hc"));
     let mut manifest:Value=serde_json::from_slice(&fs::read(other.join("manifest.json")).unwrap()).unwrap();
     manifest["name"]=json!("vec.other");
     let bytes=serde_json::to_vec(&manifest).unwrap();
