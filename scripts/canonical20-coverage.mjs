@@ -23,6 +23,7 @@ import {verifyCanonical14} from './canonical20-verify-14.mjs';
 import {verifyCanonical15} from './canonical20-verify-15.mjs';
 import {verifyCanonical18} from './canonical20-verify-18.mjs';
 import {verifyCanonical19} from './canonical20-verify-19.mjs';
+import {verifyCanonical20Feature} from './canonical20-verify-20.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
 const registryBytes=readFileSync(join(root,'compact/canonical20/workloads.json'));
@@ -172,6 +173,11 @@ export function readiness(){
         // Require old tests green on the committed seed, actual new assertion
         // failures, minimal repair, generated inputs and fault reintroduction.
         fullEvidence[w.id]=verifyCanonical19();
+        verified++;
+      }else if(w.id==='20-incremental-feature'){
+        // Require the committed starter, preserved old tests/CLI, new acceptance,
+        // actual native/TS app execution and old/new counterfactual failures.
+        fullEvidence[w.id]=verifyCanonical20Feature();
         verified++;
       }else{unsupported++;}
     }else if(w.status==='reference_partial'){

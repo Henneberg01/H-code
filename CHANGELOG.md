@@ -1,5 +1,11 @@
 # JFH-CODE change log
 
+## Unreleased — incremental application feature (2026-10-20)
+
+- Froze a concrete task20 starter and new acceptance before adding inclusive interval summaries, reports and a separate CLI. Preserved the original modules, tests and CLI protocol.
+- Verified native and TypeScript old/new behavior, thirty-two generated datasets, 250 actual CLI runs and eight assertion-rejected old/new defects. Both CLI implementations reject malformed, missing, nonfinite and extra fields.
+- Counted the whole extended project: 2,169 JFH-CODE vs 4,380 TypeScript codepoints (50.48% fewer), with UTF-8, common fixtures and generated runtime reported separately. Added derived task20 verification; the original registry and prior source locks remain unchanged. The global 70% target remains unverified.
+
 ## Unreleased — seeded bug-repair workload (2026-10-20)
 
 - Fixed local import resolution for bare relative test filenames: `hcodec test entry.test.hc` now resolves the working directory like `hcodec test ./entry.test.hc`, with a regression test for both spellings.

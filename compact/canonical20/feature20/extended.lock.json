@@ -1,0 +1,85 @@
+{
+  "starterCommit": "c76bdf492ddb52a315b00fdc0df54946fc29e1e8",
+  "starterManifest": {
+    "path": "compact/canonical20/feature20/starter.lock.json",
+    "gitBlobSha": "f613ef20d36986c69dc142999e7ec07465bfd073"
+  },
+  "files": [
+    {
+      "path": "compact/canonical20/feature20/extended/hcode/core.hc",
+      "gitBlobSha": "2de27752994edd7adde2916746d5b221370e137a"
+    },
+    {
+      "path": "compact/canonical20/feature20/extended/hcode/main.hc",
+      "gitBlobSha": "26c35db3610c5ef361843d6526e13252e39e4090"
+    },
+    {
+      "path": "compact/canonical20/feature20/extended/hcode/range.hc",
+      "gitBlobSha": "1c931434793613f0a78ad51e13b58fe86d72adf7"
+    },
+    {
+      "path": "compact/canonical20/feature20/extended/hcode/range.test.hc",
+      "gitBlobSha": "dee4d371827c10c43f89d0bfa7e607397426401c"
+    },
+    {
+      "path": "compact/canonical20/feature20/extended/hcode/report.hc",
+      "gitBlobSha": "218327e9abfa68ca1b5511a97b620ac14da1c12b"
+    },
+    {
+      "path": "compact/canonical20/feature20/extended/hcode/report.test.hc",
+      "gitBlobSha": "c70c3e0a48407b55156b5ee0b615761261593a7c"
+    },
+    {
+      "path": "compact/canonical20/feature20/extended/hcode/statistics.hc",
+      "gitBlobSha": "b1e72c3f16e6ef635dec2702ec77917484c6362d"
+    },
+    {
+      "path": "compact/canonical20/feature20/extended/hcode/statistics.test.hc",
+      "gitBlobSha": "b32f818cdb248ef1d8928881f2ad6fa8d966dca2"
+    },
+    {
+      "path": "compact/canonical20/feature20/extended/typescript/core.ts",
+      "gitBlobSha": "d7be10802fc91d2711f64eb6472c2900173dc042"
+    },
+    {
+      "path": "compact/canonical20/feature20/extended/typescript/fixtures.ts",
+      "gitBlobSha": "333a0d51699e77cc5f5404d9bdf4f98f7f2776bc"
+    },
+    {
+      "path": "compact/canonical20/feature20/extended/typescript/input.ts",
+      "gitBlobSha": "30e840d2428468d04af36793033d922ecfbda806"
+    },
+    {
+      "path": "compact/canonical20/feature20/extended/typescript/main.ts",
+      "gitBlobSha": "9ce8ae5115b30385eaeded52753e68bff558cf8b"
+    },
+    {
+      "path": "compact/canonical20/feature20/extended/typescript/range.test.ts",
+      "gitBlobSha": "2a8d881ff09f3bafcce78d7337f24b5efb3c8786"
+    },
+    {
+      "path": "compact/canonical20/feature20/extended/typescript/range.ts",
+      "gitBlobSha": "d02c366c6a9235c98d1218dbc3c7e314bef3f7a1"
+    },
+    {
+      "path": "compact/canonical20/feature20/extended/typescript/report.test.ts",
+      "gitBlobSha": "b2e3945555e98ed884380ec48c76ff76e5b18855"
+    },
+    {
+      "path": "compact/canonical20/feature20/extended/typescript/report.ts",
+      "gitBlobSha": "80188918017c0c7458debc30a157d07193bdfb1b"
+    },
+    {
+      "path": "compact/canonical20/feature20/extended/typescript/statistics.test.ts",
+      "gitBlobSha": "59712c88b4eab3cb94c0f671878f60f35f923324"
+    },
+    {
+      "path": "compact/canonical20/feature20/extended/typescript/statistics.ts",
+      "gitBlobSha": "faa99155a8e6de2c56988ce54b66163a75d36a07"
+    },
+    {
+      "path": "compact/canonical20/feature20/extended/typescript/types.ts",
+      "gitBlobSha": "a354f29a04a8401a2d85d652784ddca95c05cb7f"
+    }
+  ]
+}

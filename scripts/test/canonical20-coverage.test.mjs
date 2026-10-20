@@ -16,9 +16,9 @@ test('all 20 canonical tasks remain registered in source order, including unsupp
 test('source-locked reference-only examples cannot be misrepresented as global 70% proof',{skip:!canRunTs},()=>{
   const r=readiness();
   assert.equal(r.preregisteredTasks,20);
-  assert.equal(r.verifiedFullWorkloads,17);
+  assert.equal(r.verifiedFullWorkloads,18);
   assert.equal(r.partialReferenceEvidence,0);
-  assert.equal(r.unsupported,3);
+  assert.equal(r.unsupported,2);
   assert.equal(r.complete,false);
   assert.equal(r.globalMedianCodepointReduction,null);
   assert.equal(r.objectiveAchieved,false);
@@ -42,7 +42,7 @@ test('source-locked reference-only examples cannot be misrepresented as global 7
   assert.equal(r.historicalM14IsGlobalMetric,false);
   assert.equal(r.immutableRegistryGitBlobSha,PREREGISTERED_GIT_BLOB_SHA);
   assert.equal(r.capabilityDemandIsNotCompilerCoverage,true);
-  assert.equal(r.requestedByUnverifiedTasks.find(x=>x.capability==='multi-file-project')?.workloads,1);
+  assert.equal(r.requestedByUnverifiedTasks.some(x=>x.capability==='multi-file-project'),false);
   assert.equal(r.requestedByUnverifiedTasks.some(x=>x.capability==='test-runner'),false);
   assert.equal(r.evidenceByFullTask['19-bug-repair-task'].minimalRootCauseRepair,true);
   assert.equal(r.evidenceByFullTask['19-bug-repair-task'].reproductions.length,10);
@@ -50,6 +50,12 @@ test('source-locked reference-only examples cannot be misrepresented as global 7
   assert.equal(r.evidenceByFullTask['19-bug-repair-task'].additionalGeneratedInputCasesVerified,32);
   assert.equal(r.evidenceByFullTask['19-bug-repair-task'].reintroducedRuns.length,2);
   assert.equal(r.evidenceByFullTask['19-bug-repair-task'].globallyVerified70Percent,false);
+  assert.equal(r.evidenceByFullTask['20-incremental-feature'].oldAssertionsUnchanged,true);
+  assert.equal(r.evidenceByFullTask['20-incremental-feature'].newAssertionsUnchanged,true);
+  assert.equal(r.evidenceByFullTask['20-incremental-feature'].oldEntryPointUnchanged,true);
+  assert.equal(r.evidenceByFullTask['20-incremental-feature'].cliRuns.length,250);
+  assert.equal(r.evidenceByFullTask['20-incremental-feature'].seededFaultsRejected.length,8);
+  assert.equal(r.evidenceByFullTask['20-incremental-feature'].globallyVerified70Percent,false);
   assert.equal(r.evidenceByFullTask['18-refactor-task'].frozenAssertionsUnchanged,true);
   assert.equal(r.evidenceByFullTask['18-refactor-task'].fixedInputCasesVerified,12);
   assert.equal(r.evidenceByFullTask['18-refactor-task'].additionalGeneratedInputCasesVerified,32);
@@ -161,7 +167,7 @@ test('registry cannot claim an unsupported case is fully verified without compil
   } finally { target.status=previous; }
 });
 
-// This starts all twelve verified cross-runtime Rust/JS/TS proofs again in a new process.
+// This starts all current source-locked proofs again in a new process.
 // On Windows, independent child runtimes exceed 30s; extending the timeout does
 // not skip a single test or loosen the original 20-task strict rejection.
 test('the strict twenty-workload CI gate intentionally fails until all 20 pass',{skip:!canRunTs},()=>{
@@ -174,8 +180,8 @@ test('the strict twenty-workload CI gate intentionally fails until all 20 pass',
   assert.match(child.stderr,/all 20 must be compiler-verified/);
   const report=JSON.parse(child.stdout);
   assert.equal(report.preregisteredTasks,20);
-  assert.equal(report.verifiedFullWorkloads,17);
-  assert.equal(report.unsupported,3);
+  assert.equal(report.verifiedFullWorkloads,18);
+  assert.equal(report.unsupported,2);
   assert.equal(report.globalMedianCodepointReduction,null);
   assert.equal(report.objectiveAchieved,false);
 });
