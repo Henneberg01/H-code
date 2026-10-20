@@ -1,0 +1,144 @@
+{
+  "schema": 1,
+  "id": "JFH-CODE-CANONICAL19-SEED-2026-10-20-v1",
+  "workloadId": "19-bug-repair-task",
+  "originCommit": "be6badf576cec884d30895b88855a7ba73611b94",
+  "establishedOn": "2026-10-20",
+  "deliberatelySeeded": true,
+  "registry": {
+    "path": "compact/canonical20/workloads.json",
+    "gitBlobSha": "46653ef90ffb3e420fba4ddfbfac3c4cfd57f3b3"
+  },
+  "originalCases": {
+    "path": "compact/canonical20/refactor18/cases.json",
+    "gitBlobSha": "626cbf4192f0c66045e777ae0e759c50f4ffe1d1"
+  },
+  "regressions": {
+    "path": "compact/canonical20/bug19/regressions.json",
+    "gitBlobSha": "4a3076bd01f75eb090e9947a77401692a842e942"
+  },
+  "contract": {
+    "path": "compact/canonical20/bug19/CONTRACT.md",
+    "gitBlobSha": "b0534233377b48d50b03b6295be9e19622a67c25"
+  },
+  "attributes": {
+    "path": "compact/canonical20/bug19/.gitattributes",
+    "gitBlobSha": "fcadb2cf97913f58a2523f535336e725c6b59d1f"
+  },
+  "regressionTests": [
+    {
+      "path": "compact/canonical20/bug19/regression/hcode/regression.test.hc",
+      "gitBlobSha": "9ecb63f7df848f9c40d464cfb968a87bb1e3ee01"
+    },
+    {
+      "path": "compact/canonical20/bug19/regression/typescript/regression.test.ts",
+      "gitBlobSha": "0991a0b809efa07b7113cc965700b5f8922498d0"
+    }
+  ],
+  "reproducingIds": [
+    "maximum-after-window",
+    "minimum-after-window",
+    "filtered-tail",
+    "long-negative-tail",
+    "fractional-tail"
+  ],
+  "controlId": "window-control",
+  "files": [
+    {
+      "path": "compact/canonical20/bug19/seeded/hcode/core.hc",
+      "gitBlobSha": "8d1796c054c703bc61219ca30fd0d0db71a6abd4",
+      "origin": {
+        "path": "compact/canonical20/refactor18/refactored/hcode/core.hc",
+        "gitBlobSha": "2de27752994edd7adde2916746d5b221370e137a"
+      }
+    },
+    {
+      "path": "compact/canonical20/bug19/seeded/hcode/report.hc",
+      "gitBlobSha": "1224aa4d8e9a41917c1968064f94e73c37216822",
+      "origin": {
+        "path": "compact/canonical20/refactor18/refactored/hcode/report.hc",
+        "gitBlobSha": "1224aa4d8e9a41917c1968064f94e73c37216822"
+      }
+    },
+    {
+      "path": "compact/canonical20/bug19/seeded/hcode/report.test.hc",
+      "gitBlobSha": "c70c3e0a48407b55156b5ee0b615761261593a7c",
+      "origin": {
+        "path": "compact/canonical20/refactor18/refactored/hcode/report.test.hc",
+        "gitBlobSha": "c70c3e0a48407b55156b5ee0b615761261593a7c"
+      }
+    },
+    {
+      "path": "compact/canonical20/bug19/seeded/hcode/statistics.hc",
+      "gitBlobSha": "e130e07a2106de4b62c3b108def4d5ae651deef0",
+      "origin": {
+        "path": "compact/canonical20/refactor18/refactored/hcode/statistics.hc",
+        "gitBlobSha": "e130e07a2106de4b62c3b108def4d5ae651deef0"
+      }
+    },
+    {
+      "path": "compact/canonical20/bug19/seeded/hcode/statistics.test.hc",
+      "gitBlobSha": "b32f818cdb248ef1d8928881f2ad6fa8d966dca2",
+      "origin": {
+        "path": "compact/canonical20/refactor18/refactored/hcode/statistics.test.hc",
+        "gitBlobSha": "b32f818cdb248ef1d8928881f2ad6fa8d966dca2"
+      }
+    },
+    {
+      "path": "compact/canonical20/bug19/seeded/typescript/core.ts",
+      "gitBlobSha": "b4175aa0f2d76194359e83bf3ec066a07aa47fb1",
+      "origin": {
+        "path": "compact/canonical20/refactor18/refactored/typescript/core.ts",
+        "gitBlobSha": "d7be10802fc91d2711f64eb6472c2900173dc042"
+      }
+    },
+    {
+      "path": "compact/canonical20/bug19/seeded/typescript/fixtures.ts",
+      "gitBlobSha": "333a0d51699e77cc5f5404d9bdf4f98f7f2776bc",
+      "origin": {
+        "path": "compact/canonical20/refactor18/refactored/typescript/fixtures.ts",
+        "gitBlobSha": "333a0d51699e77cc5f5404d9bdf4f98f7f2776bc"
+      }
+    },
+    {
+      "path": "compact/canonical20/bug19/seeded/typescript/report.test.ts",
+      "gitBlobSha": "b2e3945555e98ed884380ec48c76ff76e5b18855",
+      "origin": {
+        "path": "compact/canonical20/refactor18/refactored/typescript/report.test.ts",
+        "gitBlobSha": "b2e3945555e98ed884380ec48c76ff76e5b18855"
+      }
+    },
+    {
+      "path": "compact/canonical20/bug19/seeded/typescript/report.ts",
+      "gitBlobSha": "0b2eb763c97bcded413f2441cbef9fad78f43d91",
+      "origin": {
+        "path": "compact/canonical20/refactor18/refactored/typescript/report.ts",
+        "gitBlobSha": "0b2eb763c97bcded413f2441cbef9fad78f43d91"
+      }
+    },
+    {
+      "path": "compact/canonical20/bug19/seeded/typescript/statistics.test.ts",
+      "gitBlobSha": "59712c88b4eab3cb94c0f671878f60f35f923324",
+      "origin": {
+        "path": "compact/canonical20/refactor18/refactored/typescript/statistics.test.ts",
+        "gitBlobSha": "59712c88b4eab3cb94c0f671878f60f35f923324"
+      }
+    },
+    {
+      "path": "compact/canonical20/bug19/seeded/typescript/statistics.ts",
+      "gitBlobSha": "6ca79b8a6953f839ee1c20a106b3ccde7702f78a",
+      "origin": {
+        "path": "compact/canonical20/refactor18/refactored/typescript/statistics.ts",
+        "gitBlobSha": "6ca79b8a6953f839ee1c20a106b3ccde7702f78a"
+      }
+    },
+    {
+      "path": "compact/canonical20/bug19/seeded/typescript/types.ts",
+      "gitBlobSha": "a354f29a04a8401a2d85d652784ddca95c05cb7f",
+      "origin": {
+        "path": "compact/canonical20/refactor18/refactored/typescript/types.ts",
+        "gitBlobSha": "a354f29a04a8401a2d85d652784ddca95c05cb7f"
+      }
+    }
+  ]
+}
