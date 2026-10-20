@@ -105,6 +105,7 @@ pub enum TypedExprKind {
     HttpGet(Box<TypedExpr>),
     HttpServe(Box<TypedExpr>),
     HttpServeState {handler:Box<TypedExpr>,initial:Box<TypedExpr>},
+    WebSocketServe {handler:Box<TypedExpr>,initial:Box<TypedExpr>},
     Sleep(Box<TypedExpr>),
     StdinText,
     ArithEval(Box<TypedExpr>),
@@ -139,7 +140,7 @@ fn cas_pure_expression<'a>(
             if let Some(value)=tag{cas_pure_expression(value,functions,visiting)?;}
         },
         ExprKind::FileRead(_)|ExprKind::FileWrite{..}|ExprKind::HttpGet(_)|
-        ExprKind::HttpServe(_)|ExprKind::HttpServeState{..}|ExprKind::Sleep(_)|
+        ExprKind::HttpServe(_)|ExprKind::HttpServeState{..}|ExprKind::WebSocketServe{..}|ExprKind::Sleep(_)|
         ExprKind::StdinText|ExprKind::DbRows{..}|ExprKind::DbTable{..}=>return Err(denied()),
         ExprKind::Call{callee,arguments}=>{
             match &callee.kind {
@@ -213,18 +214,18 @@ fn cas_pure_statement<'a>(
         StmtKind::Export{declaration}=>cas_pure_statement(declaration,functions,visiting)
     }
 }
-fn check_cas_pure_reducers(program:&Program)->Result<(),Diagnostic>{
+// Sorting callbacks execute once per element, in a deterministic source order.
+// They may not mutate captures or perform I/O. Reuse the recursive CAS purity
+// rules to reject effects through named functions and nested calls, but keep
+// actual database/dashboard logic in user-authored H-Code.
+fn check_callback_purity(program:&Program)->Result<(),Diagnostic>{
     let mut functions=HashMap::new();
     for stmt in &program.statements {
-        let s=if let StmtKind::Export{declaration}=&stmt.kind{declaration.as_ref()}else{stmt};
-        if let StmtKind::Function{name,..}=&s.kind {functions.insert(name.clone(),s);}
+        let original=if let StmtKind::Export{declaration}=&stmt.kind{declaration.as_ref()}else{stmt};
+        if let StmtKind::Function{name,..}=&original.kind{functions.insert(name.clone(),original);}
     }
-    for stmt in &program.statements {
-        let expr=match &stmt.kind {
-            StmtKind::Expression(e)|StmtKind::Let{value:e,..}|StmtKind::Assign{value:e,..}=>Some(e),
-            _=>None
-        };
-        if let Some(Expr{kind:ExprKind::HttpServeState{handler,..},..})=expr {
+    fn scan_expr<'a>(node:&Expr,functions:&HashMap<String,&'a Stmt>)->Result<(),Diagnostic>{
+        if let ExprKind::WebSocketServe{handler,..}|ExprKind::HttpServeState{handler,..}=&node.kind {
             match &handler.kind {
                 ExprKind::Identifier(name)=>{
                     let function=functions.get(name).ok_or_else(||Diagnostic::new("EFFECT","CAS reducer must be a statically known H-Code function".into(),handler.span))?;
@@ -236,21 +237,6 @@ fn check_cas_pure_reducers(program:&Program)->Result<(),Diagnostic>{
                 _=>return Err(Diagnostic::new("EFFECT","CAS reducer requires a statically known H-Code function".into(),handler.span))
             }
         }
-    }
-    Ok(())
-}
-
-// Sorting callbacks execute once per element, in a deterministic source order.
-// They may not mutate captures or perform I/O. Reuse the recursive CAS purity
-// rules to reject effects through named functions and nested calls, but keep
-// actual database/dashboard logic in user-authored H-Code.
-fn check_sort_key_purity(program:&Program)->Result<(),Diagnostic>{
-    let mut functions=HashMap::new();
-    for stmt in &program.statements {
-        let original=if let StmtKind::Export{declaration}=&stmt.kind{declaration.as_ref()}else{stmt};
-        if let StmtKind::Function{name,..}=&original.kind{functions.insert(name.clone(),original);}
-    }
-    fn scan_expr<'a>(node:&Expr,functions:&HashMap<String,&'a Stmt>)->Result<(),Diagnostic>{
         if let ExprKind::Binary{op,right,..}=&node.kind {
           if matches!(op,BinaryOp::SortDesc|BinaryOp::SortTextAsc) {
             let denied=||Diagnostic::new("EFFECT",
@@ -294,7 +280,7 @@ fn check_sort_key_purity(program:&Program)->Result<(),Diagnostic>{
             ExprKind::FileWrite{filename,content}=>{
                 scan_expr(filename,functions)?;scan_expr(content,functions)?;
             },
-            ExprKind::HttpServeState{handler,initial}=>{
+            ExprKind::HttpServeState{handler,initial}|ExprKind::WebSocketServe{handler,initial}=>{
                 scan_expr(handler,functions)?;scan_expr(initial,functions)?;
             },
             ExprKind::DbRows{database,sql,params,..}=>{
@@ -353,8 +339,7 @@ fn check_sort_key_purity(program:&Program)->Result<(),Diagnostic>{
 }
 
 pub fn check(program:&Program, registry:&PackageRegistry, allow_print:bool)->Result<TypedProgram,Diagnostic>{
-    check_cas_pure_reducers(program)?;
-    check_sort_key_purity(program)?;
+    check_callback_purity(program)?;
     let mut checker=Checker{
         scopes:vec![HashMap::new()],substitutions:HashMap::new(),fresh:0,
         imported:HashMap::new(),glyphs:HashMap::new(),active_function:None,
@@ -793,6 +778,19 @@ impl Checker {
                 let expected=Type::Function(vec![request],Box::new(response));
                 self.unify(&expected,&input.ty,value.span,"⤊ requires (Request)->Response handler")?;
                 (TypedExprKind::HttpServe(Box::new(input)),Type::Unit)
+            }
+            ExprKind::WebSocketServe{handler,initial}=>{
+                if !self.allow_print || self.active_function.is_some() || self.lambda_depth>0 {
+                    return Err(Diagnostic::new("EFFECT","⇄ WebSocket serve is only available in effectful top-level flow".into(),expr.span));
+                }
+                let checked_handler=self.expression(handler)?;let checked_initial=self.expression(initial)?;
+                self.unify(&Type::String,&checked_initial.ty,initial.span,"⇄ initial state requires String")?;
+                let event=Type::Record(vec![("client".into(),Type::String),("data".into(),Type::String),("kind".into(),Type::String)]);
+                let message=Type::Record(vec![("client".into(),Type::String),("data".into(),Type::String)]);
+                let output=Type::Record(vec![("messages".into(),Type::Sequence(Box::new(message))),("state".into(),Type::String)]);
+                let expected=Type::Function(vec![event,Type::String],Box::new(output));
+                self.unify(&expected,&checked_handler.ty,handler.span,"⇄ requires (WebSocketEvent,String)->{messages,state}")?;
+                (TypedExprKind::WebSocketServe{handler:Box::new(checked_handler),initial:Box::new(checked_initial)},Type::Unit)
             }
             ExprKind::HttpServeState{handler,initial}=>{
                 if !self.allow_print || self.active_function.is_some() || self.lambda_depth>0 {
@@ -1305,7 +1303,7 @@ impl Checker {
             TypedExprKind::TextScalars(value)|TypedExprKind::TextWords(value)|TypedExprKind::Histogram(value)|TypedExprKind::Markdown(value)|TypedExprKind::HttpServe(value)|TypedExprKind::FileRead(value)|TypedExprKind::HttpGet(value)|TypedExprKind::Sleep(value)|TypedExprKind::ArithEval(value)=>self.finalize_expr(value)?,
             TypedExprKind::CsvTyped{value,..}=>self.finalize_expr(value)?,
             TypedExprKind::FileWrite{filename,content}=>{self.finalize_expr(filename)?;self.finalize_expr(content)?;},
-            TypedExprKind::HttpServeState{handler,initial}=>{self.finalize_expr(handler)?;self.finalize_expr(initial)?;},
+            TypedExprKind::HttpServeState{handler,initial}|TypedExprKind::WebSocketServe{handler,initial}=>{self.finalize_expr(handler)?;self.finalize_expr(initial)?;},
             TypedExprKind::RecordUpdate{record,value,..}=>{self.finalize_expr(record)?;self.finalize_expr(value)?;},
             TypedExprKind::Index{sequence,index}=>{self.finalize_expr(sequence)?;self.finalize_expr(index)?;},
             TypedExprKind::Length(value)=>self.finalize_expr(value)?,

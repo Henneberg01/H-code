@@ -10,3 +10,6 @@ Previously and lawfully granted permissions remain effective.
 
 This notice grants no permission to present forks as official JFH-CODE
 products or imply affiliation with the rights holder. See TRADEMARKS.md.
+
+WebSocket transport dependency: ws8.22.0, MIT license.
+See third_party/ws-LICENSE.txt for the retained upstream license.

@@ -17,10 +17,10 @@ export const CORE_GLYPHS = Object.freeze({
   '⟕':'store_get', '⟖':'store_put', '⟗':'store_del',
   '\u2af6':'text-scalars', '\u27df':'text-words', '\u29c9':'histogram', '\u224b':'markdown-tokens',
   '\u29c4':'file-read', '\u29c5':'file-write', '\u29c8':'db-rows', '\u290b':'http-get', '\u290a':'http-serve', '\u231b':'sleep-ms', '\u29c7':'csv-typed',
-  '✍':'hmac-sign', '✓':'hmac-verify', '\u2328':'stdin-text', '\u2a5a':'arith-eval', '\u2317': '#', '\u29fa': '++', '\u2211': '@+', '\u2315': '@?', '\u21e2': '@>', '↧': '@v', '↥': '@^', '\u03bb': 'lambda', '\u2200': 'forall'
+  '⇄':'websocket-serve', '✍':'hmac-sign', '✓':'hmac-verify', '\u2328':'stdin-text', '\u2a5a':'arith-eval', '\u2317': '#', '\u29fa': '++', '\u2211': '@+', '\u2315': '@?', '\u21e2': '@>', '↧': '@v', '↥': '@^', '\u03bb': 'lambda', '\u2200': 'forall'
 });
 export const RESERVED_USER_GLYPHS = new Set(['\u2205', '\u2200', '\u2208', ...Object.keys(CORE_GLYPHS)]);
-const RESERVED = new Set(['fn','let','return','true','false','if','else','while','and','or','not','use','as','lambda','forall','json_in','json_valid','json_out','text_scalars','text_words','text_hist','markdown_tokens','file_read','file_write','http_get','http_serve','sleep_ms','csv_typed','db_rows','stdin_text','arith_eval','hmac_sign','hmac_verify']);
+const RESERVED = new Set(['fn','let','return','true','false','if','else','while','and','or','not','use','as','lambda','forall','json_in','json_valid','json_out','text_scalars','text_words','text_hist','markdown_tokens','file_read','file_write','http_get','http_serve','sleep_ms','csv_typed','db_rows','stdin_text','arith_eval','hmac_sign','hmac_verify','websocket_serve']);
 const TWO = new Set(['==','!=','<=','>=','->','::','|>','<<','[[',']]','++','@+','@?','@>','@v','@^','=>','<+']);
 const ONE = new Set(['+','-','*','/','%','<','>','=','(',')','{','}',',',';',':','?','#','.']);
 const ILLEGAL = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]|\p{Default_Ignorable_Code_Point}/u;
@@ -105,7 +105,7 @@ export function tokenize(source) {
     }
     if(letter(c)){
       let word='';while(alnum(peek()))word+=advance();
-      emit(word==='hmac_sign'?'hmac-sign':word==='hmac_verify'?'hmac-verify':word==='json_in'?'json-read':word==='json_valid'?'json-valid':word==='json_out'?'json-write':word==='text_scalars'?'text-scalars':word==='text_words'?'text-words':word==='text_hist'?'histogram':word==='markdown_tokens'?'markdown-tokens':word==='file_read'?'file-read':word==='file_write'?'file-write':word==='http_get'?'http-get':word==='http_serve'?'http-serve':word==='sleep_ms'?'sleep-ms':word==='csv_typed'?'csv-typed':word==='db_rows'?'db-rows':word==='stdin_text'?'stdin-text':word==='arith_eval'?'arith-eval':(RESERVED.has(word)?word:'ident'),word,ln,col);continue;
+      emit(word==='websocket_serve'?'websocket-serve':word==='hmac_sign'?'hmac-sign':word==='hmac_verify'?'hmac-verify':word==='json_in'?'json-read':word==='json_valid'?'json-valid':word==='json_out'?'json-write':word==='text_scalars'?'text-scalars':word==='text_words'?'text-words':word==='text_hist'?'histogram':word==='markdown_tokens'?'markdown-tokens':word==='file_read'?'file-read':word==='file_write'?'file-write':word==='http_get'?'http-get':word==='http_serve'?'http-serve':word==='sleep_ms'?'sleep-ms':word==='csv_typed'?'csv-typed':word==='db_rows'?'db-rows':word==='stdin_text'?'stdin-text':word==='arith_eval'?'arith-eval':(RESERVED.has(word)?word:'ident'),word,ln,col);continue;
     }
     if(Object.hasOwn(CORE_GLYPHS,c)){
       advance();const alias=CORE_GLYPHS[c];
@@ -280,6 +280,10 @@ class Parser {
       this.expect(')');left={kind:'FileWrite',filename,content};
     }
     else if(this.accept('http-get'))left={kind:'HttpGet',value:this.expr(8)};
+    else if(this.accept('websocket-serve')){
+      this.expect('(');const handler=this.expr();this.expect(',');const initial=this.expr();
+      this.expect(')');left={kind:'WebSocketServe',handler,initial};
+    }
     else if(this.accept('http-serve')){
       if(this.accept('(')){
         const handler=this.expr(0);this.expect(',');const initial=this.expr(0);this.expect(')');
@@ -484,7 +488,7 @@ export function linkProgram(ast, registry=new Map()) {
     if(node.kind==='FileWrite')return {...node,filename:expression(node.filename),content:expression(node.content)};
     if(node.kind==='DbRows')return {...node,database:expression(node.database),sql:expression(node.sql),params:expression(node.params)};
     if(node.kind==='DbTable')return {...node,database:expression(node.database),table:expression(node.table)};
-    if(node.kind==='HttpServeState')return {...node,handler:expression(node.handler),initial:expression(node.initial)};
+    if(node.kind==='HttpServeState'||node.kind==='WebSocketServe')return {...node,handler:expression(node.handler),initial:expression(node.initial)};
     if(node.kind==='RecordUpdate')return {...node,record:expression(node.record),value:expression(node.value)};
     if(node.kind==='Index')return {...node,sequence:expression(node.sequence),index:expression(node.index)};
     if(node.kind==='Length')return {...node,value:expression(node.value)};
@@ -536,8 +540,8 @@ class Scope {
 class ReturnSignal{constructor(value){this.value=value;}}
 const runtimeType=value=>value===null?'Unit':typeof value==='number'?'Number':typeof value==='string'?'String':typeof value==='boolean'?'Bool':'unsupported';
 
-export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=16384,registry=new Map(),readFile=null,readStdin=null,httpEffects=null,httpServe=null,httpServeState=null,sleepEffects=null,fileEffects=null,domHost=null,storageHost=null,dbHost=null}={}){
-  const root=new Scope(),operations=new Map(),operationSpecs=new Map(),loadedLibraries=new Set();let steps=0,stdinConsumed=false,httpIndex=0,sleepIndex=0,fileIndex=0,pureDepth=0,functionDepth=0,httpServerRegistered=false;
+export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=16384,registry=new Map(),readFile=null,readStdin=null,httpEffects=null,httpServe=null,httpServeState=null,websocketServe=null,sleepEffects=null,fileEffects=null,domHost=null,storageHost=null,dbHost=null}={}){
+  const root=new Scope(),operations=new Map(),operationSpecs=new Map(),loadedLibraries=new Set();let steps=0,stdinConsumed=false,httpIndex=0,sleepIndex=0,fileIndex=0,pureDepth=0,functionDepth=0,httpServerRegistered=false,websocketServerRegistered=false;
   // Preserve explicit H-Code structural record types for empty sequences;
   // JS arrays alone cannot identify an empty element type.
   const typedSequenceSchemas=new WeakMap();
@@ -980,6 +984,17 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
         return node.tag?verifyMAC(key,message,expr(node.tag,scope)):signMAC(key,message);
       }
       case 'ArithEval':return safeArithmetic(expr(node.value,scope));
+      case 'WebSocketServe':{
+        if(pureDepth>0||functionDepth>0)throw Error('WebSocket effect denied in a pure function');
+        if(typeof websocketServe!=='function')throw Error('WebSocket capability denied: inject trusted websocketServe host');
+        if(Array.isArray(httpEffects)||Array.isArray(sleepEffects)||Array.isArray(fileEffects))throw Error('WebSocket server cannot replay async effects');
+        if(websocketServerRegistered)throw Error('Only one WebSocket server may be registered');
+        const handler=expr(node.handler,scope),initial=expr(node.initial,scope);
+        if(typeof handler!=='function'||typeof initial!=='string'||!initial.isWellFormed()||new TextEncoder().encode(initial).length>1048576)
+          throw TypeError('WebSocket handler requires Function and bounded String initial state');
+        websocketServe((event,state)=>{steps=0;pureDepth++;try{return handler(event,state);}finally{pureDepth--; }},initial);
+        websocketServerRegistered=true;return null;
+      }
       case 'HttpServeState':{
         if(pureDepth>0||functionDepth>0)
           throw Error('⤊ persistent HTTP server effect denied in a pure function');

@@ -274,6 +274,12 @@ impl Parser {
                 ExprKind::FileWrite{filename:Box::new(filename),content:Box::new(content)}
             }
             TokenKind::HttpGet=>{self.index+=1;ExprKind::HttpGet(Box::new(self.expression(8)?))}
+            TokenKind::WebSocketServe=>{
+                self.index+=1;self.expect(&TokenKind::LeftParen)?;
+                let handler=self.expression(0)?;self.expect(&TokenKind::Comma)?;
+                let initial=self.expression(0)?;self.expect(&TokenKind::RightParen)?;
+                ExprKind::WebSocketServe{handler:Box::new(handler),initial:Box::new(initial)}
+            }
             TokenKind::HttpServe=>{
                 self.index+=1;
                 if self.accept(&TokenKind::LeftParen).is_some(){

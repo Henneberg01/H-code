@@ -15,7 +15,7 @@ pub struct Token { pub kind: TokenKind, pub span: Span }
 pub enum TokenKind {
     Fn, Let, Return, If, Else, While, Then, Forall, Use, Import, Export, As, True, False, And, Or, Not,
     Identifier(String), Number(String), String(String), Glyph(char),
-    LeftParen, RightParen, LeftBrace, RightBrace, RecOpen, RecClose, Field, RecordUpdate, JsonRead, JsonValid, JsonWrite, TextScalars, TextWords, Histogram, Markdown, FileRead, FileWrite, HttpGet, HttpServe, Sleep, CsvTyped, DbRows, StdinText, ArithEval, HmacSign, HmacVerify, Comma, Semicolon, Colon, DoubleColon, Pipe, Compose, Choice, Lambda, SeqOpen, SeqClose, SeqLength, SeqConcat, Sum, Filter, Map, SortDesc, SortTextAsc,
+    LeftParen, RightParen, LeftBrace, RightBrace, RecOpen, RecClose, Field, RecordUpdate, JsonRead, JsonValid, JsonWrite, TextScalars, TextWords, Histogram, Markdown, FileRead, FileWrite, HttpGet, HttpServe, WebSocketServe, Sleep, CsvTyped, DbRows, StdinText, ArithEval, HmacSign, HmacVerify, Comma, Semicolon, Colon, DoubleColon, Pipe, Compose, Choice, Lambda, SeqOpen, SeqClose, SeqLength, SeqConcat, Sum, Filter, Map, SortDesc, SortTextAsc,
     Assign, Arrow, Plus, Minus, Star, Slash, Percent,
     Equal, NotEqual, Less, Greater, LessEqual, GreaterEqual, Eof,
 }
@@ -124,7 +124,7 @@ pub fn lex(source: &str) -> Result<Vec<Token>, Diagnostic> {
                 "true"=>TokenKind::True,"false"=>TokenKind::False,"and"=>TokenKind::And,
                 "or"=>TokenKind::Or,"not"=>TokenKind::Not,"lambda"=>TokenKind::Lambda,"forall"=>TokenKind::Forall,
                 "json_in"=>TokenKind::JsonRead,"json_valid"=>TokenKind::JsonValid,"json_out"=>TokenKind::JsonWrite,
-                "file_read"=>TokenKind::FileRead,"file_write"=>TokenKind::FileWrite,"http_get"=>TokenKind::HttpGet,"http_serve"=>TokenKind::HttpServe,"sleep_ms"=>TokenKind::Sleep,"csv_typed"=>TokenKind::CsvTyped,"db_rows"=>TokenKind::DbRows,
+                "file_read"=>TokenKind::FileRead,"file_write"=>TokenKind::FileWrite,"http_get"=>TokenKind::HttpGet,"http_serve"=>TokenKind::HttpServe,"websocket_serve"=>TokenKind::WebSocketServe,"sleep_ms"=>TokenKind::Sleep,"csv_typed"=>TokenKind::CsvTyped,"db_rows"=>TokenKind::DbRows,
                 "hmac_sign"=>TokenKind::HmacSign,"hmac_verify"=>TokenKind::HmacVerify,
                 "stdin_text"=>TokenKind::StdinText,"arith_eval"=>TokenKind::ArithEval,
                 "text_scalars"=>TokenKind::TextScalars,"text_words"=>TokenKind::TextWords,
@@ -146,7 +146,7 @@ pub fn lex(source: &str) -> Result<Vec<Token>, Diagnostic> {
             '⦃'=>Some(TokenKind::RecOpen),'⦄'=>Some(TokenKind::RecClose),'·'=>Some(TokenKind::Field),'⊞'=>Some(TokenKind::RecordUpdate),
             '⤓'=>Some(TokenKind::JsonRead),'⤔'=>Some(TokenKind::JsonValid),'⤒'=>Some(TokenKind::JsonWrite),
             '⫶'=>Some(TokenKind::TextScalars),'⟟'=>Some(TokenKind::TextWords),'⧉'=>Some(TokenKind::Histogram),
-            '≋'=>Some(TokenKind::Markdown),'⧄'=>Some(TokenKind::FileRead),'⧅'=>Some(TokenKind::FileWrite),'⤋'=>Some(TokenKind::HttpGet),'⤊'=>Some(TokenKind::HttpServe),
+            '≋'=>Some(TokenKind::Markdown),'⧄'=>Some(TokenKind::FileRead),'⧅'=>Some(TokenKind::FileWrite),'⤋'=>Some(TokenKind::HttpGet),'⤊'=>Some(TokenKind::HttpServe),'⇄'=>Some(TokenKind::WebSocketServe),
             '⟐'=>Some(TokenKind::Identifier("dom_value".into())),
             '⟑'=>Some(TokenKind::Identifier("dom_text".into())),
             '⟒'=>Some(TokenKind::Identifier("dom_valid".into())),

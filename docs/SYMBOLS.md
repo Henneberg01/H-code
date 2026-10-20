@@ -272,3 +272,17 @@ key store. The Rust backend links crypto only when actually used, including
 imported modules. An independent JS reference adapter implements the same
 contract. Neither these signs nor any isolated example establishes the global
 70% source-reduction goal.
+
+### WebSocket events
+
+`⇄(handler,initial)` / `websocket_serve(handler,initial)` starts a capability-gated
+WebSocket server. The synchronous pure callback accepts
+`⦃client:String,data:String,kind:String⦄,String` and returns
+`⦃messages:⟦⦃client:String,data:String⦄⟧,state:String⦄`.
+Kinds open/message/close carry opaque connection IDs; data is empty for open/close.
+The application owns protocol parsing, routing and state. The host validates
+all output before applying it, bounds peers/messages/queues and drops messages
+for disconnected IDs. Use explicit `HCODE_WS_LISTEN=127.0.0.1:<port>`.
+Requires `npm ci` for pinned ws8.22.0; generated ESM resolves that dependency from
+the compiler checkout's root package. Deployment must retain that dependency.
+No HTTP, filesystem, printing or captured-variable mutation is allowed in callbacks.
