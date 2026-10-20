@@ -1,0 +1,20 @@
+{
+  "workloadId": "17-websocket-chat",
+  "establishedOn": "2026-10-20",
+  "registry": {
+    "path": "compact/canonical20/workloads.json",
+    "gitBlobSha": "46653ef90ffb3e420fba4ddfbfac3c4cfd57f3b3"
+  },
+  "contract": {
+    "path": "compact/canonical20/chat17/CONTRACT.md",
+    "gitBlobSha": "73009936424bc8830190e8ee1c6b1dcc5350910f"
+  },
+  "fixtures": {
+    "path": "compact/canonical20/chat17/fixtures.json",
+    "gitBlobSha": "ea8c5f34e3dc4b35772929d2332011a47ef6a31e"
+  },
+  "attributes": {
+    "path": "compact/canonical20/chat17/.gitattributes",
+    "gitBlobSha": "37de4fc466bae920460ad576f359738d7a4e6137"
+  }
+}

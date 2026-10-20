@@ -1,0 +1,9 @@
+{
+  "workloadId": "17-websocket-chat",
+  "scenarios": [
+    {"id":"two-clients-order","steps":[["open","a"],["open","b"],["join","a","lobby"],["join","b","lobby"],["say","a","first"],["say","b","second"],["barrier","a"],["barrier","b"]]},
+    {"id":"rooms-and-switch","steps":[["open","a"],["open","b"],["open","c"],["join","a","one"],["join","b","two"],["join","c","one"],["say","a","private one"],["say","b","private two"],["join","c","two"],["say","a","after switch"],["say","c","now two"],["barrier","a"],["barrier","b"],["barrier","c"]]},
+    {"id":"disconnect-reconnect","steps":[["open","a"],["open","b"],["join","a","lobby"],["join","b","lobby"],["say","a","before"],["close","b"],["join","a","lobby"],["say","a","alone"],["open","c"],["say","c","not joined"],["join","c","lobby"],["say","c","back"],["barrier","a"],["barrier","c"]]},
+    {"id":"unicode-and-invalid","steps":[["open","a"],["open","b"],["join","a","Møbler 🧩"],["join","b","Møbler 🧩"],["say","a","é ≠ é, hej 🙂"],["raw","a","{", "invalid"],["raw","b","{\"kind\":\"say\",\"value\":\"x\",\"spoof\":true}","invalid"],["raw","a","{\"kind\":\"say\",\"value\":\"\\ud800\"}","invalid"],["say","a",""],["join","b",""],["say","b","still original room"],["barrier","a"],["barrier","b"]]}
+  ]
+}
