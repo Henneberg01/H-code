@@ -1,0 +1,42 @@
+[
+  {
+    "id": "malformed",
+    "input": "{"
+  },
+  {
+    "id": "missing-lower",
+    "input": "{\"values\":[1],\"upper\":2}"
+  },
+  {
+    "id": "missing-upper",
+    "input": "{\"values\":[1],\"lower\":0}"
+  },
+  {
+    "id": "wrong-values",
+    "input": "{\"values\":[\"a\"],\"lower\":0,\"upper\":2}"
+  },
+  {
+    "id": "null",
+    "input": "null"
+  },
+  {
+    "id": "string-bound",
+    "input": "{\"values\":[1],\"lower\":\"0\",\"upper\":2}"
+  },
+  {
+    "id": "overflow-bound",
+    "input": "{\"values\":[1],\"lower\":0,\"upper\":1e400}"
+  },
+  {
+    "id": "overflow-value",
+    "input": "{\"values\":[1e400],\"lower\":0,\"upper\":2}"
+  },
+  {
+    "id": "wrong-shape",
+    "input": "[]"
+  },
+  {
+    "id": "invalid-utf8",
+    "inputHex": "ff"
+  }
+]

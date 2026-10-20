@@ -1,0 +1,132 @@
+[
+  {
+    "id": "empty",
+    "values": [],
+    "lower": 0,
+    "upper": 1,
+    "expected": "{\"count\":0,\"maximum\":0,\"mean\":0,\"minimum\":0,\"total\":0}"
+  },
+  {
+    "id": "inclusive-bounds",
+    "values": [
+      -2,
+      -1,
+      0,
+      1,
+      2
+    ],
+    "lower": -1,
+    "upper": 1,
+    "expected": "{\"count\":3,\"maximum\":1,\"mean\":0,\"minimum\":-1,\"total\":0}"
+  },
+  {
+    "id": "point",
+    "values": [
+      0,
+      1,
+      1,
+      2
+    ],
+    "lower": 1,
+    "upper": 1,
+    "expected": "{\"count\":2,\"maximum\":1,\"mean\":1,\"minimum\":1,\"total\":2}"
+  },
+  {
+    "id": "reversed",
+    "values": [
+      0,
+      1,
+      2
+    ],
+    "lower": 2,
+    "upper": 1,
+    "expected": "{\"count\":0,\"maximum\":0,\"mean\":0,\"minimum\":0,\"total\":0}"
+  },
+  {
+    "id": "negative",
+    "values": [
+      -8,
+      -4,
+      -2,
+      1
+    ],
+    "lower": -8,
+    "upper": -2,
+    "expected": "{\"count\":3,\"maximum\":-2,\"mean\":-4.666666666666667,\"minimum\":-8,\"total\":-14}"
+  },
+  {
+    "id": "positive",
+    "values": [
+      0,
+      1,
+      2,
+      5
+    ],
+    "lower": 1,
+    "upper": 5,
+    "expected": "{\"count\":3,\"maximum\":5,\"mean\":2.6666666666666665,\"minimum\":1,\"total\":8}"
+  },
+  {
+    "id": "fractional",
+    "values": [
+      -1,
+      -0.5,
+      0.25,
+      0.5,
+      1
+    ],
+    "lower": -0.5,
+    "upper": 0.5,
+    "expected": "{\"count\":3,\"maximum\":0.5,\"mean\":0.08333333333333333,\"minimum\":-0.5,\"total\":0.25}"
+  },
+  {
+    "id": "disjoint",
+    "values": [
+      -3,
+      -2,
+      -1
+    ],
+    "lower": 1,
+    "upper": 2,
+    "expected": "{\"count\":0,\"maximum\":0,\"mean\":0,\"minimum\":0,\"total\":0}"
+  },
+  {
+    "id": "all-in",
+    "values": [
+      -2,
+      -1,
+      0,
+      1,
+      2
+    ],
+    "lower": -100,
+    "upper": 100,
+    "expected": "{\"count\":5,\"maximum\":2,\"mean\":0,\"minimum\":-2,\"total\":0}"
+  },
+  {
+    "id": "tail",
+    "values": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      99,
+      -99
+    ],
+    "lower": -100,
+    "upper": 0,
+    "expected": "{\"count\":1,\"maximum\":-99,\"mean\":-99,\"minimum\":-99,\"total\":-99}"
+  }
+]

@@ -1,0 +1,31 @@
+[
+  {
+    "id": "empty",
+    "input": ""
+  },
+  {
+    "id": "wrong-element",
+    "input": "[1,\"bad\"]"
+  },
+  {
+    "id": "wrong-shape",
+    "input": "{}"
+  },
+  {
+    "id": "overflow",
+    "input": "[1e400]"
+  },
+  {
+    "id": "null",
+    "input": "null"
+  },
+  {
+    "id": "malformed",
+    "input": "[1"
+  },
+  {
+    "id": "invalid-utf8",
+    "input": null,
+    "inputHex": "ff"
+  }
+]
