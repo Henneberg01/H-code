@@ -22,6 +22,7 @@ import {verifyCanonical13} from './canonical20-verify-13.mjs';
 import {verifyCanonical14} from './canonical20-verify-14.mjs';
 import {verifyCanonical15} from './canonical20-verify-15.mjs';
 import {verifyCanonical18} from './canonical20-verify-18.mjs';
+import {verifyCanonical19} from './canonical20-verify-19.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
 const registryBytes=readFileSync(join(root,'compact/canonical20/workloads.json'));
@@ -166,6 +167,11 @@ export function readiness(){
         // identical assertion bytes, real native projects, independent TS,
         // generated cases and seeded faults. Never rewrite preregistration.
         fullEvidence[w.id]=verifyCanonical18();
+        verified++;
+      }else if(w.id==='19-bug-repair-task'){
+        // Require old tests green on the committed seed, actual new assertion
+        // failures, minimal repair, generated inputs and fault reintroduction.
+        fullEvidence[w.id]=verifyCanonical19();
         verified++;
       }else{unsupported++;}
     }else if(w.status==='reference_partial'){

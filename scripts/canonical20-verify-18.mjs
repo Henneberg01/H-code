@@ -1,10 +1,11 @@
 // Task 18: actual before/after multi-file projects, unchanged assertion bytes.
-import {readFileSync, readdirSync, mkdirSync, mkdtempSync, rmSync, writeFileSync} from 'node:fs';
+import {readFileSync, mkdtempSync, rmSync, writeFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
-import {spawnSync} from 'node:child_process';
 import {join, resolve, basename} from 'node:path';
 import {tmpdir} from 'node:os';
 import {fileURLToPath} from 'node:url';
+
+import {projectSources,expectedSummary,fixture,compiler,copyProject,executeProject,runProject,authored,compare,generatedSizes} from './canonical20-project-tools.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
 const folder='compact/canonical20/refactor18';
@@ -16,48 +17,11 @@ export const LOCK=Object.freeze({
   refactored:Object.freeze([`${folder}/refactored.lock.json`,'27a4d358e8d737fcc6ab534b318915985bff034a']),
 });
 const blob=bytes=>createHash('sha1').update(`blob ${bytes.length}\0`).update(bytes).digest('hex');
-const sha256=bytes=>createHash('sha256').update(bytes).digest('hex');
-const pct=(size,reference)=>Number((100*(1-size/reference)).toFixed(2));
 function fail(message){throw Error(`Canonical18 ${message}`);}
 function locked(base,path,sha){
   const bytes=readFileSync(join(base,path));
   if(blob(bytes)!==sha)fail(`source lock mismatch: ${path}`);
   return bytes;
-}
-function listFiles(base,directory){
-  return readdirSync(join(base,directory),{withFileTypes:true}).flatMap(entry=>{
-    const path=`${directory}/${entry.name}`;
-    if(entry.isSymbolicLink())fail(`inventory contains a symbolic link: ${path}`);
-    if(entry.isDirectory())return listFiles(base,path);
-    if(!entry.isFile())fail(`inventory contains a non-file: ${path}`);
-    return [path];
-  }).sort();
-}
-function project(base,manifest,variant,language){
-  const prefix=`${folder}/${variant}/${language}/`;
-  const records=manifest.files.filter(file=>file.path.startsWith(prefix));
-  const expected=records.map(file=>file.path).sort();
-  if(!records.length||new Set(expected).size!==expected.length||
-      JSON.stringify(listFiles(base,prefix.slice(0,-1)))!==JSON.stringify(expected)){
-    fail(`inventory mismatch: ${variant}/${language}`);
-  }
-  const files=records.map(record=>{
-    if(!/^\w[\w.-]*\.(?:hc|ts)$/.test(record.path.slice(prefix.length)))fail('invalid inventory path');
-    const bytes=locked(base,record.path,record.gitBlobSha),source=bytes.toString('utf8');
-    return {...record,source,unicodeCodepoints:[...source].length,utf8Bytes:bytes.length};
-  });
-  return {files,unicodeCodepoints:files.reduce((n,f)=>n+f.unicodeCodepoints,0),
-    utf8Bytes:files.reduce((n,f)=>n+f.utf8Bytes,0)};
-}
-function expectedSummary(values){
-  const ordered=[...values].sort((a,b)=>a-b),count=values.length;
-  let total=0;
-  for(const value of values)total+=value;
-  return JSON.stringify({count,maximum:count?ordered[count-1]:0,mean:count?total/count:0,
-    minimum:count?ordered[0]:0,total});
-}
-function fixture(id,values){
-  return {id,values,summary:expectedSummary(values),positive:expectedSummary(values.filter(x=>x>0))};
 }
 export function loadCanonical18Sources(base=root){
   const before=JSON.parse(locked(base,...LOCK.baseline));
@@ -82,8 +46,8 @@ export function loadCanonical18Sources(base=root){
   }
   const baseline={},refactored={};
   for(const language of ['hcode','typescript']){
-    baseline[language]=project(base,before,'baseline',language);
-    refactored[language]=project(base,after,'refactored',language);
+    baseline[language]=projectSources(base,before.files,`${folder}/baseline/${language}`);
+    refactored[language]=projectSources(base,after.files,`${folder}/refactored/${language}`);
     const tests=p=>p.files.filter(f=>/\.test\.(?:hc|ts)$/.test(f.path));
     const original=tests(baseline[language]),changed=tests(refactored[language]);
     if(original.length!==2||changed.length!==2||original.some(file=>
@@ -93,73 +57,9 @@ export function loadCanonical18Sources(base=root){
   }
   return {baseline,refactored,cases,fixtureBytes:bytes,testsUnchanged:true};
 }
-function invoke(command,args,{cwd=root,env=process.env,timeout=30000}={}){
-  // Each invocation is a standalone process, not a worker of an outer node:test.
-  const childEnv={...env};
-  delete childEnv.NODE_TEST_CONTEXT;
-  delete childEnv.NODE_TEST_REPORTER;
-  const r=spawnSync(command,args,{cwd,env:childEnv,timeout,encoding:'utf8',windowsHide:true,maxBuffer:2*1024*1024});
-  if(r.error)fail(`${command} could not execute: ${r.error.message}`);
-  return {...r,stdout:r.stdout.replaceAll('\r\n','\n'),stderr:r.stderr.replaceAll('\r\n','\n')};
-}
-function success(result,label){
-  if(result.status!==0)fail(`${label} failed: ${result.stderr||result.stdout}`);
-  return result.stdout;
-}
-function compiler(){
-  const manifest=join(root,'compiler/Cargo.toml');
-  success(invoke('cargo',['build','--quiet','--manifest-path',manifest],{timeout:180000}),'current Rust compiler build');
-  const metadata=JSON.parse(success(invoke('cargo',['metadata','--no-deps','--format-version','1','--manifest-path',manifest]),'Cargo metadata'));
-  return join(metadata.target_directory,'debug',process.platform==='win32'?'hcodec.exe':'hcodec');
-}
-function copyProject(temporary,name,source,cases){
-  const cwd=join(temporary,name);
-  mkdirSync(join(cwd,'data'),{recursive:true});
-  for(const file of source.files)writeFileSync(join(cwd,basename(file.path)),file.source);
-  writeFileSync(join(cwd,'data/cases.json'),typeof cases==='string'?cases:JSON.stringify(cases)+'\n');
-  return cwd;
-}
-function executeProject(binary,cwd,language){
-  return language==='hcode'
-    ?invoke(binary,['test','.'],{cwd,env:{...process.env,HCODE_ALLOW_FILE_READ:'1'}})
-    :invoke(process.execPath,['--experimental-strip-types','--test','--test-reporter=tap','report.test.ts','statistics.test.ts'],{cwd});
-}
-function summaryValue(output,key){
-  const values=[...output.matchAll(new RegExp(`^# ${key} (\\d+)$`,'gm'))];
-  if(values.length!==1)fail(`missing or ambiguous test summary: ${key}`);
-  return Number(values[0][1]);
-}
-function runProject(binary,cwd,language,count,variant){
-  const output=success(executeProject(binary,cwd,language),`${variant}/${language}`);
-  const tests=language==='hcode'?2:count*2;
-  if(summaryValue(output,'tests')!==tests||summaryValue(output,'pass')!==tests||
-      summaryValue(output,'fail')!==0)fail(`${variant}/${language} did not run every test`);
-  const result={variant,language,inputCases:count,tests};
-  if(language==='hcode'){
-    result.assertions=summaryValue(output,'assertions');
-    if(result.assertions!==count*6)fail(`${variant} skipped assertions`);
-  }
-  return result;
-}
 function generatedInputs(){
   return Array.from({length:32},(_,i)=>fixture(`generated-${i}`,
     Array.from({length:i%17},(_,j)=>(((i+3)*(j+5)*17)%81-40)/4)));
-}
-function authored(project){
-  return {...project,files:project.files.map(({source,...metrics})=>metrics)};
-}
-function compare(hcode,typescript){
-  return {unicodeCodepointReductionPct:pct(hcode.unicodeCodepoints,typescript.unicodeCodepoints),
-    utf8ByteReductionPct:pct(hcode.utf8Bytes,typescript.utf8Bytes)};
-}
-function generatedSizes(binary,cwd,temporary,variant){
-  const files=['report.test.hc','statistics.test.hc'].map(file=>{
-    const output=join(temporary,`${variant}-${file}.mjs`);
-    success(invoke(binary,['build',join(cwd,file),'--out',output],{cwd}),'generated test program');
-    const bytes=readFileSync(output);
-    return {source:file,utf8Bytes:bytes.length,sha256:sha256(bytes)};
-  });
-  return {files,totalBytes:files.reduce((n,f)=>n+f.utf8Bytes,0)};
 }
 function rejectFaults(binary,temporary,sources){
   const changes=[

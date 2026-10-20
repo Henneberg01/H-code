@@ -1,5 +1,12 @@
 # JFH-CODE change log
 
+## Unreleased — seeded bug-repair workload (2026-10-20)
+
+- Fixed local import resolution for bare relative test filenames: `hcodec test entry.test.hc` now resolves the working directory like `hcodec test ./entry.test.hc`, with a regression test for both spellings.
+- Committed a deliberate sixteen-value traversal bug and regression fixtures before applying a minimal repair. Original tests remain green on the seed, new cases reproduce assertion failures, and reinserting the bug reproduces failures again.
+- Added native/TypeScript proof execution, thirty-two generated boundary cases, complete repaired-project source accounting and derived task19 readiness without changing the original twenty-workload registry.
+- Reused common project-execution utilities while preserving task18's source locks and measurements. The repaired task19 project uses 39.87% fewer codepoints than its TypeScript counterpart; the global 70% target remains unverified.
+
 ## Unreleased — frozen refactor workload (2026-10-19)
 
 - Established and committed a concrete baseline for Canonical18 before extracting a reusable statistics module; kept both native and TypeScript assertion files byte-identical.

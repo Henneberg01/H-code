@@ -1,0 +1,67 @@
+{
+  "schema": 1,
+  "id": "JFH-CODE-CANONICAL19-REPAIR-2026-10-20-v1",
+  "seedCommit": "ced043c5668d3563c51cf25049e36bff2c33a0ef",
+  "seedManifest": {
+    "path": "compact/canonical20/bug19/seed.lock.json",
+    "gitBlobSha": "bd15bd39340aeeac903d995a3d7134a7bc449e83"
+  },
+  "files": [
+    {
+      "path": "compact/canonical20/bug19/fixed/hcode/core.hc",
+      "gitBlobSha": "2de27752994edd7adde2916746d5b221370e137a"
+    },
+    {
+      "path": "compact/canonical20/bug19/fixed/hcode/regression.test.hc",
+      "gitBlobSha": "9ecb63f7df848f9c40d464cfb968a87bb1e3ee01"
+    },
+    {
+      "path": "compact/canonical20/bug19/fixed/hcode/report.hc",
+      "gitBlobSha": "1224aa4d8e9a41917c1968064f94e73c37216822"
+    },
+    {
+      "path": "compact/canonical20/bug19/fixed/hcode/report.test.hc",
+      "gitBlobSha": "c70c3e0a48407b55156b5ee0b615761261593a7c"
+    },
+    {
+      "path": "compact/canonical20/bug19/fixed/hcode/statistics.hc",
+      "gitBlobSha": "e130e07a2106de4b62c3b108def4d5ae651deef0"
+    },
+    {
+      "path": "compact/canonical20/bug19/fixed/hcode/statistics.test.hc",
+      "gitBlobSha": "b32f818cdb248ef1d8928881f2ad6fa8d966dca2"
+    },
+    {
+      "path": "compact/canonical20/bug19/fixed/typescript/core.ts",
+      "gitBlobSha": "d7be10802fc91d2711f64eb6472c2900173dc042"
+    },
+    {
+      "path": "compact/canonical20/bug19/fixed/typescript/fixtures.ts",
+      "gitBlobSha": "333a0d51699e77cc5f5404d9bdf4f98f7f2776bc"
+    },
+    {
+      "path": "compact/canonical20/bug19/fixed/typescript/regression.test.ts",
+      "gitBlobSha": "0991a0b809efa07b7113cc965700b5f8922498d0"
+    },
+    {
+      "path": "compact/canonical20/bug19/fixed/typescript/report.test.ts",
+      "gitBlobSha": "b2e3945555e98ed884380ec48c76ff76e5b18855"
+    },
+    {
+      "path": "compact/canonical20/bug19/fixed/typescript/report.ts",
+      "gitBlobSha": "0b2eb763c97bcded413f2441cbef9fad78f43d91"
+    },
+    {
+      "path": "compact/canonical20/bug19/fixed/typescript/statistics.test.ts",
+      "gitBlobSha": "59712c88b4eab3cb94c0f671878f60f35f923324"
+    },
+    {
+      "path": "compact/canonical20/bug19/fixed/typescript/statistics.ts",
+      "gitBlobSha": "6ca79b8a6953f839ee1c20a106b3ccde7702f78a"
+    },
+    {
+      "path": "compact/canonical20/bug19/fixed/typescript/types.ts",
+      "gitBlobSha": "a354f29a04a8401a2d85d652784ddca95c05cb7f"
+    }
+  ]
+}
