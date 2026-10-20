@@ -133,6 +133,11 @@ the global twenty-task median, runtime speed or AI-token savings. Conditional
 readiness becomes 19/20 only when every current proof passes. Task 17 remains
 unsupported, and the aggregate's real Chromium timeout remains an independent
 blocker; targeted session success does not authorize skipping browser checks.
+The final aggregate rerun with explicit `/usr/bin/chromium` produced 4 passes
+and 2 failures: task13's browser comparator timed out, and the strict-gate test
+received exit 1 for that execution failure instead of the expected exit 2 for
+incomplete workload support. The aggregate did not reach a complete readiness
+report. No browser check was skipped or promoted to success.
 
 ```sh
 npm run benchmark20:verify16

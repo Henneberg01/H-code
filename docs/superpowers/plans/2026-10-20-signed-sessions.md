@@ -56,7 +56,7 @@ proof verifier/tests and measurement docs; derived coverage integration.
 - [x] Reject deliberately broken MAC checks, revocation or rotation implementations.
 - [x] Freeze/count full source and report generated/runtime/common data separately.
 - [x] Run relevant regressions, independent review, and document actual blockers.
-- [ ] Commit and push development branch, confirming remote commit identity.
+- [x] Commit and push development branch, confirming remote commit identity.
 
 ## Execution record
 
@@ -76,3 +76,9 @@ proof verifier/tests and measurement docs; derived coverage integration.
   during concurrent review were corrected.
 - The original registry and all earlier frozen workload/application sources
   are byte-unchanged. Aggregate Chromium verification remains a separate gate.
+- Aggregate rerun with explicit `/usr/bin/chromium`:4 passed/2 failed.
+  Task13 actual browser comparator times out; strict gate exits1 for that
+  execution failure rather than2 for incomplete workload support. No browser
+  test was skipped or treated as passing.
+- Application proof published on `codex/jfh-code-signed-sessions` at878a35c;
+  explicit remote fetch confirmed identical local/remote commit identities.
