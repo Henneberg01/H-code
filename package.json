@@ -25,6 +25,7 @@
     "benchmark20:status": "node scripts/canonical20-coverage.mjs",
     "benchmark20:test": "node --test scripts/test/canonical20-coverage.test.mjs scripts/test/canonical20-calculator-idiomatic.test.mjs",
     "benchmark20:strict": "node scripts/canonical20-coverage.mjs --require-complete",
+    "browser:driver:test": "node --test scripts/chromium-driver.test.mjs",
     "m12:measure": "node scripts/m12-records-compare.mjs",
     "m12:json-measure": "node scripts/m12-typed-json-compare.mjs",
     "benchmark20:verify05": "node scripts/canonical20-verify-05.mjs",

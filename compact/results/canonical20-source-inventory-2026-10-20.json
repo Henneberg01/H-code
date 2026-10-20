@@ -1,0 +1,862 @@
+{
+  "kind": "diagnostic-source-inventory",
+  "registryGitBlobSha": "46653ef90ffb3e420fba4ddfbfac3c4cfd57f3b3",
+  "savedAcceptanceReportSha256": "45137cc57cdb72fd254ba798d4bc2c6bb6a459902016bedb3b6f2050797ed49b",
+  "acceptanceWasRerun": false,
+  "originalTasks": 20,
+  "correctnessOraclePairs": 8,
+  "counting": "Whole LF-normalized UTF-8 authored files, including comments and whitespace; task18 refactored project, task19 fixed project, task20 extended project; task02 original recursion, task15 proven B4 backend plus UI. Shared HTML/JSON, generated JS, dependencies and host runtime excluded from this source-only diagnostic; consult individual proofs for those costs.",
+  "rawMixedComparisonMedianCodepointReductionPct": 69.71,
+  "rawMixedComparisonMedianUtf8ReductionPct": 65.85,
+  "competitiveBaselineAuditComplete": false,
+  "globalMedianCodepointReduction": null,
+  "objectiveAchieved": false,
+  "rows": [
+    {
+      "id": "01-calculator-cli",
+      "comparison": "correctness-oracle; not a competitive baseline",
+      "hcode": {
+        "files": [
+          {
+            "path": "compact/canonical20/programs/01-calculator-cli.hc",
+            "gitBlobSha": "3acfbc0be6f7902db7aee5dd46ecf0a8eb07a5a6",
+            "unicodeCodepoints": 11,
+            "utf8Bytes": 15
+          }
+        ],
+        "unicodeCodepoints": 11,
+        "utf8Bytes": 15
+      },
+      "typescript": {
+        "files": [
+          {
+            "path": "compact/canonical20/programs/01-calculator-cli.ts",
+            "gitBlobSha": "6bb1ef9a47b77fa9429b560f66faf0e8ced64ca6",
+            "unicodeCodepoints": 2365,
+            "utf8Bytes": 2365
+          }
+        ],
+        "unicodeCodepoints": 2365,
+        "utf8Bytes": 2365
+      },
+      "rawCodepointReductionPct": 99.53,
+      "rawUtf8ReductionPct": 99.37
+    },
+    {
+      "id": "02-fibonacci-recursion",
+      "comparison": "source pair; competitiveness review still required",
+      "hcode": {
+        "files": [
+          {
+            "path": "compact/benchmarks/paired/recursive-fibonacci.hc",
+            "gitBlobSha": "66f02e2dce678b51f8d02766742d9d24aa5d66f7",
+            "unicodeCodepoints": 96,
+            "utf8Bytes": 105
+          }
+        ],
+        "unicodeCodepoints": 96,
+        "utf8Bytes": 105
+      },
+      "typescript": {
+        "files": [
+          {
+            "path": "compact/benchmarks/paired/recursive-fibonacci.ts",
+            "gitBlobSha": "2a4e6ac1ef469a6e0c64381b79f901ee26085125",
+            "unicodeCodepoints": 94,
+            "utf8Bytes": 94
+          }
+        ],
+        "unicodeCodepoints": 94,
+        "utf8Bytes": 94
+      },
+      "rawCodepointReductionPct": -2.13,
+      "rawUtf8ReductionPct": -11.7
+    },
+    {
+      "id": "03-text-frequency-counter",
+      "comparison": "source pair; competitiveness review still required",
+      "hcode": {
+        "files": [
+          {
+            "path": "compact/canonical20/programs/03-text-frequency-counter.hc",
+            "gitBlobSha": "c8a54820def663c364ec39ee0989d1406d6370e2",
+            "unicodeCodepoints": 437,
+            "utf8Bytes": 499
+          }
+        ],
+        "unicodeCodepoints": 437,
+        "utf8Bytes": 499
+      },
+      "typescript": {
+        "files": [
+          {
+            "path": "compact/canonical20/programs/03-text-frequency-counter.ts",
+            "gitBlobSha": "cd42048825aa837104340bff6215441a0a97523f",
+            "unicodeCodepoints": 1541,
+            "utf8Bytes": 1592
+          }
+        ],
+        "unicodeCodepoints": 1541,
+        "utf8Bytes": 1592
+      },
+      "rawCodepointReductionPct": 71.64,
+      "rawUtf8ReductionPct": 68.66
+    },
+    {
+      "id": "04-csv-validation",
+      "comparison": "correctness-oracle; not a competitive baseline",
+      "hcode": {
+        "files": [
+          {
+            "path": "compact/canonical20/programs/04-csv-validation.hc",
+            "gitBlobSha": "ab7c4a8059244339318d31bd553dfebe463fab4f",
+            "unicodeCodepoints": 258,
+            "utf8Bytes": 273
+          }
+        ],
+        "unicodeCodepoints": 258,
+        "utf8Bytes": 273
+      },
+      "typescript": {
+        "files": [
+          {
+            "path": "compact/canonical20/programs/04-csv-validation.ts",
+            "gitBlobSha": "27b3b2f2ecbca43d33341463096a1ceff79347c8",
+            "unicodeCodepoints": 3936,
+            "utf8Bytes": 3936
+          }
+        ],
+        "unicodeCodepoints": 3936,
+        "utf8Bytes": 3936
+      },
+      "rawCodepointReductionPct": 93.45,
+      "rawUtf8ReductionPct": 93.06
+    },
+    {
+      "id": "05-json-transformation",
+      "comparison": "source pair; competitiveness review still required",
+      "hcode": {
+        "files": [
+          {
+            "path": "compact/canonical20/programs/05-json-transformation.hc",
+            "gitBlobSha": "9e98f97129e6c40c41ba4635f63fe9af26275f19",
+            "unicodeCodepoints": 594,
+            "utf8Bytes": 651
+          }
+        ],
+        "unicodeCodepoints": 594,
+        "utf8Bytes": 651
+      },
+      "typescript": {
+        "files": [
+          {
+            "path": "compact/canonical20/programs/05-json-transformation.ts",
+            "gitBlobSha": "f01524c5559aa4606348ef166a4ff7ad5b5ed46b",
+            "unicodeCodepoints": 2005,
+            "utf8Bytes": 2007
+          }
+        ],
+        "unicodeCodepoints": 2005,
+        "utf8Bytes": 2007
+      },
+      "rawCodepointReductionPct": 70.37,
+      "rawUtf8ReductionPct": 67.56
+    },
+    {
+      "id": "06-http-retries",
+      "comparison": "correctness-oracle; not a competitive baseline",
+      "hcode": {
+        "files": [
+          {
+            "path": "compact/canonical20/programs/06-http-retries.hc",
+            "gitBlobSha": "8abedc2d8fa32fa6ec157bb98d3a64a02408dfda",
+            "unicodeCodepoints": 776,
+            "utf8Bytes": 961
+          }
+        ],
+        "unicodeCodepoints": 776,
+        "utf8Bytes": 961
+      },
+      "typescript": {
+        "files": [
+          {
+            "path": "scripts/canonical20-http-oracle.ts",
+            "gitBlobSha": "1e9f968d900ed9ab77c703afad1fec104135a83d",
+            "unicodeCodepoints": 3112,
+            "utf8Bytes": 3112
+          }
+        ],
+        "unicodeCodepoints": 3112,
+        "utf8Bytes": 3112
+      },
+      "rawCodepointReductionPct": 75.06,
+      "rawUtf8ReductionPct": 69.12
+    },
+    {
+      "id": "07-file-conversion",
+      "comparison": "correctness-oracle; not a competitive baseline",
+      "hcode": {
+        "files": [
+          {
+            "path": "compact/canonical20/programs/07-file-conversion.hc",
+            "gitBlobSha": "b93015a0dab3cd5b616026a16348de97162b5bac",
+            "unicodeCodepoints": 173,
+            "utf8Bytes": 207
+          }
+        ],
+        "unicodeCodepoints": 173,
+        "utf8Bytes": 207
+      },
+      "typescript": {
+        "files": [
+          {
+            "path": "compact/canonical20/programs/07-file-conversion.ts",
+            "gitBlobSha": "8d81d7b3c8150201728d9451dfbd3d07e1359d69",
+            "unicodeCodepoints": 3135,
+            "utf8Bytes": 3135
+          }
+        ],
+        "unicodeCodepoints": 3135,
+        "utf8Bytes": 3135
+      },
+      "rawCodepointReductionPct": 94.48,
+      "rawUtf8ReductionPct": 93.4
+    },
+    {
+      "id": "08-concurrent-requests",
+      "comparison": "correctness-oracle; not a competitive baseline",
+      "hcode": {
+        "files": [
+          {
+            "path": "compact/canonical20/programs/08-concurrent-requests.hc",
+            "gitBlobSha": "1b948801e6f411a93f8de0581ccc34b7dbb4dc07",
+            "unicodeCodepoints": 123,
+            "utf8Bytes": 145
+          }
+        ],
+        "unicodeCodepoints": 123,
+        "utf8Bytes": 145
+      },
+      "typescript": {
+        "files": [
+          {
+            "path": "compact/canonical20/programs/08-concurrent-requests.ts",
+            "gitBlobSha": "9c7952f29ce910193c7eea7b4d6eb0c5705540e0",
+            "unicodeCodepoints": 1549,
+            "utf8Bytes": 1549
+          }
+        ],
+        "unicodeCodepoints": 1549,
+        "utf8Bytes": 1549
+      },
+      "rawCodepointReductionPct": 92.06,
+      "rawUtf8ReductionPct": 90.64
+    },
+    {
+      "id": "09-expiring-cache",
+      "comparison": "correctness-oracle; not a competitive baseline",
+      "hcode": {
+        "files": [
+          {
+            "path": "compact/canonical20/programs/09-expiring-cache.hc",
+            "gitBlobSha": "c77479b480904950a1c059f5d920e4a78d31ed62",
+            "unicodeCodepoints": 460,
+            "utf8Bytes": 651
+          }
+        ],
+        "unicodeCodepoints": 460,
+        "utf8Bytes": 651
+      },
+      "typescript": {
+        "files": [
+          {
+            "path": "compact/canonical20/programs/09-expiring-cache.ts",
+            "gitBlobSha": "f52e8006de9a1be27c44a48c1e17646df6fac4a1",
+            "unicodeCodepoints": 2180,
+            "utf8Bytes": 2180
+          }
+        ],
+        "unicodeCodepoints": 2180,
+        "utf8Bytes": 2180
+      },
+      "rawCodepointReductionPct": 78.9,
+      "rawUtf8ReductionPct": 70.14
+    },
+    {
+      "id": "10-generic-collection-transforms",
+      "comparison": "source pair; competitiveness review still required",
+      "hcode": {
+        "files": [
+          {
+            "path": "compact/canonical20/programs/10-generic-collection-transforms.hc",
+            "gitBlobSha": "8620b434b846714e10484f607f67bc37f393fe43",
+            "unicodeCodepoints": 505,
+            "utf8Bytes": 645
+          }
+        ],
+        "unicodeCodepoints": 505,
+        "utf8Bytes": 645
+      },
+      "typescript": {
+        "files": [
+          {
+            "path": "compact/canonical20/programs/10-generic-collection-transforms.ts",
+            "gitBlobSha": "f6e36cd493b5ac5897ab39f8a9ffe87b6ea8a820",
+            "unicodeCodepoints": 836,
+            "utf8Bytes": 836
+          }
+        ],
+        "unicodeCodepoints": 836,
+        "utf8Bytes": 836
+      },
+      "rawCodepointReductionPct": 39.59,
+      "rawUtf8ReductionPct": 22.85
+    },
+    {
+      "id": "11-markdown-processing",
+      "comparison": "correctness-oracle; not a competitive baseline",
+      "hcode": {
+        "files": [
+          {
+            "path": "compact/canonical20/programs/11-markdown-processing.hc",
+            "gitBlobSha": "e826116ae1f7df4603fad62aee356594c7e58d5f",
+            "unicodeCodepoints": 19,
+            "utf8Bytes": 29
+          }
+        ],
+        "unicodeCodepoints": 19,
+        "utf8Bytes": 29
+      },
+      "typescript": {
+        "files": [
+          {
+            "path": "compact/canonical20/programs/11-markdown-processing.ts",
+            "gitBlobSha": "b60a9066f1b73c97737e131ebd21b23cd2fbf066",
+            "unicodeCodepoints": 4103,
+            "utf8Bytes": 4103
+          }
+        ],
+        "unicodeCodepoints": 4103,
+        "utf8Bytes": 4103
+      },
+      "rawCodepointReductionPct": 99.54,
+      "rawUtf8ReductionPct": 99.29
+    },
+    {
+      "id": "12-crud-api",
+      "comparison": "correctness-oracle; not a competitive baseline",
+      "hcode": {
+        "files": [
+          {
+            "path": "compact/canonical20/programs/12-crud-api.hc",
+            "gitBlobSha": "b3ba6542ef27474390a7354c8c01a22464156179",
+            "unicodeCodepoints": 3098,
+            "utf8Bytes": 3721
+          }
+        ],
+        "unicodeCodepoints": 3098,
+        "utf8Bytes": 3721
+      },
+      "typescript": {
+        "files": [
+          {
+            "path": "compact/canonical20/programs/12-crud-api.ts",
+            "gitBlobSha": "6ac016aaf88620578cfc36a82b6f4a94b3b72c9e",
+            "unicodeCodepoints": 8772,
+            "utf8Bytes": 8772
+          }
+        ],
+        "unicodeCodepoints": 8772,
+        "utf8Bytes": 8772
+      },
+      "rawCodepointReductionPct": 64.68,
+      "rawUtf8ReductionPct": 57.58
+    },
+    {
+      "id": "13-form-validation-ui",
+      "comparison": "source pair; competitiveness review still required",
+      "hcode": {
+        "files": [
+          {
+            "path": "compact/canonical20/programs/13-form-validation-ui.hc",
+            "gitBlobSha": "67d5766dd1624fb9780639d574a13d15f8a55e6f",
+            "unicodeCodepoints": 418,
+            "utf8Bytes": 441
+          }
+        ],
+        "unicodeCodepoints": 418,
+        "utf8Bytes": 441
+      },
+      "typescript": {
+        "files": [
+          {
+            "path": "compact/canonical20/idiomatic/13-form-validation-ui.ts",
+            "gitBlobSha": "716aeede97a7cda7a0e45b0ea638e842f0684ef9",
+            "unicodeCodepoints": 705,
+            "utf8Bytes": 705
+          }
+        ],
+        "unicodeCodepoints": 705,
+        "utf8Bytes": 705
+      },
+      "rawCodepointReductionPct": 40.71,
+      "rawUtf8ReductionPct": 37.45
+    },
+    {
+      "id": "14-todo-app",
+      "comparison": "source pair; competitiveness review still required",
+      "hcode": {
+        "files": [
+          {
+            "path": "compact/canonical20/programs/14-todo-app.hc",
+            "gitBlobSha": "2931b75caac9db0582e0d8088fe2f1e29f5cd934",
+            "unicodeCodepoints": 1456,
+            "utf8Bytes": 1757
+          }
+        ],
+        "unicodeCodepoints": 1456,
+        "utf8Bytes": 1757
+      },
+      "typescript": {
+        "files": [
+          {
+            "path": "compact/canonical20/idiomatic/14-todo-app.ts",
+            "gitBlobSha": "d3ca8ac09a9c0a6d830fd559b4aaf0f36ead8bad",
+            "unicodeCodepoints": 1999,
+            "utf8Bytes": 2003
+          }
+        ],
+        "unicodeCodepoints": 1999,
+        "utf8Bytes": 2003
+      },
+      "rawCodepointReductionPct": 27.16,
+      "rawUtf8ReductionPct": 12.28
+    },
+    {
+      "id": "15-db-dashboard",
+      "comparison": "source pair; competitiveness review still required",
+      "hcode": {
+        "files": [
+          {
+            "path": "compact/canonical20/candidates/15-db-dashboard-sqlfree-b4.hc",
+            "gitBlobSha": "250bfa1c78da2f6e4affb23f478fd421ba3ef6cc",
+            "unicodeCodepoints": 592,
+            "utf8Bytes": 712
+          },
+          {
+            "path": "compact/canonical20/programs/15-db-dashboard-ui.hc",
+            "gitBlobSha": "ebfe4116989491cd28bc46ecdf56d910c4280773",
+            "unicodeCodepoints": 674,
+            "utf8Bytes": 732
+          }
+        ],
+        "unicodeCodepoints": 1266,
+        "utf8Bytes": 1444
+      },
+      "typescript": {
+        "files": [
+          {
+            "path": "compact/canonical20/idiomatic/15-db-dashboard-backend.ts",
+            "gitBlobSha": "6a38199524ce4b25a1476859d7817c6751006579",
+            "unicodeCodepoints": 2059,
+            "utf8Bytes": 2059
+          },
+          {
+            "path": "compact/canonical20/idiomatic/15-db-dashboard-browser.ts",
+            "gitBlobSha": "537236ac89b9eba6e4c9c188f33d1b34637ca1b0",
+            "unicodeCodepoints": 3429,
+            "utf8Bytes": 3429
+          }
+        ],
+        "unicodeCodepoints": 5488,
+        "utf8Bytes": 5488
+      },
+      "rawCodepointReductionPct": 76.93,
+      "rawUtf8ReductionPct": 73.69
+    },
+    {
+      "id": "16-auth-sessions",
+      "comparison": "source pair; competitiveness review still required",
+      "hcode": {
+        "files": [
+          {
+            "path": "compact/canonical20/auth16/hcode/main.hc",
+            "gitBlobSha": "7c539c75f34be5dd45f405400841617670da53aa",
+            "unicodeCodepoints": 2403,
+            "utf8Bytes": 2784
+          }
+        ],
+        "unicodeCodepoints": 2403,
+        "utf8Bytes": 2784
+      },
+      "typescript": {
+        "files": [
+          {
+            "path": "compact/canonical20/auth16/typescript/main.ts",
+            "gitBlobSha": "e9292439af93a9c0877464de45532f72fb8d747d",
+            "unicodeCodepoints": 7762,
+            "utf8Bytes": 7762
+          }
+        ],
+        "unicodeCodepoints": 7762,
+        "utf8Bytes": 7762
+      },
+      "rawCodepointReductionPct": 69.04,
+      "rawUtf8ReductionPct": 64.13
+    },
+    {
+      "id": "17-websocket-chat",
+      "comparison": "source pair; competitiveness review still required",
+      "hcode": {
+        "files": [
+          {
+            "path": "compact/canonical20/chat17/hcode/main.hc",
+            "gitBlobSha": "98a10aaf17165fd8896a5bbaf69b4eaa5dc79703",
+            "unicodeCodepoints": 1689,
+            "utf8Bytes": 2065
+          }
+        ],
+        "unicodeCodepoints": 1689,
+        "utf8Bytes": 2065
+      },
+      "typescript": {
+        "files": [
+          {
+            "path": "compact/canonical20/chat17/typescript/main.ts",
+            "gitBlobSha": "4856b898377aedbed5f277a2315910db8b3f9219",
+            "unicodeCodepoints": 3968,
+            "utf8Bytes": 3968
+          }
+        ],
+        "unicodeCodepoints": 3968,
+        "utf8Bytes": 3968
+      },
+      "rawCodepointReductionPct": 57.43,
+      "rawUtf8ReductionPct": 47.96
+    },
+    {
+      "id": "18-refactor-task",
+      "comparison": "source pair; competitiveness review still required",
+      "hcode": {
+        "files": [
+          {
+            "path": "compact/canonical20/refactor18/refactored/hcode/core.hc",
+            "gitBlobSha": "2de27752994edd7adde2916746d5b221370e137a",
+            "unicodeCodepoints": 401,
+            "utf8Bytes": 470
+          },
+          {
+            "path": "compact/canonical20/refactor18/refactored/hcode/report.hc",
+            "gitBlobSha": "1224aa4d8e9a41917c1968064f94e73c37216822",
+            "unicodeCodepoints": 178,
+            "utf8Bytes": 204
+          },
+          {
+            "path": "compact/canonical20/refactor18/refactored/hcode/report.test.hc",
+            "gitBlobSha": "c70c3e0a48407b55156b5ee0b615761261593a7c",
+            "unicodeCodepoints": 287,
+            "utf8Bytes": 355
+          },
+          {
+            "path": "compact/canonical20/refactor18/refactored/hcode/statistics.hc",
+            "gitBlobSha": "e130e07a2106de4b62c3b108def4d5ae651deef0",
+            "unicodeCodepoints": 156,
+            "utf8Bytes": 176
+          },
+          {
+            "path": "compact/canonical20/refactor18/refactored/hcode/statistics.test.hc",
+            "gitBlobSha": "b32f818cdb248ef1d8928881f2ad6fa8d966dca2",
+            "unicodeCodepoints": 291,
+            "utf8Bytes": 363
+          }
+        ],
+        "unicodeCodepoints": 1313,
+        "utf8Bytes": 1568
+      },
+      "typescript": {
+        "files": [
+          {
+            "path": "compact/canonical20/refactor18/refactored/typescript/core.ts",
+            "gitBlobSha": "d7be10802fc91d2711f64eb6472c2900173dc042",
+            "unicodeCodepoints": 423,
+            "utf8Bytes": 423
+          },
+          {
+            "path": "compact/canonical20/refactor18/refactored/typescript/fixtures.ts",
+            "gitBlobSha": "333a0d51699e77cc5f5404d9bdf4f98f7f2776bc",
+            "unicodeCodepoints": 212,
+            "utf8Bytes": 212
+          },
+          {
+            "path": "compact/canonical20/refactor18/refactored/typescript/report.test.ts",
+            "gitBlobSha": "b2e3945555e98ed884380ec48c76ff76e5b18855",
+            "unicodeCodepoints": 432,
+            "utf8Bytes": 432
+          },
+          {
+            "path": "compact/canonical20/refactor18/refactored/typescript/report.ts",
+            "gitBlobSha": "0b2eb763c97bcded413f2441cbef9fad78f43d91",
+            "unicodeCodepoints": 249,
+            "utf8Bytes": 249
+          },
+          {
+            "path": "compact/canonical20/refactor18/refactored/typescript/statistics.test.ts",
+            "gitBlobSha": "59712c88b4eab3cb94c0f671878f60f35f923324",
+            "unicodeCodepoints": 480,
+            "utf8Bytes": 480
+          },
+          {
+            "path": "compact/canonical20/refactor18/refactored/typescript/statistics.ts",
+            "gitBlobSha": "6ca79b8a6953f839ee1c20a106b3ccde7702f78a",
+            "unicodeCodepoints": 157,
+            "utf8Bytes": 157
+          },
+          {
+            "path": "compact/canonical20/refactor18/refactored/typescript/types.ts",
+            "gitBlobSha": "a354f29a04a8401a2d85d652784ddca95c05cb7f",
+            "unicodeCodepoints": 115,
+            "utf8Bytes": 115
+          }
+        ],
+        "unicodeCodepoints": 2068,
+        "utf8Bytes": 2068
+      },
+      "rawCodepointReductionPct": 36.51,
+      "rawUtf8ReductionPct": 24.18
+    },
+    {
+      "id": "19-bug-repair-task",
+      "comparison": "source pair; competitiveness review still required",
+      "hcode": {
+        "files": [
+          {
+            "path": "compact/canonical20/bug19/fixed/hcode/core.hc",
+            "gitBlobSha": "2de27752994edd7adde2916746d5b221370e137a",
+            "unicodeCodepoints": 401,
+            "utf8Bytes": 470
+          },
+          {
+            "path": "compact/canonical20/bug19/fixed/hcode/regression.test.hc",
+            "gitBlobSha": "9ecb63f7df848f9c40d464cfb968a87bb1e3ee01",
+            "unicodeCodepoints": 415,
+            "utf8Bytes": 503
+          },
+          {
+            "path": "compact/canonical20/bug19/fixed/hcode/report.hc",
+            "gitBlobSha": "1224aa4d8e9a41917c1968064f94e73c37216822",
+            "unicodeCodepoints": 178,
+            "utf8Bytes": 204
+          },
+          {
+            "path": "compact/canonical20/bug19/fixed/hcode/report.test.hc",
+            "gitBlobSha": "c70c3e0a48407b55156b5ee0b615761261593a7c",
+            "unicodeCodepoints": 287,
+            "utf8Bytes": 355
+          },
+          {
+            "path": "compact/canonical20/bug19/fixed/hcode/statistics.hc",
+            "gitBlobSha": "e130e07a2106de4b62c3b108def4d5ae651deef0",
+            "unicodeCodepoints": 156,
+            "utf8Bytes": 176
+          },
+          {
+            "path": "compact/canonical20/bug19/fixed/hcode/statistics.test.hc",
+            "gitBlobSha": "b32f818cdb248ef1d8928881f2ad6fa8d966dca2",
+            "unicodeCodepoints": 291,
+            "utf8Bytes": 363
+          }
+        ],
+        "unicodeCodepoints": 1728,
+        "utf8Bytes": 2071
+      },
+      "typescript": {
+        "files": [
+          {
+            "path": "compact/canonical20/bug19/fixed/typescript/core.ts",
+            "gitBlobSha": "d7be10802fc91d2711f64eb6472c2900173dc042",
+            "unicodeCodepoints": 423,
+            "utf8Bytes": 423
+          },
+          {
+            "path": "compact/canonical20/bug19/fixed/typescript/fixtures.ts",
+            "gitBlobSha": "333a0d51699e77cc5f5404d9bdf4f98f7f2776bc",
+            "unicodeCodepoints": 212,
+            "utf8Bytes": 212
+          },
+          {
+            "path": "compact/canonical20/bug19/fixed/typescript/regression.test.ts",
+            "gitBlobSha": "0991a0b809efa07b7113cc965700b5f8922498d0",
+            "unicodeCodepoints": 806,
+            "utf8Bytes": 806
+          },
+          {
+            "path": "compact/canonical20/bug19/fixed/typescript/report.test.ts",
+            "gitBlobSha": "b2e3945555e98ed884380ec48c76ff76e5b18855",
+            "unicodeCodepoints": 432,
+            "utf8Bytes": 432
+          },
+          {
+            "path": "compact/canonical20/bug19/fixed/typescript/report.ts",
+            "gitBlobSha": "0b2eb763c97bcded413f2441cbef9fad78f43d91",
+            "unicodeCodepoints": 249,
+            "utf8Bytes": 249
+          },
+          {
+            "path": "compact/canonical20/bug19/fixed/typescript/statistics.test.ts",
+            "gitBlobSha": "59712c88b4eab3cb94c0f671878f60f35f923324",
+            "unicodeCodepoints": 480,
+            "utf8Bytes": 480
+          },
+          {
+            "path": "compact/canonical20/bug19/fixed/typescript/statistics.ts",
+            "gitBlobSha": "6ca79b8a6953f839ee1c20a106b3ccde7702f78a",
+            "unicodeCodepoints": 157,
+            "utf8Bytes": 157
+          },
+          {
+            "path": "compact/canonical20/bug19/fixed/typescript/types.ts",
+            "gitBlobSha": "a354f29a04a8401a2d85d652784ddca95c05cb7f",
+            "unicodeCodepoints": 115,
+            "utf8Bytes": 115
+          }
+        ],
+        "unicodeCodepoints": 2874,
+        "utf8Bytes": 2874
+      },
+      "rawCodepointReductionPct": 39.87,
+      "rawUtf8ReductionPct": 27.94
+    },
+    {
+      "id": "20-incremental-feature",
+      "comparison": "source pair; competitiveness review still required",
+      "hcode": {
+        "files": [
+          {
+            "path": "compact/canonical20/feature20/extended/hcode/core.hc",
+            "gitBlobSha": "2de27752994edd7adde2916746d5b221370e137a",
+            "unicodeCodepoints": 401,
+            "utf8Bytes": 470
+          },
+          {
+            "path": "compact/canonical20/feature20/extended/hcode/main.hc",
+            "gitBlobSha": "26c35db3610c5ef361843d6526e13252e39e4090",
+            "unicodeCodepoints": 114,
+            "utf8Bytes": 134
+          },
+          {
+            "path": "compact/canonical20/feature20/extended/hcode/range.hc",
+            "gitBlobSha": "1c931434793613f0a78ad51e13b58fe86d72adf7",
+            "unicodeCodepoints": 156,
+            "utf8Bytes": 179
+          },
+          {
+            "path": "compact/canonical20/feature20/extended/hcode/range.test.hc",
+            "gitBlobSha": "dee4d371827c10c43f89d0bfa7e607397426401c",
+            "unicodeCodepoints": 368,
+            "utf8Bytes": 442
+          },
+          {
+            "path": "compact/canonical20/feature20/extended/hcode/report.hc",
+            "gitBlobSha": "218327e9abfa68ca1b5511a97b620ac14da1c12b",
+            "unicodeCodepoints": 289,
+            "utf8Bytes": 328
+          },
+          {
+            "path": "compact/canonical20/feature20/extended/hcode/report.test.hc",
+            "gitBlobSha": "c70c3e0a48407b55156b5ee0b615761261593a7c",
+            "unicodeCodepoints": 287,
+            "utf8Bytes": 355
+          },
+          {
+            "path": "compact/canonical20/feature20/extended/hcode/statistics.hc",
+            "gitBlobSha": "b1e72c3f16e6ef635dec2702ec77917484c6362d",
+            "unicodeCodepoints": 263,
+            "utf8Bytes": 301
+          },
+          {
+            "path": "compact/canonical20/feature20/extended/hcode/statistics.test.hc",
+            "gitBlobSha": "b32f818cdb248ef1d8928881f2ad6fa8d966dca2",
+            "unicodeCodepoints": 291,
+            "utf8Bytes": 363
+          }
+        ],
+        "unicodeCodepoints": 2169,
+        "utf8Bytes": 2572
+      },
+      "typescript": {
+        "files": [
+          {
+            "path": "compact/canonical20/feature20/extended/typescript/core.ts",
+            "gitBlobSha": "d7be10802fc91d2711f64eb6472c2900173dc042",
+            "unicodeCodepoints": 423,
+            "utf8Bytes": 423
+          },
+          {
+            "path": "compact/canonical20/feature20/extended/typescript/fixtures.ts",
+            "gitBlobSha": "333a0d51699e77cc5f5404d9bdf4f98f7f2776bc",
+            "unicodeCodepoints": 212,
+            "utf8Bytes": 212
+          },
+          {
+            "path": "compact/canonical20/feature20/extended/typescript/input.ts",
+            "gitBlobSha": "30e840d2428468d04af36793033d922ecfbda806",
+            "unicodeCodepoints": 375,
+            "utf8Bytes": 375
+          },
+          {
+            "path": "compact/canonical20/feature20/extended/typescript/main.ts",
+            "gitBlobSha": "9ce8ae5115b30385eaeded52753e68bff558cf8b",
+            "unicodeCodepoints": 203,
+            "utf8Bytes": 203
+          },
+          {
+            "path": "compact/canonical20/feature20/extended/typescript/range.test.ts",
+            "gitBlobSha": "2a8d881ff09f3bafcce78d7337f24b5efb3c8786",
+            "unicodeCodepoints": 829,
+            "utf8Bytes": 829
+          },
+          {
+            "path": "compact/canonical20/feature20/extended/typescript/range.ts",
+            "gitBlobSha": "d02c366c6a9235c98d1218dbc3c7e314bef3f7a1",
+            "unicodeCodepoints": 567,
+            "utf8Bytes": 567
+          },
+          {
+            "path": "compact/canonical20/feature20/extended/typescript/report.test.ts",
+            "gitBlobSha": "b2e3945555e98ed884380ec48c76ff76e5b18855",
+            "unicodeCodepoints": 432,
+            "utf8Bytes": 432
+          },
+          {
+            "path": "compact/canonical20/feature20/extended/typescript/report.ts",
+            "gitBlobSha": "80188918017c0c7458debc30a157d07193bdfb1b",
+            "unicodeCodepoints": 436,
+            "utf8Bytes": 436
+          },
+          {
+            "path": "compact/canonical20/feature20/extended/typescript/statistics.test.ts",
+            "gitBlobSha": "59712c88b4eab3cb94c0f671878f60f35f923324",
+            "unicodeCodepoints": 480,
+            "utf8Bytes": 480
+          },
+          {
+            "path": "compact/canonical20/feature20/extended/typescript/statistics.ts",
+            "gitBlobSha": "faa99155a8e6de2c56988ce54b66163a75d36a07",
+            "unicodeCodepoints": 308,
+            "utf8Bytes": 308
+          },
+          {
+            "path": "compact/canonical20/feature20/extended/typescript/types.ts",
+            "gitBlobSha": "a354f29a04a8401a2d85d652784ddca95c05cb7f",
+            "unicodeCodepoints": 115,
+            "utf8Bytes": 115
+          }
+        ],
+        "unicodeCodepoints": 4380,
+        "utf8Bytes": 4380
+      },
+      "rawCodepointReductionPct": 50.48,
+      "rawUtf8ReductionPct": 41.28
+    }
+  ]
+}

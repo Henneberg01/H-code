@@ -23,6 +23,7 @@ on:
       - feat/m16-typed-user-signs
       - 'feat/m19-*'
       - codex/jfh-code-websocket-chat
+      - codex/jfh-code-browser-benchmark
       - feat/m16-2-universal-sign-types
 permissions:
   contents: read
@@ -48,6 +49,11 @@ jobs:
       - name: Export actual Chrome executable for all nested coverage subprocesses
         shell: bash
         run: echo "HCODE_CHROME=${{ steps.chrome.outputs.chrome-path }}" >> "$GITHUB_ENV"
+      - name: Verify real Chromium CDP driver and bounded process cleanup
+        if: runner.os == 'Linux'
+        env:
+          HCODE_CHROME_BINARY: ${{ steps.chrome.outputs.chrome-path }}
+        run: npm run browser:driver:test
       - name: Generate typed packages from concise JFH-CODE
         run: cargo run --manifest-path compiler/Cargo.toml -- pack --name poly.auto --version 1.0.0 --source packages/poly.auto/signs.hcs --lock hcode.m16.3.lock.json
       - name: Verify deterministic package output

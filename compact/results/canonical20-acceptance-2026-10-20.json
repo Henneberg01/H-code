@@ -1,0 +1,4827 @@
+{
+  "id": "HCODE-CANONICAL20-2026-10-18-PREREG-1",
+  "preregisteredTasks": 20,
+  "strictTargetPercent": 70,
+  "immutableRegistryGitBlobSha": "46653ef90ffb3e420fba4ddfbfac3c4cfd57f3b3",
+  "capabilityDemandIsNotCompilerCoverage": true,
+  "requestedByUnverifiedTasks": [],
+  "verifiedFullWorkloads": 20,
+  "partialReferenceEvidence": 0,
+  "unsupported": 0,
+  "acceptanceComplete": true,
+  "complete": false,
+  "globalMedianCodepointReduction": null,
+  "globalMedianUtf8Reduction": null,
+  "objectiveAchieved": false,
+  "compilerProvenanceValidated": false,
+  "historicalM14MedianCodepointReductionPct": 68.46,
+  "historicalM14IsGlobalMetric": false,
+  "evidenceByFullTask": {
+    "01-calculator-cli": {
+      "workloadId": "01-calculator-cli",
+      "kind": "full-compiler-evidence",
+      "originalAcceptance": "stdin expressions for +,-,*,/ with invalid division; stable stdout/stderr and exit status",
+      "registryUnmodified": true,
+      "positiveFrozenInputsVerified": 17,
+      "negativeFrozenInputsVerified": 15,
+      "previouslyUnseenGeneratedInputsVerified": 64,
+      "invalidUtf8Rejected": true,
+      "oversizedStdinRejected": true,
+      "rustStaticWrongTypesRejected": 5,
+      "actualCargoRunCliTested": true,
+      "engines": [
+        "real Rust compiled JS",
+        "independent JS H-Code CLI",
+        "independent TypeScript CLI"
+      ],
+      "sourceShaLocks": {
+        "registry": {
+          "path": "compact/canonical20/workloads.json",
+          "gitBlobSha": "46653ef90ffb3e420fba4ddfbfac3c4cfd57f3b3"
+        },
+        "cases": {
+          "path": "compact/canonical20/cases/01-calculator-cli.json",
+          "gitBlobSha": "ec2a70c7108c5120bbffef22878290a885ecefb0"
+        },
+        "hc": {
+          "path": "compact/canonical20/programs/01-calculator-cli.hc",
+          "gitBlobSha": "3acfbc0be6f7902db7aee5dd46ecf0a8eb07a5a6"
+        },
+        "ts": {
+          "path": "compact/canonical20/programs/01-calculator-cli.ts",
+          "gitBlobSha": "6bb1ef9a47b77fa9429b560f66faf0e8ced64ca6"
+        }
+      },
+      "hcodeDeveloperSource": {
+        "unicodeCodepoints": 11,
+        "utf8Bytes": 15
+      },
+      "independentTypeScriptOracleSource": {
+        "unicodeCodepoints": 2365,
+        "utf8Bytes": 2365
+      },
+      "rawOracleCodepointReductionPercent": 99.53,
+      "rawOracleUtf8ReductionPercent": 99.37,
+      "sourceRatioIsNotALibraryBackedTSBenchmark": true,
+      "generatedJSNotAuthored": {
+        "utf8Bytes": 6433,
+        "sha256": "0d659dc408afbdc48e82bb6f96d4c9b7cebcc951d3ff023ef4f9af518e624476"
+      },
+      "globalTwentyMedian": null,
+      "global70PercentObjectiveProven": false
+    },
+    "02-fibonacci-recursion": {
+      "workloadId": "02-fibonacci-recursion",
+      "kind": "full-compiler-evidence",
+      "acceptance": "input n=7; stdout 13; recursion and type equivalence against fixed TypeScript baseline",
+      "originalM10SourceUnchanged": true,
+      "compilerBackend": "Rust AST/typechecker -> generated JavaScript -> Node",
+      "referenceInterpreter": "H-Code JS",
+      "typescriptBaseline": "exact SHA-frozen M10 TypeScript recursion with explicit n:number and return number",
+      "fixedAcceptanceN": 7,
+      "fixedAcceptanceOutput": "13\n",
+      "variedInputsVerified": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        17
+      ],
+      "positiveCasesVerified": 16,
+      "compilerStaticTypeFailuresVerified": 3,
+      "stdoutParityOnAllPositiveCases": true,
+      "compilerGeneratedExecutionVerified": true,
+      "tsStaticCompilationMeasured": false,
+      "hashLockedSources": {
+        "registry": {
+          "path": "compact/canonical20/workloads.json",
+          "gitBlobSha": "46653ef90ffb3e420fba4ddfbfac3c4cfd57f3b3"
+        },
+        "manifest": {
+          "path": "compact/benchmarks/paired/manifest.json",
+          "gitBlobSha": "3f8902a5936d2b8265711ef2e9b6f100dc03ee7d"
+        },
+        "m10": {
+          "path": "compact/results/frozen-baseline-m10-eight.json",
+          "gitBlobSha": "a556d1e08146569515a9a89ec2adc0f2ae62ef6d"
+        },
+        "fixtures": {
+          "path": "compact/canonical20/cases/02-fibonacci-recursion.json",
+          "gitBlobSha": "8d17955cbe4672aa1596d68c438d1ff69c8b9d51"
+        },
+        "hc": {
+          "path": "compact/benchmarks/paired/recursive-fibonacci.hc",
+          "gitBlobSha": "66f02e2dce678b51f8d02766742d9d24aa5d66f7"
+        },
+        "ts": {
+          "path": "compact/benchmarks/paired/recursive-fibonacci.ts",
+          "gitBlobSha": "2a4e6ac1ef469a6e0c64381b79f901ee26085125"
+        },
+        "glyphCandidate": {
+          "path": "compact/canonical20/candidates/02-fibonacci-glyph-first.hc",
+          "gitBlobSha": "9f60ca57fec6dd77c1b4ee358913224e860b140c"
+        }
+      },
+      "hcodeDeveloperAuthored": {
+        "unicodeCodepoints": 96,
+        "utf8Bytes": 105
+      },
+      "typescriptDeveloperAuthored": {
+        "unicodeCodepoints": 94,
+        "utf8Bytes": 94
+      },
+      "unicodeCodepointReductionPct": -2.13,
+      "symbolFirstAlternate": {
+        "NOT_AN_AUTOMATIC_REPLACEMENT_FOR_ORIGINAL_FROZEN_M10": true,
+        "sourcePath": "compact/canonical20/candidates/02-fibonacci-glyph-first.hc",
+        "gitBlobSha": "9f60ca57fec6dd77c1b4ee358913224e860b140c",
+        "authoredUnicodeCodepoints": 64,
+        "authoredUtf8Bytes": 71,
+        "unicodeCodepointReductionPctVsSameFrozenTS": 31.91,
+        "utf8ByteReductionPctVsSameFrozenTS": 24.47,
+        "validatedSame16CasesWithRustAndJS": true,
+        "generatedJsNotAuthored": {
+          "utf8Bytes": 3654,
+          "sha256": "9584ee35e8d693d727ba6cc239723fcf3aa2af5708df2055ded80f54975a1fa1"
+        }
+      },
+      "utf8ByteReductionPct": -11.7,
+      "generatedJsNotAuthored": {
+        "utf8Bytes": 3673,
+        "sha256": "9b8dd238c4479e2d135361dcce98fe6f37e4868cdc05328bc8172181bea2455d"
+      },
+      "libraryDependencyBytesMeasured": false,
+      "compileTimeMeasured": false,
+      "runtimePerformanceMeasured": false,
+      "twentyTaskGlobalMedian": null,
+      "seventyPercentGlobalTargetVerified": false
+    },
+    "03-text-frequency-counter": {
+      "workloadId": "03-text-frequency-counter",
+      "kind": "full-compiler-evidence",
+      "acceptance": "normalize and count tokens; deterministic frequency ordering including Unicode cases",
+      "normalization": "NFC+Unicode lowercase+NFC",
+      "tokenRule": "[\\p{L}\\p{N}][\\p{L}\\p{M}\\p{N}\\p{Pc}]* /gu",
+      "sortOrder": "Unicode scalar ascending",
+      "outputCompatibleWithIndependentOracle": true,
+      "positiveFixturesVerified": 10,
+      "generatedUnicodeVariantsVerified": 28,
+      "staticTypeFailuresRejectedInRustAndReference": 6,
+      "genericPrimitiveProgramsVerified": 5,
+      "runtimeOversizedTokenSequenceRejected": true,
+      "originalPreregistrationUnchanged": true,
+      "threeEngines": "Rust H-Code compiler→JS Node, independent H-Code JS reference, idiomatic TS Node",
+      "sourceGitBlobShas": {
+        "registry": {
+          "file": "compact/canonical20/workloads.json",
+          "sha": "46653ef90ffb3e420fba4ddfbfac3c4cfd57f3b3"
+        },
+        "fixture": {
+          "file": "compact/canonical20/cases/03-text-frequency-counter.json",
+          "sha": "448e77cb094d5c0ba9fb3c561de53e80407fc606"
+        },
+        "hc": {
+          "file": "compact/canonical20/programs/03-text-frequency-counter.hc",
+          "sha": "c8a54820def663c364ec39ee0989d1406d6370e2"
+        },
+        "ts": {
+          "file": "compact/canonical20/programs/03-text-frequency-counter.ts",
+          "sha": "cd42048825aa837104340bff6215441a0a97523f"
+        }
+      },
+      "hcodeDeveloperAuthored": {
+        "unicodeCodepoints": 437,
+        "utf8Bytes": 499
+      },
+      "typescriptDeveloperAuthored": {
+        "unicodeCodepoints": 1541,
+        "utf8Bytes": 1592
+      },
+      "codepointReductionPercent": 71.64,
+      "utf8ByteReductionPercent": 68.66,
+      "generatedJsNotAuthored": {
+        "utf8Bytes": 9672,
+        "sha256": "a3fc368bd8a24d33f1a688be256707026ba524fd8a22a3abce1137ce972ffe3b"
+      },
+      "externalLibrarySizeMeasured": false,
+      "compilerTimeMeasured": false,
+      "runtimePerformanceMeasured": false,
+      "globalTwentyCodepointMedian": null,
+      "globalSeventyPercentVerified": false
+    },
+    "04-csv-validation": {
+      "workloadId": "04-csv-validation",
+      "kind": "full-compiler-evidence",
+      "originalAcceptance": "parse quoted CSV, reject malformed rows and validate column types deterministically",
+      "originalRegistryUntouched": true,
+      "fixedFilesVerified": 4,
+      "generatedCSVFilesAndExpectedOutputsVerified": 40,
+      "malformedFilesRejectedByThreeEngines": 6,
+      "invalidTypesRejectedByRustAndReference": 5,
+      "fileReadCapabilityFailClosed": true,
+      "pathTraversalRejected": true,
+      "threeEngines": "Rust H-Code compiler→Node JS, independent H-Code JS interpreter, standalone TS Node",
+      "sourceShaLocks": {
+        "registry": {
+          "path": "compact/canonical20/workloads.json",
+          "sha": "46653ef90ffb3e420fba4ddfbfac3c4cfd57f3b3"
+        },
+        "cases": {
+          "path": "compact/canonical20/cases/04-csv-validation.json",
+          "sha": "0a0381b403da2c5701767bf82912b10a58012535"
+        },
+        "hc": {
+          "path": "compact/canonical20/programs/04-csv-validation.hc",
+          "sha": "ab7c4a8059244339318d31bd553dfebe463fab4f"
+        },
+        "ts": {
+          "path": "compact/canonical20/programs/04-csv-validation.ts",
+          "sha": "27b3b2f2ecbca43d33341463096a1ceff79347c8"
+        }
+      },
+      "hcodeDeveloperAuthored": {
+        "unicodeCodepoints": 258,
+        "utf8Bytes": 273
+      },
+      "typescriptDeveloperAuthored": {
+        "unicodeCodepoints": 3936,
+        "utf8Bytes": 3936
+      },
+      "referenceSourceComparisonNotFairLibraryBenchmark": true,
+      "rawReferenceCodepointReductionPct": 93.45,
+      "rawReferenceUtf8ReductionPct": 93.06,
+      "generatedJsNotAuthored": {
+        "utf8Bytes": 13407,
+        "sha256": "2f41ef8c2bff3fc3eed2ccf2eba90104bd4c397ccdcc2bc974d3c2fd8c1752a9"
+      },
+      "bundledDataFixtureBytes": 345,
+      "idiomaticExternalLibraryBaselineVerified": false,
+      "dependencySizeMeasured": false,
+      "compilerTimeMeasured": false,
+      "runtimePerformanceMeasured": false,
+      "globalTwentyMedian": null,
+      "global70PercentVerified": false
+    },
+    "05-json-transformation": {
+      "workloadId": "05-json-transformation",
+      "acceptance": "deserialize structured input, transform nested typed fields, serialize valid JSON",
+      "kind": "full-compiler-evidence",
+      "compilerBackend": "Rust H-Code AST/typecheck/JS ESM",
+      "referenceInterpreter": "independent H-Code JS reference",
+      "typescriptBaseline": "idiomatic TypeScript with matching recursive runtime validation and no external library",
+      "shaFrozen": {
+        "registry": "compact/canonical20/workloads.json",
+        "cases": "compact/canonical20/cases/05-json-transformation.json",
+        "hc": "compact/canonical20/programs/05-json-transformation.hc",
+        "ts": "compact/canonical20/programs/05-json-transformation.ts"
+      },
+      "gitBlobShas": {
+        "registry": "46653ef90ffb3e420fba4ddfbfac3c4cfd57f3b3",
+        "cases": "6e151dd70cbb16b160349688be8f86aad06c54ee",
+        "hc": "9e98f97129e6c40c41ba4635f63fe9af26275f19",
+        "ts": "f01524c5559aa4606348ef166a4ff7ad5b5ed46b"
+      },
+      "positiveFixturesVerified": 3,
+      "generatedVariantsVerified": 12,
+      "invalidFixturesRejectedByAll": 11,
+      "stdoutParityOnEveryValidCase": true,
+      "compilerGeneratedExecutionVerified": true,
+      "runtimeMalformedInputRejectionVerified": true,
+      "hcodeDeveloperAuthored": {
+        "unicodeCodepoints": 594,
+        "utf8Bytes": 651
+      },
+      "typescriptDeveloperAuthored": {
+        "unicodeCodepoints": 2005,
+        "utf8Bytes": 2007
+      },
+      "codepointReductionPercent": 70.37,
+      "utf8ByteReductionPercent": 67.56,
+      "generatedJsNotAuthored": {
+        "utf8Bytes": 7262,
+        "sha256": "71e41e8a760a5428b35cc5e2e27f0051f62e4356b4af889ce6afe0e4e4620495"
+      },
+      "dependencyBytesMeasured": false,
+      "compilerTimeMeasured": false,
+      "runtimePerformanceMeasured": false,
+      "twentyTaskGlobalMedian": null,
+      "allTwentyVerified": false
+    },
+    "06-http-retries": {
+      "kind": "full-compiler-evidence",
+      "immutableRegistryGitBlobSha": "46653ef90ffb3e420fba4ddfbfac3c4cfd57f3b3",
+      "frozenHTTPFixturesVerified": 6,
+      "generatedHTTPVariantsVerified": 10,
+      "compilerStaticInvalidProgramsRejected": 4,
+      "interpreterInvalidProgramsRejected": 4,
+      "rustGeneratedJsAndIndependentInterpreterAndTypeScriptParity": true,
+      "realLoopbackNetworkAndBackoffVerified": true,
+      "capabilityDenialVerified": true,
+      "realRetryLogicIsHCodeSource": true,
+      "hcodeUnicodeCodepoints": 776,
+      "typescriptCorrectnessOracleUnicodeCodepoints": 3112,
+      "hcodeUtf8Bytes": 961,
+      "typescriptCorrectnessOracleUtf8Bytes": 3112,
+      "compiledJavascriptUtf8Bytes": 10826,
+      "compiledJavascriptSha256": "628123225ce0ff1564d6c0b004b833571e02cf9409d8c2a4035719dd70d370fa",
+      "comparisonIsCorrectnessOracleNotCompetitiveBaseline": true,
+      "provisionalCodepointReductionVsCorrectnessOraclePct": 75.06,
+      "provisionalUtf8ReductionVsCorrectnessOraclePct": 69.12,
+      "benchmarkPercentIsNotGlobalMedian": true,
+      "note": "Proves workload06 functional acceptance, not representative all20 compression or an independent competitive idiomatic TypeScript source baseline"
+    },
+    "07-file-conversion": {
+      "kind": "full-compiler-evidence",
+      "originalRegistryGitBlobSha": "46653ef90ffb3e420fba4ddfbfac3c4cfd57f3b3",
+      "frozenPositiveFilesystemCasesVerified": 3,
+      "generatedPositiveCSVVariationsVerified": 18,
+      "negativeMalformedCSVInputsRejectedByThreeEngines": 6,
+      "invalidStaticTypedAndEffectProgramsRejectedByRustAndReference": 4,
+      "rustGeneratedJsAndIndependentReferenceAndTypeScriptParity": true,
+      "exactUtf8OutputBytesAndWriteCountVerified": true,
+      "originFilesystemOutputCapabilityDeniedWhenAbsent": true,
+      "atomicNoOverwriteAndSymlinkTargetProtected": true,
+      "fileWriteReplayNoDuplicateSideEffects": true,
+      "generalCsvReadTypedParseJsonWriteAndAtomicFileWrite": true,
+      "hcodeUnicodeCodepoints": 173,
+      "hcodeUtf8Bytes": 207,
+      "typescriptCorrectnessOracleUnicodeCodepoints": 3135,
+      "typescriptCorrectnessOracleUtf8Bytes": 3135,
+      "compiledJavascriptUtf8Bytes": 19759,
+      "compiledJavascriptSha256": "325bb8e3480ab55c340e176b9fccb746b0fd6d27bc3d7d43cabd342636115c65",
+      "comparisonIsCorrectnessOracleNotCompetitiveBaseline": true,
+      "provisionalCodepointReductionVsCorrectnessOraclePct": 94.48,
+      "provisionalUtf8ReductionVsCorrectnessOraclePct": 93.4,
+      "global20MedianNotComputed": true,
+      "note": "This is real file-conversion acceptance but the TypeScript source is a correctness oracle, NOT a competitive idiomatic TS baseline. No overall 70% claim."
+    },
+    "08-concurrent-requests": {
+      "kind": "full-compiler-evidence",
+      "frozenOriginalRegistryGitBlobSha": "46653ef90ffb3e420fba4ddfbfac3c4cfd57f3b3",
+      "frozenConcurrentCasesVerified": 6,
+      "generatedConcurrentVariantsVerified": 8,
+      "realThreeEndpointNoSerialBlockingVerified": true,
+      "rustGeneratedJsAndIndependentInterpreterAndTypeScriptParity": true,
+      "immutableSourceProofVerified": true,
+      "permissionAndFanoutBoundaryRejectedBeforeIO": true,
+      "compilerAndInterpreterInvalidSourceCasesRejected": 4,
+      "vectorizedHttpIsGeneralTypedLanguagePrimitive": true,
+      "hcodeUnicodeCodepoints": 123,
+      "hcodeUtf8Bytes": 145,
+      "typescriptCorrectnessOracleUnicodeCodepoints": 1549,
+      "typescriptCorrectnessOracleUtf8Bytes": 1549,
+      "compiledJavascriptUtf8Bytes": 9806,
+      "compiledJavascriptSha256": "d6fcad9819f19d5dfbb35f12603e724c58ae8164b1046b344a6ccb0989a6ab90",
+      "comparisonIsCorrectnessOracleNotCompetitiveBaseline": true,
+      "provisionalCodepointReductionVsCorrectnessOraclePct": 92.06,
+      "provisionalUtf8ReductionVsCorrectnessOraclePct": 90.64,
+      "global20MedianNotComputed": true,
+      "note": "Full async concurrency acceptance verified, but this individual correctness-oracle comparison does not prove a competitive TS baseline or the global 70% goal"
+    },
+    "09-expiring-cache": {
+      "kind": "full-compiler-evidence",
+      "unchangedTwentyTaskRegistryGitBlobSha": "46653ef90ffb3e420fba4ddfbfac3c4cfd57f3b3",
+      "frozenFakeClockTracesVerified": 6,
+      "generatedFakeClockStreamsVerified": 15,
+      "rustCompiledJsAndIndependentInterpreterAndTypeScriptParity": true,
+      "exactExpiryBoundaryAndStaleReadPreventionVerified": true,
+      "boundedEntries": 8,
+      "deterministicFifoEvictionAndReplacementVerified": true,
+      "unicodeKeysAndZeroTtlVerified": true,
+      "invalidTypedJsonEventsRejectedByRustAndReference": true,
+      "clockInjection": "event timestamps; no wall clock or external clock host used",
+      "cacheStorage": "source-defined associative record sequence with O(n) key lookup; no native hash map claim",
+      "hcodeUnicodeCodepoints": 460,
+      "hcodeUtf8Bytes": 651,
+      "typescriptCorrectnessOracleUnicodeCodepoints": 2180,
+      "typescriptCorrectnessOracleUtf8Bytes": 2180,
+      "compiledJavascriptUtf8Bytes": 8864,
+      "compiledJavascriptSha256": "db8e97160b51e7383c543762475ae305570d3e573d9e2e31ecc59d06f8e1d20a",
+      "comparisonIsCorrectnessOracleNotCompetitiveBaseline": true,
+      "provisionalCodepointReductionVsCorrectnessOraclePct": 78.9,
+      "provisionalUtf8ReductionVsCorrectnessOraclePct": 70.14,
+      "globalTwentyMedianNotComputed": true,
+      "note": "This verifies original time/state/map observable behavior, not an efficient native hash map and NOT a global 70% compression benchmark."
+    },
+    "10-generic-collection-transforms": {
+      "workloadId": "10-generic-collection-transforms",
+      "kind": "full-compiler-evidence",
+      "acceptance": "typed sum, map and filter of arbitrary compatible values with stable outputs",
+      "frozenM14ProgramsCompiledAndExecuted": [
+        {
+          "id": "sum-typed-sequence",
+          "sourceSha": "4407ad4043c29f10fbeafbbd60070ee2ae6daabc",
+          "generated": {
+            "utf8Bytes": 3400,
+            "sha256": "441088386f9ab353f65e2ae4198c4c7cb1eb2dcfdadea11952ac634339b521b8"
+          },
+          "stdoutValidated": true
+        },
+        {
+          "id": "map-typed-sequence",
+          "sourceSha": "5d0ee1cf3f5bcb702f260a7c9824a3dcf2245c80",
+          "generated": {
+            "utf8Bytes": 3574,
+            "sha256": "e0fea40c67fcd5de939205d6bcad7645d1c561ceb81ad2fde85c5c9ebad86104"
+          },
+          "stdoutValidated": true
+        },
+        {
+          "id": "filter-typed-sequence",
+          "sourceSha": "8c0f3a165fece721c3fb66dba3b3aee1d7367e85",
+          "generated": {
+            "utf8Bytes": 3615,
+            "sha256": "dfc745879d8fa11783660dd6b4dca8b3274941bd2eb926aa1d05d3313de1d872"
+          },
+          "stdoutValidated": true
+        }
+      ],
+      "historicalM14MedianCodepointReductionPct": 68.46,
+      "existingM14CorpusIsNotGlobalStudy": true,
+      "independentFixedPositiveOutputCases": 11,
+      "generatedVariableInputSets": 19,
+      "generatedOutputAssertions": 47,
+      "compilerRejectedIllTypedPrograms": 6,
+      "testedCompatibleTypes": [
+        "Number",
+        "String",
+        "Bool",
+        "Record",
+        "Sequence<Sequence<Number>>",
+        "Sequence<Number> empty"
+      ],
+      "successfulSameOutputInRustJsAndTs": true,
+      "sourceGitBlobs": {
+        "registry": {
+          "path": "compact/canonical20/workloads.json",
+          "sha": "46653ef90ffb3e420fba4ddfbfac3c4cfd57f3b3"
+        },
+        "m14": {
+          "path": "compact/benchmarks/m14/manifest.json",
+          "sha": "03a8fbd02f106a0014f576ee250e5531a76177be"
+        },
+        "cases": {
+          "path": "compact/canonical20/cases/10-generic-collection-transforms.json",
+          "sha": "c4242e7414dc7dde17e151c71b3a4f46d23d8047"
+        },
+        "hc": {
+          "path": "compact/canonical20/programs/10-generic-collection-transforms.hc",
+          "sha": "8620b434b846714e10484f607f67bc37f393fe43"
+        },
+        "ts": {
+          "path": "compact/canonical20/programs/10-generic-collection-transforms.ts",
+          "sha": "f6e36cd493b5ac5897ab39f8a9ffe87b6ea8a820"
+        }
+      },
+      "hcodeDeveloperAuthored": {
+        "unicodeCodepoints": 505,
+        "utf8Bytes": 645
+      },
+      "typescriptDeveloperAuthored": {
+        "unicodeCodepoints": 836,
+        "utf8Bytes": 836
+      },
+      "unicodeCodepointReductionPct": 39.59,
+      "utf8ByteReductionPct": 22.85,
+      "generatedJsNotAuthored": {
+        "utf8Bytes": 8007,
+        "sha256": "72600bce832e3fb66e72d65d9659c48e3830704bc3d49d4b65cf3c311832d193"
+      },
+      "externalLibrariesUsed": false,
+      "compilerTimeMeasured": false,
+      "performanceMeasured": false,
+      "fullTwentyMedian": null,
+      "global70GoalReached": false
+    },
+    "11-markdown-processing": {
+      "kind": "full-compiler-evidence",
+      "originalTwentyRegistryBlobSha": "46653ef90ffb3e420fba4ddfbfac3c4cfd57f3b3",
+      "agreedFrozenMarkdownDocumentsVerified": 6,
+      "generatedMarkdownDocumentsVerified": 19,
+      "rustGeneratedJsVsIndependentHCodeReferenceVsTypeScriptOracle": true,
+      "pureGenericMarkdownLexingIntrinsic": true,
+      "parserScope": "bounded Markdown heading/link extraction subset, not full CommonMark",
+      "typedMarkdownStructuralTokenRecords": true,
+      "noHTMLExecutionOrNetworkFetch": true,
+      "malformedUnicodeAndOversizedStdinDenied": true,
+      "fourIllTypedProgramsRejectedByCompilerAndInterpreter": 4,
+      "hcodeUnicodeCodepoints": 19,
+      "hcodeUtf8Bytes": 29,
+      "typescriptCorrectnessOracleUnicodeCodepoints": 4103,
+      "typescriptCorrectnessOracleUtf8Bytes": 4103,
+      "compiledJavascriptUtf8Bytes": 11332,
+      "compiledJavascriptSha256": "5b15864057f41a9577bf5926d3e73fadadbc37c45366d587a2f653f44630bb4d",
+      "comparisonIsCorrectnessOracleNotCompetitiveBaseline": true,
+      "provisionalCodepointReductionVsCorrectnessOraclePct": 99.54,
+      "provisionalUtf8ReductionVsCorrectnessOraclePct": 99.29,
+      "globalTwentyMedianNotComputed": true,
+      "note": "Compiler-verified original heading/link extraction against a standalone correctness oracle, not a complete CommonMark claim and not a global 70%-reduction proof."
+    },
+    "12-crud-api": {
+      "kind": "full-compiler-evidence",
+      "originalTwentyRegistryBlobSha": "46653ef90ffb3e420fba4ddfbfac3c4cfd57f3b3",
+      "originalFrozenCRUDFixturesVerified": 6,
+      "generatedAntiCherrypickFlowsVerified": 5,
+      "compiledHCodeVsJSReferenceVsTypeScript": true,
+      "persistentStateAndReplayVerified": true,
+      "noCrudSpecificRuntimeMacro": true,
+      "hcodeUnicodeCodepoints": 3098,
+      "hcodeUtf8Bytes": 3721,
+      "typescriptCorrectnessOracleUnicodeCodepoints": 8772,
+      "typescriptCorrectnessOracleUtf8Bytes": 8772,
+      "compiledJavascriptUtf8Bytes": 49047,
+      "compiledJavascriptSha256": "195b4a128720d1b1c9acf499f87a05b1725b16096ae86801f8fa3e525d1a7933",
+      "comparisonIsCorrectnessOracleNotCompetitiveBaseline": true,
+      "provisionalCodepointReductionVsCorrectnessOraclePct": 64.68,
+      "provisionalUtf8ReductionVsCorrectnessOraclePct": 57.58,
+      "globalTwentyMedianNotComputed": true,
+      "note": "Full six-case typed HTTP CRUD contract plus generated flows proven in actual compiled H-Code, independent JS interpreter and frozen TypeScript correctness oracle; NOT a competitive idiomatic TypeScript baseline."
+    },
+    "13-form-validation-ui": {
+      "kind": "full-compiler-evidence",
+      "originalTwentyRegistryBlobSha": "46653ef90ffb3e420fba4ddfbfac3c4cfd57f3b3",
+      "originalAcceptance": "interactive required/email validation with accessible error feedback",
+      "actualBrowserChromium": true,
+      "nativeRustChecked": true,
+      "independentHCodeJSReference": true,
+      "independentIdiomaticTypeScript": true,
+      "browserHtml5ScenariosVerified": 9,
+      "exactDOMTraceParity": true,
+      "realChromeTestCases": 2,
+      "independentJSReferenceTests": 6,
+      "accessibleErrorLiveFeedbackVerified": true,
+      "invalidSubmitPrevented": true,
+      "nativeRequiredEmailValidity": true,
+      "htmlInjectionWasTextOnly": true,
+      "hcodeUnicodeCodepoints": 418,
+      "hcodeUtf8Bytes": 441,
+      "idiomaticTypeScriptUnicodeCodepoints": 705,
+      "idiomaticTypeScriptUtf8Bytes": 705,
+      "codepointReductionVsIdiomaticTypeScriptPct": 40.71,
+      "utf8ReductionVsIdiomaticTypeScriptPct": 37.45,
+      "compiledBrowserJavascriptUtf8Bytes": 11805,
+      "globalTwentyMedianNotComputed": true,
+      "globallyVerified70Percent": false,
+      "note": "Native Rust/browser ESM, independent H-Code JS interpreter, and actual Chromium against independent idiomatic TS; one task only. Source and browser input fixtures SHA-locked."
+    },
+    "14-todo-app": {
+      "kind": "full-compiler-evidence",
+      "originalTwentyRegistryBlobSha": "46653ef90ffb3e420fba4ddfbfac3c4cfd57f3b3",
+      "actualBrowserChromium": true,
+      "nativeRustTypedSource": true,
+      "independentHCodeJSReference": true,
+      "independentIdiomaticTypeScript": true,
+      "genericNonTodoDOMListAndStorageOperations": true,
+      "addCompleteRemoveWithPersistence": true,
+      "accessibleSemanticListAndLiveFeedback": true,
+      "unsafeHTMLNeverInterpreted": true,
+      "fullBrowserRestartsVerified": 2,
+      "persistedEmojiAndCompletionVerified": true,
+      "originalBrowserTraceStagesVerified": 15,
+      "independentJSTestsVerified": 4,
+      "independentChromeTestsVerified": 1,
+      "hcodeUnicodeCodepoints": 1456,
+      "hcodeUtf8Bytes": 1757,
+      "idiomaticTypeScriptUnicodeCodepoints": 1999,
+      "idiomaticTypeScriptUtf8Bytes": 2003,
+      "codepointReductionVsIdiomaticTypeScriptPct": 27.16,
+      "utf8ReductionVsIdiomaticTypeScriptPct": 12.28,
+      "compiledBrowserJavascriptUtf8Bytes": 22392,
+      "globalTwentyMedianNotComputed": true,
+      "globallyVerified70Percent": false,
+      "note": "All task14 business behavior is source-authored H-Code, independent JS and TypeScript app. Real Chrome executes 15 steps over 3 separate browser launches for each engine and checks durable JSON plus accessible list and live status. Per-task source savings are below the 70% goal."
+    },
+    "15-db-dashboard": {
+      "kind": "full-compiler-evidence",
+      "preregisteredTwentySha": "46653ef90ffb3e420fba4ddfbfac3c4cfd57f3b3",
+      "originalTaskId": "15-db-dashboard",
+      "fullOriginalAcceptancePreserved": true,
+      "nativeRustCompiler": true,
+      "independentHCodeJSInterpreter": true,
+      "independentIdiomaticTypeScript": true,
+      "actualBrowserChromium": true,
+      "SQLFreeHCodeAuthoredBackend": true,
+      "noDashboardSpecificCompilerMacro": true,
+      "actualDiskBackedSQLite": true,
+      "readOnlyDatabasePermissionVerified": true,
+      "fiveOriginalScenariosVerified": 5,
+      "adversarialUnicodeAndSeedPermutationVerified": true,
+      "accessibleSemanticHTMLAndInertHostileMarkup": true,
+      "browserMutationAndReopenVerified": true,
+      "existingOriginalB3SourcePreserved": true,
+      "rustNativeTestsVerified": 3,
+      "independentJSTestsVerified": 5,
+      "independentRealSQLiteTestsVerified": 4,
+      "independentRealChromiumTestsVerified": 1,
+      "hcodeUnicodeCodepoints": 1266,
+      "hcodeUtf8Bytes": 1444,
+      "idiomaticTypeScriptUnicodeCodepoints": 5488,
+      "idiomaticTypeScriptUtf8Bytes": 5488,
+      "codepointReductionVsIdiomaticTypeScriptPct": 76.93,
+      "utf8ReductionVsIdiomaticTypeScriptPct": 73.69,
+      "generatedESMSizeExcludedFromDeveloperAuthoredSource": true,
+      "globalTwentyMedianNotComputed": true,
+      "globallyVerified70Percent": false,
+      "note": "Real Chromium, independent Rust ESM/H-Code JS interpreter/idiomatic TS, five SQL-free SQLite fixtures, Unicode ties and source hashes. HTTP server validates ISO dates before execution. Does not imply all 20 tasks pass."
+    },
+    "16-auth-sessions": {
+      "kind": "full-compiler-evidence",
+      "engines": [
+        "native",
+        "reference",
+        "typescript"
+      ],
+      "fixedScenarios": 6,
+      "generatedScenarios": 8,
+      "fixedRuns": [
+        {
+          "engine": "native",
+          "scenario": "issue-rotate-revoke",
+          "httpAssertions": 14,
+          "restarts": 0,
+          "forcedCrashes": 0,
+          "concurrentRotations": 0,
+          "keyChanges": 0
+        },
+        {
+          "engine": "native",
+          "scenario": "durable-restart",
+          "httpAssertions": 9,
+          "restarts": 3,
+          "forcedCrashes": 2,
+          "concurrentRotations": 0,
+          "keyChanges": 0
+        },
+        {
+          "engine": "native",
+          "scenario": "invalid-input-does-not-mutate",
+          "httpAssertions": 17,
+          "restarts": 0,
+          "forcedCrashes": 0,
+          "concurrentRotations": 0,
+          "keyChanges": 0
+        },
+        {
+          "engine": "native",
+          "scenario": "duplicate-and-malformed-signatures",
+          "httpAssertions": 9,
+          "restarts": 0,
+          "forcedCrashes": 0,
+          "concurrentRotations": 0,
+          "keyChanges": 0
+        },
+        {
+          "engine": "native",
+          "scenario": "concurrent-rotation",
+          "httpAssertions": 9,
+          "restarts": 1,
+          "forcedCrashes": 0,
+          "concurrentRotations": 1,
+          "keyChanges": 0
+        },
+        {
+          "engine": "native",
+          "scenario": "reissue-invalidates-prior-generation",
+          "httpAssertions": 11,
+          "restarts": 1,
+          "forcedCrashes": 0,
+          "concurrentRotations": 0,
+          "keyChanges": 0
+        },
+        {
+          "engine": "reference",
+          "scenario": "issue-rotate-revoke",
+          "httpAssertions": 14,
+          "restarts": 0,
+          "forcedCrashes": 0,
+          "concurrentRotations": 0,
+          "keyChanges": 0
+        },
+        {
+          "engine": "reference",
+          "scenario": "durable-restart",
+          "httpAssertions": 9,
+          "restarts": 3,
+          "forcedCrashes": 2,
+          "concurrentRotations": 0,
+          "keyChanges": 0
+        },
+        {
+          "engine": "reference",
+          "scenario": "invalid-input-does-not-mutate",
+          "httpAssertions": 17,
+          "restarts": 0,
+          "forcedCrashes": 0,
+          "concurrentRotations": 0,
+          "keyChanges": 0
+        },
+        {
+          "engine": "reference",
+          "scenario": "duplicate-and-malformed-signatures",
+          "httpAssertions": 9,
+          "restarts": 0,
+          "forcedCrashes": 0,
+          "concurrentRotations": 0,
+          "keyChanges": 0
+        },
+        {
+          "engine": "reference",
+          "scenario": "concurrent-rotation",
+          "httpAssertions": 9,
+          "restarts": 1,
+          "forcedCrashes": 0,
+          "concurrentRotations": 1,
+          "keyChanges": 0
+        },
+        {
+          "engine": "reference",
+          "scenario": "reissue-invalidates-prior-generation",
+          "httpAssertions": 11,
+          "restarts": 1,
+          "forcedCrashes": 0,
+          "concurrentRotations": 0,
+          "keyChanges": 0
+        },
+        {
+          "engine": "typescript",
+          "scenario": "issue-rotate-revoke",
+          "httpAssertions": 14,
+          "restarts": 0,
+          "forcedCrashes": 0,
+          "concurrentRotations": 0,
+          "keyChanges": 0
+        },
+        {
+          "engine": "typescript",
+          "scenario": "durable-restart",
+          "httpAssertions": 9,
+          "restarts": 3,
+          "forcedCrashes": 2,
+          "concurrentRotations": 0,
+          "keyChanges": 0
+        },
+        {
+          "engine": "typescript",
+          "scenario": "invalid-input-does-not-mutate",
+          "httpAssertions": 17,
+          "restarts": 0,
+          "forcedCrashes": 0,
+          "concurrentRotations": 0,
+          "keyChanges": 0
+        },
+        {
+          "engine": "typescript",
+          "scenario": "duplicate-and-malformed-signatures",
+          "httpAssertions": 9,
+          "restarts": 0,
+          "forcedCrashes": 0,
+          "concurrentRotations": 0,
+          "keyChanges": 0
+        },
+        {
+          "engine": "typescript",
+          "scenario": "concurrent-rotation",
+          "httpAssertions": 9,
+          "restarts": 1,
+          "forcedCrashes": 0,
+          "concurrentRotations": 1,
+          "keyChanges": 0
+        },
+        {
+          "engine": "typescript",
+          "scenario": "reissue-invalidates-prior-generation",
+          "httpAssertions": 11,
+          "restarts": 1,
+          "forcedCrashes": 0,
+          "concurrentRotations": 0,
+          "keyChanges": 0
+        }
+      ],
+      "generatedRuns": [
+        {
+          "engine": "native",
+          "scenario": "generated-0",
+          "httpAssertions": 25,
+          "restarts": 3,
+          "forcedCrashes": 2,
+          "concurrentRotations": 1,
+          "keyChanges": 1
+        },
+        {
+          "engine": "native",
+          "scenario": "generated-1",
+          "httpAssertions": 27,
+          "restarts": 2,
+          "forcedCrashes": 1,
+          "concurrentRotations": 2,
+          "keyChanges": 0
+        },
+        {
+          "engine": "native",
+          "scenario": "generated-2",
+          "httpAssertions": 34,
+          "restarts": 3,
+          "forcedCrashes": 2,
+          "concurrentRotations": 2,
+          "keyChanges": 1
+        },
+        {
+          "engine": "native",
+          "scenario": "generated-3",
+          "httpAssertions": 22,
+          "restarts": 2,
+          "forcedCrashes": 1,
+          "concurrentRotations": 1,
+          "keyChanges": 0
+        },
+        {
+          "engine": "native",
+          "scenario": "generated-4",
+          "httpAssertions": 30,
+          "restarts": 3,
+          "forcedCrashes": 2,
+          "concurrentRotations": 2,
+          "keyChanges": 1
+        },
+        {
+          "engine": "native",
+          "scenario": "generated-5",
+          "httpAssertions": 31,
+          "restarts": 2,
+          "forcedCrashes": 1,
+          "concurrentRotations": 2,
+          "keyChanges": 0
+        },
+        {
+          "engine": "native",
+          "scenario": "generated-6",
+          "httpAssertions": 25,
+          "restarts": 3,
+          "forcedCrashes": 2,
+          "concurrentRotations": 1,
+          "keyChanges": 1
+        },
+        {
+          "engine": "native",
+          "scenario": "generated-7",
+          "httpAssertions": 27,
+          "restarts": 2,
+          "forcedCrashes": 1,
+          "concurrentRotations": 2,
+          "keyChanges": 0
+        },
+        {
+          "engine": "reference",
+          "scenario": "generated-0",
+          "httpAssertions": 25,
+          "restarts": 3,
+          "forcedCrashes": 2,
+          "concurrentRotations": 1,
+          "keyChanges": 1
+        },
+        {
+          "engine": "reference",
+          "scenario": "generated-1",
+          "httpAssertions": 27,
+          "restarts": 2,
+          "forcedCrashes": 1,
+          "concurrentRotations": 2,
+          "keyChanges": 0
+        },
+        {
+          "engine": "reference",
+          "scenario": "generated-2",
+          "httpAssertions": 34,
+          "restarts": 3,
+          "forcedCrashes": 2,
+          "concurrentRotations": 2,
+          "keyChanges": 1
+        },
+        {
+          "engine": "reference",
+          "scenario": "generated-3",
+          "httpAssertions": 22,
+          "restarts": 2,
+          "forcedCrashes": 1,
+          "concurrentRotations": 1,
+          "keyChanges": 0
+        },
+        {
+          "engine": "reference",
+          "scenario": "generated-4",
+          "httpAssertions": 30,
+          "restarts": 3,
+          "forcedCrashes": 2,
+          "concurrentRotations": 2,
+          "keyChanges": 1
+        },
+        {
+          "engine": "reference",
+          "scenario": "generated-5",
+          "httpAssertions": 31,
+          "restarts": 2,
+          "forcedCrashes": 1,
+          "concurrentRotations": 2,
+          "keyChanges": 0
+        },
+        {
+          "engine": "reference",
+          "scenario": "generated-6",
+          "httpAssertions": 25,
+          "restarts": 3,
+          "forcedCrashes": 2,
+          "concurrentRotations": 1,
+          "keyChanges": 1
+        },
+        {
+          "engine": "reference",
+          "scenario": "generated-7",
+          "httpAssertions": 27,
+          "restarts": 2,
+          "forcedCrashes": 1,
+          "concurrentRotations": 2,
+          "keyChanges": 0
+        },
+        {
+          "engine": "typescript",
+          "scenario": "generated-0",
+          "httpAssertions": 25,
+          "restarts": 3,
+          "forcedCrashes": 2,
+          "concurrentRotations": 1,
+          "keyChanges": 1
+        },
+        {
+          "engine": "typescript",
+          "scenario": "generated-1",
+          "httpAssertions": 27,
+          "restarts": 2,
+          "forcedCrashes": 1,
+          "concurrentRotations": 2,
+          "keyChanges": 0
+        },
+        {
+          "engine": "typescript",
+          "scenario": "generated-2",
+          "httpAssertions": 34,
+          "restarts": 3,
+          "forcedCrashes": 2,
+          "concurrentRotations": 2,
+          "keyChanges": 1
+        },
+        {
+          "engine": "typescript",
+          "scenario": "generated-3",
+          "httpAssertions": 22,
+          "restarts": 2,
+          "forcedCrashes": 1,
+          "concurrentRotations": 1,
+          "keyChanges": 0
+        },
+        {
+          "engine": "typescript",
+          "scenario": "generated-4",
+          "httpAssertions": 30,
+          "restarts": 3,
+          "forcedCrashes": 2,
+          "concurrentRotations": 2,
+          "keyChanges": 1
+        },
+        {
+          "engine": "typescript",
+          "scenario": "generated-5",
+          "httpAssertions": 31,
+          "restarts": 2,
+          "forcedCrashes": 1,
+          "concurrentRotations": 2,
+          "keyChanges": 0
+        },
+        {
+          "engine": "typescript",
+          "scenario": "generated-6",
+          "httpAssertions": 25,
+          "restarts": 3,
+          "forcedCrashes": 2,
+          "concurrentRotations": 1,
+          "keyChanges": 1
+        },
+        {
+          "engine": "typescript",
+          "scenario": "generated-7",
+          "httpAssertions": 27,
+          "restarts": 2,
+          "forcedCrashes": 1,
+          "concurrentRotations": 2,
+          "keyChanges": 0
+        }
+      ],
+      "generationBoundaryRuns": [
+        {
+          "engine": "native",
+          "scenario": "maximum-generation",
+          "httpAssertions": 6,
+          "restarts": 1,
+          "forcedCrashes": 1,
+          "concurrentRotations": 0,
+          "keyChanges": 0
+        },
+        {
+          "engine": "reference",
+          "scenario": "maximum-generation",
+          "httpAssertions": 6,
+          "restarts": 1,
+          "forcedCrashes": 1,
+          "concurrentRotations": 0,
+          "keyChanges": 0
+        },
+        {
+          "engine": "typescript",
+          "scenario": "maximum-generation",
+          "httpAssertions": 6,
+          "restarts": 1,
+          "forcedCrashes": 1,
+          "concurrentRotations": 0,
+          "keyChanges": 0
+        }
+      ],
+      "httpAssertions": 888,
+      "forcedCrashes": 45,
+      "restarts": 78,
+      "concurrentRotations": 42,
+      "keyChanges": 12,
+      "startupRejections": [
+        {
+          "engine": "native",
+          "case": "missing",
+          "rejectedBeforeListen": true
+        },
+        {
+          "engine": "native",
+          "case": "short",
+          "rejectedBeforeListen": true
+        },
+        {
+          "engine": "native",
+          "case": "long",
+          "rejectedBeforeListen": true
+        },
+        {
+          "engine": "native",
+          "case": "invalid-utf8",
+          "rejectedBeforeListen": true
+        },
+        {
+          "engine": "native",
+          "case": "bom-short",
+          "rejectedBeforeListen": true
+        },
+        {
+          "engine": "native",
+          "case": "capability",
+          "rejectedBeforeListen": true
+        },
+        {
+          "engine": "reference",
+          "case": "missing",
+          "rejectedBeforeListen": true
+        },
+        {
+          "engine": "reference",
+          "case": "short",
+          "rejectedBeforeListen": true
+        },
+        {
+          "engine": "reference",
+          "case": "long",
+          "rejectedBeforeListen": true
+        },
+        {
+          "engine": "reference",
+          "case": "invalid-utf8",
+          "rejectedBeforeListen": true
+        },
+        {
+          "engine": "reference",
+          "case": "bom-short",
+          "rejectedBeforeListen": true
+        },
+        {
+          "engine": "reference",
+          "case": "capability",
+          "rejectedBeforeListen": true
+        },
+        {
+          "engine": "typescript",
+          "case": "missing",
+          "rejectedBeforeListen": true
+        },
+        {
+          "engine": "typescript",
+          "case": "short",
+          "rejectedBeforeListen": true
+        },
+        {
+          "engine": "typescript",
+          "case": "long",
+          "rejectedBeforeListen": true
+        },
+        {
+          "engine": "typescript",
+          "case": "invalid-utf8",
+          "rejectedBeforeListen": true
+        },
+        {
+          "engine": "typescript",
+          "case": "bom-short",
+          "rejectedBeforeListen": true
+        },
+        {
+          "engine": "typescript",
+          "case": "capability",
+          "rejectedBeforeListen": true
+        }
+      ],
+      "seededFaultsRejected": [
+        {
+          "engine": "native",
+          "id": "signature-bypass",
+          "rejectedByHttpAssertions": true
+        },
+        {
+          "engine": "native",
+          "id": "rotation-reuse",
+          "rejectedByHttpAssertions": true
+        },
+        {
+          "engine": "native",
+          "id": "revocation-bypass",
+          "rejectedByHttpAssertions": true
+        },
+        {
+          "engine": "reference",
+          "id": "signature-bypass",
+          "rejectedByHttpAssertions": true
+        },
+        {
+          "engine": "reference",
+          "id": "rotation-reuse",
+          "rejectedByHttpAssertions": true
+        },
+        {
+          "engine": "reference",
+          "id": "revocation-bypass",
+          "rejectedByHttpAssertions": true
+        },
+        {
+          "engine": "typescript",
+          "id": "signature-bypass",
+          "rejectedByHttpAssertions": true
+        },
+        {
+          "engine": "typescript",
+          "id": "rotation-reuse",
+          "rejectedByHttpAssertions": true
+        },
+        {
+          "engine": "typescript",
+          "id": "revocation-bypass",
+          "rejectedByHttpAssertions": true
+        }
+      ],
+      "bomKeyBytesVerified": true,
+      "minimumScalarBomKeyVerified": true,
+      "maximumUtf8KeyVerified": true,
+      "sharedReferenceHttpAndCasHost": true,
+      "independentTypeScriptSQLite": true,
+      "compiledJavaScript": {
+        "utf8Bytes": 50283,
+        "sha256": "f5ea0e33ec7519a55d2eec6115cbffc2f4f78973224a7fb86d9063924100ebe3"
+      },
+      "globallyVerified70Percent": false,
+      "workloadId": "16-auth-sessions",
+      "acceptance": "issue/rotate/revoke a signed session using deterministic fixture identity",
+      "originalRegistryGitBlobSha": "46653ef90ffb3e420fba4ddfbfac3c4cfd57f3b3",
+      "contractCommit": "01cef3b86b361eafc6accd2b78a6a3be6b20108e",
+      "concreteFixtureEstablishedOn": "2026-10-20",
+      "preexistingConcreteTask16Fixture": false,
+      "nativeRustCompiler": true,
+      "independentHCodeJSReference": true,
+      "independentIdiomaticTypeScript": true,
+      "authoredSource": {
+        "hcode": {
+          "files": [
+            {
+              "path": "compact/canonical20/auth16/hcode/main.hc",
+              "gitBlobSha": "7c539c75f34be5dd45f405400841617670da53aa",
+              "unicodeCodepoints": 2403,
+              "utf8Bytes": 2784
+            }
+          ],
+          "unicodeCodepoints": 2403,
+          "utf8Bytes": 2784
+        },
+        "typescript": {
+          "files": [
+            {
+              "path": "compact/canonical20/auth16/typescript/main.ts",
+              "gitBlobSha": "e9292439af93a9c0877464de45532f72fb8d747d",
+              "unicodeCodepoints": 7762,
+              "utf8Bytes": 7762
+            }
+          ],
+          "unicodeCodepoints": 7762,
+          "utf8Bytes": 7762
+        }
+      },
+      "sourceCompression": {
+        "unicodeCodepointReductionPct": 69.04,
+        "utf8ByteReductionPct": 64.13
+      },
+      "sharedFixtures": {
+        "unicodeCodepoints": 8453,
+        "utf8Bytes": 8453
+      },
+      "includingSharedFixtures": {
+        "hcode": {
+          "unicodeCodepoints": 10856,
+          "utf8Bytes": 11237
+        },
+        "typescript": {
+          "unicodeCodepoints": 16215,
+          "utf8Bytes": 16215
+        }
+      },
+      "includingSharedFixtureCompression": {
+        "unicodeCodepointReductionPct": 33.05,
+        "utf8ByteReductionPct": 30.7
+      },
+      "externalPackageDependencies": 0,
+      "minimumTypeScriptNodeVersion": "22.13.0",
+      "limitations": "Only task16: symmetric HMAC-authenticated stateful session for one fixed fixture identity. No expiration, production credential provider, JWT or asymmetric signature claim. JS language evaluator is independent but shares the generic HTTP/CAS host with native; TypeScript uses independent SQLite transactions. Whole app source includes validation, configuration and persistence glue. JSON fixtures are separate and inclusive; generated runtime is separate, and Node/Rust/toolchain/SQLite size is not zero or measured here. No global median, runtime-performance or AI-token claim."
+    },
+    "17-websocket-chat": {
+      "kind": "full-compiler-evidence",
+      "engines": [
+        "native",
+        "reference",
+        "typescript"
+      ],
+      "fixedRuns": [
+        {
+          "engine": "native",
+          "scenario": "two-clients-order",
+          "wireAssertions": 12,
+          "sentMessages": 8,
+          "acceptedChatMessages": 2,
+          "disconnects": 0,
+          "reconnects": 0,
+          "concurrentSends": 0,
+          "forcedDisconnects": 0,
+          "isolatedClientProcesses": 0
+        },
+        {
+          "engine": "native",
+          "scenario": "rooms-and-switch",
+          "wireAssertions": 20,
+          "sentMessages": 14,
+          "acceptedChatMessages": 4,
+          "disconnects": 0,
+          "reconnects": 0,
+          "concurrentSends": 0,
+          "forcedDisconnects": 0,
+          "isolatedClientProcesses": 0
+        },
+        {
+          "engine": "native",
+          "scenario": "disconnect-reconnect",
+          "wireAssertions": 19,
+          "sentMessages": 13,
+          "acceptedChatMessages": 3,
+          "disconnects": 1,
+          "reconnects": 1,
+          "concurrentSends": 0,
+          "forcedDisconnects": 0,
+          "isolatedClientProcesses": 0
+        },
+        {
+          "engine": "native",
+          "scenario": "unicode-and-invalid",
+          "wireAssertions": 17,
+          "sentMessages": 13,
+          "acceptedChatMessages": 2,
+          "disconnects": 0,
+          "reconnects": 0,
+          "concurrentSends": 0,
+          "forcedDisconnects": 0,
+          "isolatedClientProcesses": 0
+        },
+        {
+          "engine": "reference",
+          "scenario": "two-clients-order",
+          "wireAssertions": 12,
+          "sentMessages": 8,
+          "acceptedChatMessages": 2,
+          "disconnects": 0,
+          "reconnects": 0,
+          "concurrentSends": 0,
+          "forcedDisconnects": 0,
+          "isolatedClientProcesses": 0
+        },
+        {
+          "engine": "reference",
+          "scenario": "rooms-and-switch",
+          "wireAssertions": 20,
+          "sentMessages": 14,
+          "acceptedChatMessages": 4,
+          "disconnects": 0,
+          "reconnects": 0,
+          "concurrentSends": 0,
+          "forcedDisconnects": 0,
+          "isolatedClientProcesses": 0
+        },
+        {
+          "engine": "reference",
+          "scenario": "disconnect-reconnect",
+          "wireAssertions": 19,
+          "sentMessages": 13,
+          "acceptedChatMessages": 3,
+          "disconnects": 1,
+          "reconnects": 1,
+          "concurrentSends": 0,
+          "forcedDisconnects": 0,
+          "isolatedClientProcesses": 0
+        },
+        {
+          "engine": "reference",
+          "scenario": "unicode-and-invalid",
+          "wireAssertions": 17,
+          "sentMessages": 13,
+          "acceptedChatMessages": 2,
+          "disconnects": 0,
+          "reconnects": 0,
+          "concurrentSends": 0,
+          "forcedDisconnects": 0,
+          "isolatedClientProcesses": 0
+        },
+        {
+          "engine": "typescript",
+          "scenario": "two-clients-order",
+          "wireAssertions": 12,
+          "sentMessages": 8,
+          "acceptedChatMessages": 2,
+          "disconnects": 0,
+          "reconnects": 0,
+          "concurrentSends": 0,
+          "forcedDisconnects": 0,
+          "isolatedClientProcesses": 0
+        },
+        {
+          "engine": "typescript",
+          "scenario": "rooms-and-switch",
+          "wireAssertions": 20,
+          "sentMessages": 14,
+          "acceptedChatMessages": 4,
+          "disconnects": 0,
+          "reconnects": 0,
+          "concurrentSends": 0,
+          "forcedDisconnects": 0,
+          "isolatedClientProcesses": 0
+        },
+        {
+          "engine": "typescript",
+          "scenario": "disconnect-reconnect",
+          "wireAssertions": 19,
+          "sentMessages": 13,
+          "acceptedChatMessages": 3,
+          "disconnects": 1,
+          "reconnects": 1,
+          "concurrentSends": 0,
+          "forcedDisconnects": 0,
+          "isolatedClientProcesses": 0
+        },
+        {
+          "engine": "typescript",
+          "scenario": "unicode-and-invalid",
+          "wireAssertions": 17,
+          "sentMessages": 13,
+          "acceptedChatMessages": 2,
+          "disconnects": 0,
+          "reconnects": 0,
+          "concurrentSends": 0,
+          "forcedDisconnects": 0,
+          "isolatedClientProcesses": 0
+        }
+      ],
+      "generatedRuns": [
+        {
+          "engine": "native",
+          "scenario": "generated-0",
+          "wireAssertions": 29,
+          "sentMessages": 621,
+          "acceptedChatMessages": 604,
+          "disconnects": 1,
+          "reconnects": 1,
+          "concurrentSends": 600,
+          "forcedDisconnects": 0,
+          "isolatedClientProcesses": 0
+        },
+        {
+          "engine": "native",
+          "scenario": "generated-1",
+          "wireAssertions": 29,
+          "sentMessages": 40,
+          "acceptedChatMessages": 23,
+          "disconnects": 1,
+          "reconnects": 1,
+          "concurrentSends": 19,
+          "forcedDisconnects": 0,
+          "isolatedClientProcesses": 0
+        },
+        {
+          "engine": "native",
+          "scenario": "generated-2",
+          "wireAssertions": 29,
+          "sentMessages": 43,
+          "acceptedChatMessages": 26,
+          "disconnects": 1,
+          "reconnects": 1,
+          "concurrentSends": 22,
+          "forcedDisconnects": 0,
+          "isolatedClientProcesses": 0
+        },
+        {
+          "engine": "native",
+          "scenario": "generated-3",
+          "wireAssertions": 29,
+          "sentMessages": 46,
+          "acceptedChatMessages": 29,
+          "disconnects": 1,
+          "reconnects": 1,
+          "concurrentSends": 25,
+          "forcedDisconnects": 0,
+          "isolatedClientProcesses": 0
+        },
+        {
+          "engine": "native",
+          "scenario": "generated-4",
+          "wireAssertions": 29,
+          "sentMessages": 49,
+          "acceptedChatMessages": 32,
+          "disconnects": 1,
+          "reconnects": 1,
+          "concurrentSends": 28,
+          "forcedDisconnects": 0,
+          "isolatedClientProcesses": 0
+        },
+        {
+          "engine": "native",
+          "scenario": "generated-5",
+          "wireAssertions": 29,
+          "sentMessages": 52,
+          "acceptedChatMessages": 35,
+          "disconnects": 1,
+          "reconnects": 1,
+          "concurrentSends": 31,
+          "forcedDisconnects": 0,
+          "isolatedClientProcesses": 0
+        },
+        {
+          "engine": "native",
+          "scenario": "generated-6",
+          "wireAssertions": 29,
+          "sentMessages": 55,
+          "acceptedChatMessages": 38,
+          "disconnects": 1,
+          "reconnects": 1,
+          "concurrentSends": 34,
+          "forcedDisconnects": 0,
+          "isolatedClientProcesses": 0
+        },
+        {
+          "engine": "native",
+          "scenario": "generated-7",
+          "wireAssertions": 29,
+          "sentMessages": 58,
+          "acceptedChatMessages": 41,
+          "disconnects": 1,
+          "reconnects": 1,
+          "concurrentSends": 37,
+          "forcedDisconnects": 0,
+          "isolatedClientProcesses": 0
+        },
+        {
+          "engine": "reference",
+          "scenario": "generated-0",
+          "wireAssertions": 29,
+          "sentMessages": 621,
+          "acceptedChatMessages": 604,
+          "disconnects": 1,
+          "reconnects": 1,
+          "concurrentSends": 600,
+          "forcedDisconnects": 0,
+          "isolatedClientProcesses": 0
+        },
+        {
+          "engine": "reference",
+          "scenario": "generated-1",
+          "wireAssertions": 29,
+          "sentMessages": 40,
+          "acceptedChatMessages": 23,
+          "disconnects": 1,
+          "reconnects": 1,
+          "concurrentSends": 19,
+          "forcedDisconnects": 0,
+          "isolatedClientProcesses": 0
+        },
+        {
+          "engine": "reference",
+          "scenario": "generated-2",
+          "wireAssertions": 29,
+          "sentMessages": 43,
+          "acceptedChatMessages": 26,
+          "disconnects": 1,
+          "reconnects": 1,
+          "concurrentSends": 22,
+          "forcedDisconnects": 0,
+          "isolatedClientProcesses": 0
+        },
+        {
+          "engine": "reference",
+          "scenario": "generated-3",
+          "wireAssertions": 29,
+          "sentMessages": 46,
+          "acceptedChatMessages": 29,
+          "disconnects": 1,
+          "reconnects": 1,
+          "concurrentSends": 25,
+          "forcedDisconnects": 0,
+          "isolatedClientProcesses": 0
+        },
+        {
+          "engine": "reference",
+          "scenario": "generated-4",
+          "wireAssertions": 29,
+          "sentMessages": 49,
+          "acceptedChatMessages": 32,
+          "disconnects": 1,
+          "reconnects": 1,
+          "concurrentSends": 28,
+          "forcedDisconnects": 0,
+          "isolatedClientProcesses": 0
+        },
+        {
+          "engine": "reference",
+          "scenario": "generated-5",
+          "wireAssertions": 29,
+          "sentMessages": 52,
+          "acceptedChatMessages": 35,
+          "disconnects": 1,
+          "reconnects": 1,
+          "concurrentSends": 31,
+          "forcedDisconnects": 0,
+          "isolatedClientProcesses": 0
+        },
+        {
+          "engine": "reference",
+          "scenario": "generated-6",
+          "wireAssertions": 29,
+          "sentMessages": 55,
+          "acceptedChatMessages": 38,
+          "disconnects": 1,
+          "reconnects": 1,
+          "concurrentSends": 34,
+          "forcedDisconnects": 0,
+          "isolatedClientProcesses": 0
+        },
+        {
+          "engine": "reference",
+          "scenario": "generated-7",
+          "wireAssertions": 29,
+          "sentMessages": 58,
+          "acceptedChatMessages": 41,
+          "disconnects": 1,
+          "reconnects": 1,
+          "concurrentSends": 37,
+          "forcedDisconnects": 0,
+          "isolatedClientProcesses": 0
+        },
+        {
+          "engine": "typescript",
+          "scenario": "generated-0",
+          "wireAssertions": 29,
+          "sentMessages": 621,
+          "acceptedChatMessages": 604,
+          "disconnects": 1,
+          "reconnects": 1,
+          "concurrentSends": 600,
+          "forcedDisconnects": 0,
+          "isolatedClientProcesses": 0
+        },
+        {
+          "engine": "typescript",
+          "scenario": "generated-1",
+          "wireAssertions": 29,
+          "sentMessages": 40,
+          "acceptedChatMessages": 23,
+          "disconnects": 1,
+          "reconnects": 1,
+          "concurrentSends": 19,
+          "forcedDisconnects": 0,
+          "isolatedClientProcesses": 0
+        },
+        {
+          "engine": "typescript",
+          "scenario": "generated-2",
+          "wireAssertions": 29,
+          "sentMessages": 43,
+          "acceptedChatMessages": 26,
+          "disconnects": 1,
+          "reconnects": 1,
+          "concurrentSends": 22,
+          "forcedDisconnects": 0,
+          "isolatedClientProcesses": 0
+        },
+        {
+          "engine": "typescript",
+          "scenario": "generated-3",
+          "wireAssertions": 29,
+          "sentMessages": 46,
+          "acceptedChatMessages": 29,
+          "disconnects": 1,
+          "reconnects": 1,
+          "concurrentSends": 25,
+          "forcedDisconnects": 0,
+          "isolatedClientProcesses": 0
+        },
+        {
+          "engine": "typescript",
+          "scenario": "generated-4",
+          "wireAssertions": 29,
+          "sentMessages": 49,
+          "acceptedChatMessages": 32,
+          "disconnects": 1,
+          "reconnects": 1,
+          "concurrentSends": 28,
+          "forcedDisconnects": 0,
+          "isolatedClientProcesses": 0
+        },
+        {
+          "engine": "typescript",
+          "scenario": "generated-5",
+          "wireAssertions": 29,
+          "sentMessages": 52,
+          "acceptedChatMessages": 35,
+          "disconnects": 1,
+          "reconnects": 1,
+          "concurrentSends": 31,
+          "forcedDisconnects": 0,
+          "isolatedClientProcesses": 0
+        },
+        {
+          "engine": "typescript",
+          "scenario": "generated-6",
+          "wireAssertions": 29,
+          "sentMessages": 55,
+          "acceptedChatMessages": 38,
+          "disconnects": 1,
+          "reconnects": 1,
+          "concurrentSends": 34,
+          "forcedDisconnects": 0,
+          "isolatedClientProcesses": 0
+        },
+        {
+          "engine": "typescript",
+          "scenario": "generated-7",
+          "wireAssertions": 29,
+          "sentMessages": 58,
+          "acceptedChatMessages": 41,
+          "disconnects": 1,
+          "reconnects": 1,
+          "concurrentSends": 37,
+          "forcedDisconnects": 0,
+          "isolatedClientProcesses": 0
+        }
+      ],
+      "abruptRuns": [
+        {
+          "engine": "native",
+          "scenario": "abrupt-process-disconnect",
+          "wireAssertions": 19,
+          "sentMessages": 13,
+          "acceptedChatMessages": 3,
+          "disconnects": 1,
+          "reconnects": 1,
+          "concurrentSends": 0,
+          "forcedDisconnects": 1,
+          "isolatedClientProcesses": 1
+        },
+        {
+          "engine": "reference",
+          "scenario": "abrupt-process-disconnect",
+          "wireAssertions": 19,
+          "sentMessages": 13,
+          "acceptedChatMessages": 3,
+          "disconnects": 1,
+          "reconnects": 1,
+          "concurrentSends": 0,
+          "forcedDisconnects": 1,
+          "isolatedClientProcesses": 1
+        },
+        {
+          "engine": "typescript",
+          "scenario": "abrupt-process-disconnect",
+          "wireAssertions": 19,
+          "sentMessages": 13,
+          "acceptedChatMessages": 3,
+          "disconnects": 1,
+          "reconnects": 1,
+          "concurrentSends": 0,
+          "forcedDisconnects": 1,
+          "isolatedClientProcesses": 1
+        }
+      ],
+      "counterBoundaryRuns": [
+        {
+          "engine": "native",
+          "scenario": "maximum-sequence",
+          "wireAssertions": 8,
+          "sentMessages": 6,
+          "acceptedChatMessages": 0,
+          "disconnects": 0,
+          "reconnects": 0,
+          "concurrentSends": 0,
+          "forcedDisconnects": 0,
+          "isolatedClientProcesses": 0
+        },
+        {
+          "engine": "reference",
+          "scenario": "maximum-sequence",
+          "wireAssertions": 8,
+          "sentMessages": 6,
+          "acceptedChatMessages": 0,
+          "disconnects": 0,
+          "reconnects": 0,
+          "concurrentSends": 0,
+          "forcedDisconnects": 0,
+          "isolatedClientProcesses": 0
+        },
+        {
+          "engine": "typescript",
+          "scenario": "maximum-sequence",
+          "wireAssertions": 8,
+          "sentMessages": 6,
+          "acceptedChatMessages": 0,
+          "disconnects": 0,
+          "reconnects": 0,
+          "concurrentSends": 0,
+          "forcedDisconnects": 0,
+          "isolatedClientProcesses": 0
+        }
+      ],
+      "wireAssertions": 981,
+      "sentMessages": 3093,
+      "acceptedChatMessages": 2526,
+      "disconnects": 30,
+      "concurrentSends": 2388,
+      "forcedDisconnects": 3,
+      "isolatedClientProcesses": 3,
+      "seededFaultsRejected": [
+        {
+          "engine": "native",
+          "id": "room-leak",
+          "rejectedByWireAssertions": true
+        },
+        {
+          "engine": "native",
+          "id": "sequence-reuse",
+          "rejectedByWireAssertions": true
+        },
+        {
+          "engine": "native",
+          "id": "disconnect-retained",
+          "rejectedByWireAssertions": true
+        },
+        {
+          "engine": "reference",
+          "id": "room-leak",
+          "rejectedByWireAssertions": true
+        },
+        {
+          "engine": "reference",
+          "id": "sequence-reuse",
+          "rejectedByWireAssertions": true
+        },
+        {
+          "engine": "reference",
+          "id": "disconnect-retained",
+          "rejectedByWireAssertions": true
+        },
+        {
+          "engine": "typescript",
+          "id": "room-leak",
+          "rejectedByWireAssertions": true
+        },
+        {
+          "engine": "typescript",
+          "id": "sequence-reuse",
+          "rejectedByWireAssertions": true
+        },
+        {
+          "engine": "typescript",
+          "id": "disconnect-retained",
+          "rejectedByWireAssertions": true
+        }
+      ],
+      "independentNodeWebSocketClients": true,
+      "sharedReferenceTransport": true,
+      "independentTypeScriptPolicy": true,
+      "compiledJavaScript": {
+        "utf8Bytes": 18408,
+        "sha256": "a23549128b694025adec44c2a447cd8da62e6db125d8f886e9290b0a03521108"
+      },
+      "globallyVerified70Percent": false,
+      "workloadId": "17-websocket-chat",
+      "acceptance": "two isolated clients, room join, ordered message delivery and disconnect",
+      "originalRegistryGitBlobSha": "46653ef90ffb3e420fba4ddfbfac3c4cfd57f3b3",
+      "contractCommit": "6489e6d8a9b9997a71da7af29d6ba063858d664e",
+      "concreteFixtureEstablishedOn": "2026-10-20",
+      "preexistingConcreteTask17Fixture": false,
+      "nativeRustCompiler": true,
+      "independentHCodeJSReference": true,
+      "authoredSource": {
+        "hcode": {
+          "files": [
+            {
+              "path": "compact/canonical20/chat17/hcode/main.hc",
+              "gitBlobSha": "98a10aaf17165fd8896a5bbaf69b4eaa5dc79703",
+              "unicodeCodepoints": 1689,
+              "utf8Bytes": 2065
+            }
+          ],
+          "unicodeCodepoints": 1689,
+          "utf8Bytes": 2065
+        },
+        "typescript": {
+          "files": [
+            {
+              "path": "compact/canonical20/chat17/typescript/main.ts",
+              "gitBlobSha": "4856b898377aedbed5f277a2315910db8b3f9219",
+              "unicodeCodepoints": 3968,
+              "utf8Bytes": 3968
+            }
+          ],
+          "unicodeCodepoints": 3968,
+          "utf8Bytes": 3968
+        }
+      },
+      "sourceCompression": {
+        "unicodeCodepointReductionPct": 57.43,
+        "utf8ByteReductionPct": 47.96
+      },
+      "sharedFixtures": {
+        "unicodeCodepoints": 1257,
+        "utf8Bytes": 1272
+      },
+      "includingSharedFixtures": {
+        "hcode": {
+          "unicodeCodepoints": 2946,
+          "utf8Bytes": 3337
+        },
+        "typescript": {
+          "unicodeCodepoints": 5225,
+          "utf8Bytes": 5240
+        }
+      },
+      "includingSharedFixtureCompression": {
+        "unicodeCodepointReductionPct": 43.62,
+        "utf8ByteReductionPct": 36.32
+      },
+      "externalPackageDependencies": 1,
+      "maintainedDependency": {
+        "name": "ws",
+        "version": "8.22.0",
+        "integrity": "sha512-Ydggc987+RO0AnWtZ/7Wq9FtNvcrL1b/RO0ud9mWjUPgDrsAAwQSF51sm2hm1XofbU/4jkpGEsLFsZZxU+1DOg==",
+        "files": [
+          {
+            "path": "browser.js",
+            "utf8Bytes": 176,
+            "sha256": "010da44addea1d88b2b732540c3f1fd0cbcb28926b96623d4c64222e0ead2d0e"
+          },
+          {
+            "path": "index.js",
+            "utf8Bytes": 796,
+            "sha256": "924564d5be26d59b9682c4263f68320e48dde7240bd2d1ad17ec305537429dd2"
+          },
+          {
+            "path": "lib/buffer-util.js",
+            "utf8Bytes": 3056,
+            "sha256": "8b0a45739132f82e25ea13163780abf547ccfe989267f3eb7abb475beec92da3"
+          },
+          {
+            "path": "lib/constants.js",
+            "utf8Bytes": 503,
+            "sha256": "391e823142b8b370e55a2fd32b022deaf03b8415c56000009674ebc86a0b4f86"
+          },
+          {
+            "path": "lib/event-target.js",
+            "utf8Bytes": 7321,
+            "sha256": "c45d3c6e12d170c860c0c3f1a050aa0f864d9806632b609a1e607d675aba128c"
+          },
+          {
+            "path": "lib/extension.js",
+            "utf8Bytes": 6183,
+            "sha256": "852564f0f6b460287043803eae732666fb5610f676874354fc89f06aa4e986ed"
+          },
+          {
+            "path": "lib/limiter.js",
+            "utf8Bytes": 1034,
+            "sha256": "e0469d4b83f6ba764b15f80e1766b75c136fbff68f048f4c050f0b1c7f065f69"
+          },
+          {
+            "path": "lib/permessage-deflate.js",
+            "utf8Bytes": 14669,
+            "sha256": "16a91536988a53c23047ee5882392068728a839a244178c3b09b8c54982f58b0"
+          },
+          {
+            "path": "lib/receiver.js",
+            "utf8Bytes": 17439,
+            "sha256": "a6ada33c9a2d54eaf595824b821ea89ca2c6395f89aa06755c52142148274884"
+          },
+          {
+            "path": "lib/sender.js",
+            "utf8Bytes": 16886,
+            "sha256": "d0791d30c3defd44dcabbddb879a901c757993fea2c00a7ffea01d53b23b4b77"
+          },
+          {
+            "path": "lib/stream.js",
+            "utf8Bytes": 4204,
+            "sha256": "a56fcb6e2b152097ee820b6f5410b1f71e59819b45d08d9f8bda588fe39070ec"
+          },
+          {
+            "path": "lib/subprotocol.js",
+            "utf8Bytes": 1498,
+            "sha256": "be3f6323d6f549568577dcba9004c1479d95c65a7abb0fe0c582875b9fac0b7c"
+          },
+          {
+            "path": "lib/validation.js",
+            "utf8Bytes": 3903,
+            "sha256": "41ce8e83d0d434132e1704895fedb91f6703a701b42d91c80954ab29b2845593"
+          },
+          {
+            "path": "lib/websocket-server.js",
+            "utf8Bytes": 17022,
+            "sha256": "6d8dd89a841748c80445fd5fcdb5ba8005369b53cc3525135e11304c8b9c55e5"
+          },
+          {
+            "path": "lib/websocket.js",
+            "utf8Bytes": 37848,
+            "sha256": "7ccf305925f0cdb74e06b75b4c84de134b1bd771a220ef409b24520def08128f"
+          },
+          {
+            "path": "LICENSE",
+            "utf8Bytes": 1183,
+            "sha256": "2b29dcfe0d6471f7e8c92c5fb38c9f93edee10330937055440192f1832b1ecef"
+          },
+          {
+            "path": "package.json",
+            "utf8Bytes": 1829,
+            "sha256": "c1ef91ca04eb4754c011c5f0e7638b5078ff71104fada400c44ac761cf93e0b1"
+          },
+          {
+            "path": "README.md",
+            "utf8Bytes": 15306,
+            "sha256": "bb979132f3cbff08ce47f36d041e18071f8f534d01f591c0b129ba7abf1e480e"
+          },
+          {
+            "path": "wrapper.mjs",
+            "utf8Bytes": 554,
+            "sha256": "fe154662301fd558f935f9c217fccbe7a7dac02ff39e648a000589403ff27c7f"
+          }
+        ],
+        "totalBytes": 151410
+      },
+      "minimumProofNodeVersion": "22.13.0",
+      "sharedDependencyMetadataBytes": 2113,
+      "limitations": "Only task17. Independent language evaluator shares the generic transport with native; TypeScript owns separate application/routing logic but both use maintained ws. Primary clients use Node standard WebSocket; forced-disconnect clients run in separate killed processes. Counter-boundary runs use temporary initialization variants. No authentication, TLS, persistence, offline delivery or multi-process room claim. Complete app source includes configuration, protocol/input and transport glue. Shared JSON, dependency/metadata and emitted runtime are separate. No global median, runtime-performance or AI-token claim."
+    },
+    "18-refactor-task": {
+      "workloadId": "18-refactor-task",
+      "kind": "full-compiler-evidence",
+      "acceptance": "refactor a frozen baseline without modifying its required behavior or assertions",
+      "originalRegistryGitBlobSha": "46653ef90ffb3e420fba4ddfbfac3c4cfd57f3b3",
+      "baselineCommit": "43d49ba2529befc10210062eaa4128ff9260a2b0",
+      "concreteFixtureEstablishedOn": "2026-10-19",
+      "preexistingConcreteFixture": false,
+      "frozenAssertionsUnchanged": true,
+      "nativeRustCompiler": true,
+      "independentIdiomaticTypeScript": true,
+      "independentHCodeJSReference": false,
+      "fixedInputCasesVerified": 12,
+      "additionalGeneratedInputCasesVerified": 32,
+      "fixedRuns": [
+        {
+          "variant": "baseline",
+          "language": "hcode",
+          "inputCases": 12,
+          "tests": 2,
+          "assertions": 72
+        },
+        {
+          "variant": "baseline",
+          "language": "typescript",
+          "inputCases": 12,
+          "tests": 24
+        },
+        {
+          "variant": "refactored",
+          "language": "hcode",
+          "inputCases": 12,
+          "tests": 2,
+          "assertions": 72
+        },
+        {
+          "variant": "refactored",
+          "language": "typescript",
+          "inputCases": 12,
+          "tests": 24
+        }
+      ],
+      "generatedRuns": [
+        {
+          "variant": "baseline",
+          "language": "hcode",
+          "inputCases": 32,
+          "tests": 2,
+          "assertions": 192
+        },
+        {
+          "variant": "baseline",
+          "language": "typescript",
+          "inputCases": 32,
+          "tests": 64
+        },
+        {
+          "variant": "refactored",
+          "language": "hcode",
+          "inputCases": 32,
+          "tests": 2,
+          "assertions": 192
+        },
+        {
+          "variant": "refactored",
+          "language": "typescript",
+          "inputCases": 32,
+          "tests": 64
+        }
+      ],
+      "typeScriptLargeArrayRegression": {
+        "elements": 200000,
+        "runs": [
+          {
+            "variant": "baseline",
+            "language": "typescript",
+            "inputCases": 1,
+            "tests": 2
+          },
+          {
+            "variant": "refactored",
+            "language": "typescript",
+            "inputCases": 1,
+            "tests": 2
+          }
+        ],
+        "nativeCoverageClaimed": false
+      },
+      "seededFaultsRejected": [
+        {
+          "language": "hcode",
+          "id": "zero-total",
+          "rejectedByAssertions": true
+        },
+        {
+          "language": "hcode",
+          "id": "zero-minimum",
+          "rejectedByAssertions": true
+        },
+        {
+          "language": "hcode",
+          "id": "zero-is-positive",
+          "rejectedByAssertions": true
+        },
+        {
+          "language": "typescript",
+          "id": "zero-total",
+          "rejectedByAssertions": true
+        },
+        {
+          "language": "typescript",
+          "id": "zero-minimum",
+          "rejectedByAssertions": true
+        },
+        {
+          "language": "typescript",
+          "id": "zero-is-positive",
+          "rejectedByAssertions": true
+        }
+      ],
+      "authoredSource": {
+        "baseline": {
+          "hcode": {
+            "files": [
+              {
+                "path": "compact/canonical20/refactor18/baseline/hcode/report.hc",
+                "gitBlobSha": "1224aa4d8e9a41917c1968064f94e73c37216822",
+                "unicodeCodepoints": 178,
+                "utf8Bytes": 204
+              },
+              {
+                "path": "compact/canonical20/refactor18/baseline/hcode/report.test.hc",
+                "gitBlobSha": "c70c3e0a48407b55156b5ee0b615761261593a7c",
+                "unicodeCodepoints": 287,
+                "utf8Bytes": 355
+              },
+              {
+                "path": "compact/canonical20/refactor18/baseline/hcode/statistics.hc",
+                "gitBlobSha": "eb8f7091b6ee6d8efcdcfa50bc4d610de0ba8fb8",
+                "unicodeCodepoints": 862,
+                "utf8Bytes": 1006
+              },
+              {
+                "path": "compact/canonical20/refactor18/baseline/hcode/statistics.test.hc",
+                "gitBlobSha": "b32f818cdb248ef1d8928881f2ad6fa8d966dca2",
+                "unicodeCodepoints": 291,
+                "utf8Bytes": 363
+              }
+            ],
+            "unicodeCodepoints": 1618,
+            "utf8Bytes": 1928
+          },
+          "typescript": {
+            "files": [
+              {
+                "path": "compact/canonical20/refactor18/baseline/typescript/fixtures.ts",
+                "gitBlobSha": "333a0d51699e77cc5f5404d9bdf4f98f7f2776bc",
+                "unicodeCodepoints": 212,
+                "utf8Bytes": 212
+              },
+              {
+                "path": "compact/canonical20/refactor18/baseline/typescript/report.test.ts",
+                "gitBlobSha": "b2e3945555e98ed884380ec48c76ff76e5b18855",
+                "unicodeCodepoints": 432,
+                "utf8Bytes": 432
+              },
+              {
+                "path": "compact/canonical20/refactor18/baseline/typescript/report.ts",
+                "gitBlobSha": "0b2eb763c97bcded413f2441cbef9fad78f43d91",
+                "unicodeCodepoints": 249,
+                "utf8Bytes": 249
+              },
+              {
+                "path": "compact/canonical20/refactor18/baseline/typescript/statistics.test.ts",
+                "gitBlobSha": "59712c88b4eab3cb94c0f671878f60f35f923324",
+                "unicodeCodepoints": 480,
+                "utf8Bytes": 480
+              },
+              {
+                "path": "compact/canonical20/refactor18/baseline/typescript/statistics.ts",
+                "gitBlobSha": "2e049932971e48575d691c60e052a2a667497954",
+                "unicodeCodepoints": 851,
+                "utf8Bytes": 851
+              },
+              {
+                "path": "compact/canonical20/refactor18/baseline/typescript/types.ts",
+                "gitBlobSha": "a354f29a04a8401a2d85d652784ddca95c05cb7f",
+                "unicodeCodepoints": 115,
+                "utf8Bytes": 115
+              }
+            ],
+            "unicodeCodepoints": 2339,
+            "utf8Bytes": 2339
+          }
+        },
+        "refactored": {
+          "hcode": {
+            "files": [
+              {
+                "path": "compact/canonical20/refactor18/refactored/hcode/core.hc",
+                "gitBlobSha": "2de27752994edd7adde2916746d5b221370e137a",
+                "unicodeCodepoints": 401,
+                "utf8Bytes": 470
+              },
+              {
+                "path": "compact/canonical20/refactor18/refactored/hcode/report.hc",
+                "gitBlobSha": "1224aa4d8e9a41917c1968064f94e73c37216822",
+                "unicodeCodepoints": 178,
+                "utf8Bytes": 204
+              },
+              {
+                "path": "compact/canonical20/refactor18/refactored/hcode/report.test.hc",
+                "gitBlobSha": "c70c3e0a48407b55156b5ee0b615761261593a7c",
+                "unicodeCodepoints": 287,
+                "utf8Bytes": 355
+              },
+              {
+                "path": "compact/canonical20/refactor18/refactored/hcode/statistics.hc",
+                "gitBlobSha": "e130e07a2106de4b62c3b108def4d5ae651deef0",
+                "unicodeCodepoints": 156,
+                "utf8Bytes": 176
+              },
+              {
+                "path": "compact/canonical20/refactor18/refactored/hcode/statistics.test.hc",
+                "gitBlobSha": "b32f818cdb248ef1d8928881f2ad6fa8d966dca2",
+                "unicodeCodepoints": 291,
+                "utf8Bytes": 363
+              }
+            ],
+            "unicodeCodepoints": 1313,
+            "utf8Bytes": 1568
+          },
+          "typescript": {
+            "files": [
+              {
+                "path": "compact/canonical20/refactor18/refactored/typescript/core.ts",
+                "gitBlobSha": "d7be10802fc91d2711f64eb6472c2900173dc042",
+                "unicodeCodepoints": 423,
+                "utf8Bytes": 423
+              },
+              {
+                "path": "compact/canonical20/refactor18/refactored/typescript/fixtures.ts",
+                "gitBlobSha": "333a0d51699e77cc5f5404d9bdf4f98f7f2776bc",
+                "unicodeCodepoints": 212,
+                "utf8Bytes": 212
+              },
+              {
+                "path": "compact/canonical20/refactor18/refactored/typescript/report.test.ts",
+                "gitBlobSha": "b2e3945555e98ed884380ec48c76ff76e5b18855",
+                "unicodeCodepoints": 432,
+                "utf8Bytes": 432
+              },
+              {
+                "path": "compact/canonical20/refactor18/refactored/typescript/report.ts",
+                "gitBlobSha": "0b2eb763c97bcded413f2441cbef9fad78f43d91",
+                "unicodeCodepoints": 249,
+                "utf8Bytes": 249
+              },
+              {
+                "path": "compact/canonical20/refactor18/refactored/typescript/statistics.test.ts",
+                "gitBlobSha": "59712c88b4eab3cb94c0f671878f60f35f923324",
+                "unicodeCodepoints": 480,
+                "utf8Bytes": 480
+              },
+              {
+                "path": "compact/canonical20/refactor18/refactored/typescript/statistics.ts",
+                "gitBlobSha": "6ca79b8a6953f839ee1c20a106b3ccde7702f78a",
+                "unicodeCodepoints": 157,
+                "utf8Bytes": 157
+              },
+              {
+                "path": "compact/canonical20/refactor18/refactored/typescript/types.ts",
+                "gitBlobSha": "a354f29a04a8401a2d85d652784ddca95c05cb7f",
+                "unicodeCodepoints": 115,
+                "utf8Bytes": 115
+              }
+            ],
+            "unicodeCodepoints": 2068,
+            "utf8Bytes": 2068
+          }
+        }
+      },
+      "sourceCompression": {
+        "baselineVsTypeScript": {
+          "unicodeCodepointReductionPct": 30.83,
+          "utf8ByteReductionPct": 17.57
+        },
+        "refactoredVsTypeScript": {
+          "unicodeCodepointReductionPct": 36.51,
+          "utf8ByteReductionPct": 24.18
+        },
+        "hcodeRefactor": {
+          "unicodeCodepointReductionPct": 18.85,
+          "utf8ByteReductionPct": 18.67
+        }
+      },
+      "sharedFixture": {
+        "unicodeCodepoints": 3076,
+        "utf8Bytes": 3076
+      },
+      "includingSharedFixture": {
+        "baseline": {
+          "hcode": {
+            "unicodeCodepoints": 4694,
+            "utf8Bytes": 5004
+          },
+          "typescript": {
+            "unicodeCodepoints": 5415,
+            "utf8Bytes": 5415
+          }
+        },
+        "refactored": {
+          "hcode": {
+            "unicodeCodepoints": 4389,
+            "utf8Bytes": 4644
+          },
+          "typescript": {
+            "unicodeCodepoints": 5144,
+            "utf8Bytes": 5144
+          }
+        }
+      },
+      "includingSharedFixtureCompression": {
+        "unicodeCodepointReductionPct": 14.68,
+        "utf8ByteReductionPct": 9.72
+      },
+      "generatedJavaScript": {
+        "baseline": {
+          "files": [
+            {
+              "source": "report.test.hc",
+              "utf8Bytes": 15478,
+              "sha256": "e8ab110654af45199d2b72ea8b84d666b4b82a497899cd6ad33aa2cdb867ff4e"
+            },
+            {
+              "source": "statistics.test.hc",
+              "utf8Bytes": 13843,
+              "sha256": "9ed392ea3ac58aaa9b562c253f1bc39112958e091cc9886364e4f4e6788d7c7f"
+            }
+          ],
+          "totalBytes": 29321
+        },
+        "refactored": {
+          "files": [
+            {
+              "source": "report.test.hc",
+              "utf8Bytes": 15342,
+              "sha256": "3d11d4c19c4c14ffcf654870cedfb4bb502f7a826e4f9eb529516e97d17b3874"
+            },
+            {
+              "source": "statistics.test.hc",
+              "utf8Bytes": 13679,
+              "sha256": "78550c5ec55337a1a6f7648ce7769a639a5cbf2444a5f1ec429bfba905821332"
+            }
+          ],
+          "totalBytes": 29021
+        }
+      },
+      "externalPackageDependencies": 0,
+      "globallyVerified70Percent": false,
+      "limitations": "Only task18. All project modules, types, fixture readers and tests count as authored source. Shared JSON input is separate and included in alternate totals. Generated JS includes duplicated runtime per test file. No speed, AI-token, toolchain-size or global median claim. The JS reference has no local module loader and is not counted."
+    },
+    "19-bug-repair-task": {
+      "workloadId": "19-bug-repair-task",
+      "kind": "full-compiler-evidence",
+      "acceptance": "reproduce seeded failure, fix actual root cause and verify regression test",
+      "originalRegistryGitBlobSha": "46653ef90ffb3e420fba4ddfbfac3c4cfd57f3b3",
+      "seedCommit": "ced043c5668d3563c51cf25049e36bff2c33a0ef",
+      "deliberatelySeeded": true,
+      "concreteFixtureEstablishedOn": "2026-10-20",
+      "oldAssertionsUnchanged": true,
+      "regressionAssertionsUnchanged": true,
+      "minimalRootCauseRepair": true,
+      "oldSuiteRuns": [
+        {
+          "variant": "seeded",
+          "language": "hcode",
+          "inputCases": 12,
+          "tests": 2,
+          "assertions": 72
+        },
+        {
+          "variant": "fixed",
+          "language": "hcode",
+          "inputCases": 12,
+          "tests": 2,
+          "assertions": 72
+        },
+        {
+          "variant": "seeded",
+          "language": "typescript",
+          "inputCases": 12,
+          "tests": 24
+        },
+        {
+          "variant": "fixed",
+          "language": "typescript",
+          "inputCases": 12,
+          "tests": 24
+        }
+      ],
+      "reproductions": [
+        {
+          "language": "hcode",
+          "id": "maximum-after-window",
+          "failedByAssertion": true
+        },
+        {
+          "language": "hcode",
+          "id": "minimum-after-window",
+          "failedByAssertion": true
+        },
+        {
+          "language": "hcode",
+          "id": "filtered-tail",
+          "failedByAssertion": true
+        },
+        {
+          "language": "hcode",
+          "id": "long-negative-tail",
+          "failedByAssertion": true
+        },
+        {
+          "language": "hcode",
+          "id": "fractional-tail",
+          "failedByAssertion": true
+        },
+        {
+          "language": "typescript",
+          "id": "maximum-after-window",
+          "failedByAssertion": true
+        },
+        {
+          "language": "typescript",
+          "id": "minimum-after-window",
+          "failedByAssertion": true
+        },
+        {
+          "language": "typescript",
+          "id": "filtered-tail",
+          "failedByAssertion": true
+        },
+        {
+          "language": "typescript",
+          "id": "long-negative-tail",
+          "failedByAssertion": true
+        },
+        {
+          "language": "typescript",
+          "id": "fractional-tail",
+          "failedByAssertion": true
+        }
+      ],
+      "controls": [
+        {
+          "language": "hcode",
+          "id": "window-control",
+          "passed": true
+        },
+        {
+          "language": "typescript",
+          "id": "window-control",
+          "passed": true
+        }
+      ],
+      "fixedRuns": [
+        {
+          "variant": "fixed",
+          "language": "hcode",
+          "inputCases": 18,
+          "tests": 3,
+          "assertions": 102
+        },
+        {
+          "variant": "fixed",
+          "language": "typescript",
+          "inputCases": 18,
+          "tests": 30
+        }
+      ],
+      "additionalGeneratedInputCasesVerified": 32,
+      "generatedRuns": [
+        {
+          "variant": "fixed-generated",
+          "language": "hcode",
+          "inputCases": 44,
+          "tests": 3,
+          "assertions": 232
+        },
+        {
+          "variant": "fixed-generated",
+          "language": "typescript",
+          "inputCases": 44,
+          "tests": 56
+        }
+      ],
+      "reintroducedRuns": [
+        {
+          "language": "hcode",
+          "failedByAssertion": true,
+          "oldTestsStillPass": true
+        },
+        {
+          "language": "typescript",
+          "failedByAssertion": true,
+          "oldTestsStillPass": true
+        }
+      ],
+      "nativeRustCompiler": true,
+      "independentIdiomaticTypeScript": true,
+      "independentHCodeJSReference": false,
+      "authoredSource": {
+        "hcode": {
+          "files": [
+            {
+              "path": "compact/canonical20/bug19/fixed/hcode/core.hc",
+              "gitBlobSha": "2de27752994edd7adde2916746d5b221370e137a",
+              "unicodeCodepoints": 401,
+              "utf8Bytes": 470
+            },
+            {
+              "path": "compact/canonical20/bug19/fixed/hcode/regression.test.hc",
+              "gitBlobSha": "9ecb63f7df848f9c40d464cfb968a87bb1e3ee01",
+              "unicodeCodepoints": 415,
+              "utf8Bytes": 503
+            },
+            {
+              "path": "compact/canonical20/bug19/fixed/hcode/report.hc",
+              "gitBlobSha": "1224aa4d8e9a41917c1968064f94e73c37216822",
+              "unicodeCodepoints": 178,
+              "utf8Bytes": 204
+            },
+            {
+              "path": "compact/canonical20/bug19/fixed/hcode/report.test.hc",
+              "gitBlobSha": "c70c3e0a48407b55156b5ee0b615761261593a7c",
+              "unicodeCodepoints": 287,
+              "utf8Bytes": 355
+            },
+            {
+              "path": "compact/canonical20/bug19/fixed/hcode/statistics.hc",
+              "gitBlobSha": "e130e07a2106de4b62c3b108def4d5ae651deef0",
+              "unicodeCodepoints": 156,
+              "utf8Bytes": 176
+            },
+            {
+              "path": "compact/canonical20/bug19/fixed/hcode/statistics.test.hc",
+              "gitBlobSha": "b32f818cdb248ef1d8928881f2ad6fa8d966dca2",
+              "unicodeCodepoints": 291,
+              "utf8Bytes": 363
+            }
+          ],
+          "unicodeCodepoints": 1728,
+          "utf8Bytes": 2071
+        },
+        "typescript": {
+          "files": [
+            {
+              "path": "compact/canonical20/bug19/fixed/typescript/core.ts",
+              "gitBlobSha": "d7be10802fc91d2711f64eb6472c2900173dc042",
+              "unicodeCodepoints": 423,
+              "utf8Bytes": 423
+            },
+            {
+              "path": "compact/canonical20/bug19/fixed/typescript/fixtures.ts",
+              "gitBlobSha": "333a0d51699e77cc5f5404d9bdf4f98f7f2776bc",
+              "unicodeCodepoints": 212,
+              "utf8Bytes": 212
+            },
+            {
+              "path": "compact/canonical20/bug19/fixed/typescript/regression.test.ts",
+              "gitBlobSha": "0991a0b809efa07b7113cc965700b5f8922498d0",
+              "unicodeCodepoints": 806,
+              "utf8Bytes": 806
+            },
+            {
+              "path": "compact/canonical20/bug19/fixed/typescript/report.test.ts",
+              "gitBlobSha": "b2e3945555e98ed884380ec48c76ff76e5b18855",
+              "unicodeCodepoints": 432,
+              "utf8Bytes": 432
+            },
+            {
+              "path": "compact/canonical20/bug19/fixed/typescript/report.ts",
+              "gitBlobSha": "0b2eb763c97bcded413f2441cbef9fad78f43d91",
+              "unicodeCodepoints": 249,
+              "utf8Bytes": 249
+            },
+            {
+              "path": "compact/canonical20/bug19/fixed/typescript/statistics.test.ts",
+              "gitBlobSha": "59712c88b4eab3cb94c0f671878f60f35f923324",
+              "unicodeCodepoints": 480,
+              "utf8Bytes": 480
+            },
+            {
+              "path": "compact/canonical20/bug19/fixed/typescript/statistics.ts",
+              "gitBlobSha": "6ca79b8a6953f839ee1c20a106b3ccde7702f78a",
+              "unicodeCodepoints": 157,
+              "utf8Bytes": 157
+            },
+            {
+              "path": "compact/canonical20/bug19/fixed/typescript/types.ts",
+              "gitBlobSha": "a354f29a04a8401a2d85d652784ddca95c05cb7f",
+              "unicodeCodepoints": 115,
+              "utf8Bytes": 115
+            }
+          ],
+          "unicodeCodepoints": 2874,
+          "utf8Bytes": 2874
+        }
+      },
+      "sourceCompression": {
+        "unicodeCodepointReductionPct": 39.87,
+        "utf8ByteReductionPct": 27.94
+      },
+      "sharedFixtures": {
+        "unicodeCodepoints": 5805,
+        "utf8Bytes": 5805
+      },
+      "includingSharedFixtures": {
+        "hcode": {
+          "unicodeCodepoints": 7533,
+          "utf8Bytes": 7876
+        },
+        "typescript": {
+          "unicodeCodepoints": 8679,
+          "utf8Bytes": 8679
+        }
+      },
+      "includingSharedFixtureCompression": {
+        "unicodeCodepointReductionPct": 13.2,
+        "utf8ByteReductionPct": 9.25
+      },
+      "generatedJavaScript": {
+        "files": [
+          {
+            "source": "report.test.hc",
+            "utf8Bytes": 15157,
+            "sha256": "733ec1704c734ef70c75c4b2d2e91974870597f78f5caf8267a72ff74f36614c"
+          },
+          {
+            "source": "statistics.test.hc",
+            "utf8Bytes": 13564,
+            "sha256": "0838d88ed2adb0cf67dd6b5cb30191280f80b2669f8bb8993af9c6786160eb0f"
+          },
+          {
+            "source": "regression.test.hc",
+            "utf8Bytes": 15746,
+            "sha256": "dd7ac9b49446fa5b8782de9de56624bbcf9738958e5c6959de1e64fd959a0d24"
+          }
+        ],
+        "totalBytes": 44467
+      },
+      "externalPackageDependencies": 0,
+      "globallyVerified70Percent": false,
+      "limitations": "Only task19. Seed and repair are benchmark fixtures, not a production incident or timing study. All modules, old/new tests, types and fixture readers count. Both shared JSON files have separate and inclusive totals. Generated runtime is separate and depends on resolved paths. The JS reference has no local module loader. No global median, performance or AI-token claim."
+    },
+    "20-incremental-feature": {
+      "workloadId": "20-incremental-feature",
+      "kind": "full-compiler-evidence",
+      "acceptance": "extend frozen starter app while retaining all prior behavior and passing new acceptance",
+      "originalRegistryGitBlobSha": "46653ef90ffb3e420fba4ddfbfac3c4cfd57f3b3",
+      "starterCommit": "c76bdf492ddb52a315b00fdc0df54946fc29e1e8",
+      "concreteFixtureEstablishedOn": "2026-10-20",
+      "preexistingConcreteTask20Fixture": false,
+      "oldAssertionsUnchanged": true,
+      "newAssertionsUnchanged": true,
+      "oldEntryPointUnchanged": true,
+      "originalModuleSourceRetained": true,
+      "red": {
+        "typeScriptMissingFeatureAssertionFailures": 10,
+        "nativeStarterHasNoRangeOperation": true,
+        "nativeCompilerErrorCountedAsAssertionFailure": false
+      },
+      "oldSuiteRuns": [
+        {
+          "variant": "starter",
+          "language": "hcode",
+          "inputCases": 12,
+          "tests": 2,
+          "assertions": 72
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "inputCases": 12,
+          "tests": 2,
+          "assertions": 72
+        },
+        {
+          "variant": "starter",
+          "language": "typescript",
+          "inputCases": 12,
+          "tests": 24
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "inputCases": 12,
+          "tests": 24
+        }
+      ],
+      "fullRuns": [
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "inputCases": 22,
+          "tests": 3,
+          "assertions": 102
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "inputCases": 22,
+          "tests": 34
+        }
+      ],
+      "generatedRuns": [
+        {
+          "variant": "extended-generated",
+          "language": "hcode",
+          "inputCases": 44,
+          "tests": 3,
+          "assertions": 168
+        },
+        {
+          "variant": "extended-generated",
+          "language": "typescript",
+          "inputCases": 44,
+          "tests": 56
+        }
+      ],
+      "cliRuns": [
+        {
+          "variant": "starter",
+          "language": "hcode",
+          "id": "empty",
+          "entry": "main",
+          "inputKind": "valid",
+          "passed": true
+        },
+        {
+          "variant": "starter",
+          "language": "hcode",
+          "id": "singleton",
+          "entry": "main",
+          "inputKind": "valid",
+          "passed": true
+        },
+        {
+          "variant": "starter",
+          "language": "hcode",
+          "id": "negative-singleton",
+          "entry": "main",
+          "inputKind": "valid",
+          "passed": true
+        },
+        {
+          "variant": "starter",
+          "language": "hcode",
+          "id": "all-zero",
+          "entry": "main",
+          "inputKind": "valid",
+          "passed": true
+        },
+        {
+          "variant": "starter",
+          "language": "hcode",
+          "id": "unsorted",
+          "entry": "main",
+          "inputKind": "valid",
+          "passed": true
+        },
+        {
+          "variant": "starter",
+          "language": "hcode",
+          "id": "mixed-duplicates",
+          "entry": "main",
+          "inputKind": "valid",
+          "passed": true
+        },
+        {
+          "variant": "starter",
+          "language": "hcode",
+          "id": "fractions",
+          "entry": "main",
+          "inputKind": "valid",
+          "passed": true
+        },
+        {
+          "variant": "starter",
+          "language": "hcode",
+          "id": "balanced-extrema",
+          "entry": "main",
+          "inputKind": "valid",
+          "passed": true
+        },
+        {
+          "variant": "starter",
+          "language": "hcode",
+          "id": "equal-extrema",
+          "entry": "main",
+          "inputKind": "valid",
+          "passed": true
+        },
+        {
+          "variant": "starter",
+          "language": "hcode",
+          "id": "negative-only",
+          "entry": "main",
+          "inputKind": "valid",
+          "passed": true
+        },
+        {
+          "variant": "starter",
+          "language": "hcode",
+          "id": "zero-total",
+          "entry": "main",
+          "inputKind": "valid",
+          "passed": true
+        },
+        {
+          "variant": "starter",
+          "language": "hcode",
+          "id": "ascending",
+          "entry": "main",
+          "inputKind": "valid",
+          "passed": true
+        },
+        {
+          "variant": "starter",
+          "language": "hcode",
+          "id": "empty",
+          "entry": "main",
+          "inputKind": "invalid",
+          "passed": true
+        },
+        {
+          "variant": "starter",
+          "language": "hcode",
+          "id": "wrong-element",
+          "entry": "main",
+          "inputKind": "invalid",
+          "passed": true
+        },
+        {
+          "variant": "starter",
+          "language": "hcode",
+          "id": "wrong-shape",
+          "entry": "main",
+          "inputKind": "invalid",
+          "passed": true
+        },
+        {
+          "variant": "starter",
+          "language": "hcode",
+          "id": "overflow",
+          "entry": "main",
+          "inputKind": "invalid",
+          "passed": true
+        },
+        {
+          "variant": "starter",
+          "language": "hcode",
+          "id": "null",
+          "entry": "main",
+          "inputKind": "invalid",
+          "passed": true
+        },
+        {
+          "variant": "starter",
+          "language": "hcode",
+          "id": "malformed",
+          "entry": "main",
+          "inputKind": "invalid",
+          "passed": true
+        },
+        {
+          "variant": "starter",
+          "language": "hcode",
+          "id": "invalid-utf8",
+          "entry": "main",
+          "inputKind": "invalid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "empty",
+          "entry": "main",
+          "inputKind": "valid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "singleton",
+          "entry": "main",
+          "inputKind": "valid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "negative-singleton",
+          "entry": "main",
+          "inputKind": "valid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "all-zero",
+          "entry": "main",
+          "inputKind": "valid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "unsorted",
+          "entry": "main",
+          "inputKind": "valid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "mixed-duplicates",
+          "entry": "main",
+          "inputKind": "valid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "fractions",
+          "entry": "main",
+          "inputKind": "valid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "balanced-extrema",
+          "entry": "main",
+          "inputKind": "valid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "equal-extrema",
+          "entry": "main",
+          "inputKind": "valid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "negative-only",
+          "entry": "main",
+          "inputKind": "valid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "zero-total",
+          "entry": "main",
+          "inputKind": "valid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "ascending",
+          "entry": "main",
+          "inputKind": "valid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "empty",
+          "entry": "main",
+          "inputKind": "invalid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "wrong-element",
+          "entry": "main",
+          "inputKind": "invalid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "wrong-shape",
+          "entry": "main",
+          "inputKind": "invalid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "overflow",
+          "entry": "main",
+          "inputKind": "invalid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "null",
+          "entry": "main",
+          "inputKind": "invalid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "malformed",
+          "entry": "main",
+          "inputKind": "invalid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "invalid-utf8",
+          "entry": "main",
+          "inputKind": "invalid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "empty",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "inclusive-bounds",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "point",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "reversed",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "negative",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "positive",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "fractional",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "disjoint",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "all-in",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "tail",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-0",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-1",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-2",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-3",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-4",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-5",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-6",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-7",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-8",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-9",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-10",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-11",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-12",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-13",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-14",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-15",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-16",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-17",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-18",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-19",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-20",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-21",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-22",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-23",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-24",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-25",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-26",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-27",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-28",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-29",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-30",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-31",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "malformed",
+          "entry": "range-invalid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "missing-lower",
+          "entry": "range-invalid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "missing-upper",
+          "entry": "range-invalid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "wrong-values",
+          "entry": "range-invalid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "null",
+          "entry": "range-invalid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "string-bound",
+          "entry": "range-invalid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "overflow-bound",
+          "entry": "range-invalid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "overflow-value",
+          "entry": "range-invalid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "wrong-shape",
+          "entry": "range-invalid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "invalid-utf8",
+          "entry": "range-invalid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "extra-field",
+          "entry": "range-invalid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "boolean-upper",
+          "entry": "range-invalid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "null-values",
+          "entry": "range-invalid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-0",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-1",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-2",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-3",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-4",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-5",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-6",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-7",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-8",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-9",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-10",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-11",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-12",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-13",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-14",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-15",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-16",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-17",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-18",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-19",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-20",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-21",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-22",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-23",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-24",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-25",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-26",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-27",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-28",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-29",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-30",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "hcode",
+          "id": "generated-31",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "starter",
+          "language": "typescript",
+          "id": "empty",
+          "entry": "main",
+          "inputKind": "valid",
+          "passed": true
+        },
+        {
+          "variant": "starter",
+          "language": "typescript",
+          "id": "singleton",
+          "entry": "main",
+          "inputKind": "valid",
+          "passed": true
+        },
+        {
+          "variant": "starter",
+          "language": "typescript",
+          "id": "negative-singleton",
+          "entry": "main",
+          "inputKind": "valid",
+          "passed": true
+        },
+        {
+          "variant": "starter",
+          "language": "typescript",
+          "id": "all-zero",
+          "entry": "main",
+          "inputKind": "valid",
+          "passed": true
+        },
+        {
+          "variant": "starter",
+          "language": "typescript",
+          "id": "unsorted",
+          "entry": "main",
+          "inputKind": "valid",
+          "passed": true
+        },
+        {
+          "variant": "starter",
+          "language": "typescript",
+          "id": "mixed-duplicates",
+          "entry": "main",
+          "inputKind": "valid",
+          "passed": true
+        },
+        {
+          "variant": "starter",
+          "language": "typescript",
+          "id": "fractions",
+          "entry": "main",
+          "inputKind": "valid",
+          "passed": true
+        },
+        {
+          "variant": "starter",
+          "language": "typescript",
+          "id": "balanced-extrema",
+          "entry": "main",
+          "inputKind": "valid",
+          "passed": true
+        },
+        {
+          "variant": "starter",
+          "language": "typescript",
+          "id": "equal-extrema",
+          "entry": "main",
+          "inputKind": "valid",
+          "passed": true
+        },
+        {
+          "variant": "starter",
+          "language": "typescript",
+          "id": "negative-only",
+          "entry": "main",
+          "inputKind": "valid",
+          "passed": true
+        },
+        {
+          "variant": "starter",
+          "language": "typescript",
+          "id": "zero-total",
+          "entry": "main",
+          "inputKind": "valid",
+          "passed": true
+        },
+        {
+          "variant": "starter",
+          "language": "typescript",
+          "id": "ascending",
+          "entry": "main",
+          "inputKind": "valid",
+          "passed": true
+        },
+        {
+          "variant": "starter",
+          "language": "typescript",
+          "id": "empty",
+          "entry": "main",
+          "inputKind": "invalid",
+          "passed": true
+        },
+        {
+          "variant": "starter",
+          "language": "typescript",
+          "id": "wrong-element",
+          "entry": "main",
+          "inputKind": "invalid",
+          "passed": true
+        },
+        {
+          "variant": "starter",
+          "language": "typescript",
+          "id": "wrong-shape",
+          "entry": "main",
+          "inputKind": "invalid",
+          "passed": true
+        },
+        {
+          "variant": "starter",
+          "language": "typescript",
+          "id": "overflow",
+          "entry": "main",
+          "inputKind": "invalid",
+          "passed": true
+        },
+        {
+          "variant": "starter",
+          "language": "typescript",
+          "id": "null",
+          "entry": "main",
+          "inputKind": "invalid",
+          "passed": true
+        },
+        {
+          "variant": "starter",
+          "language": "typescript",
+          "id": "malformed",
+          "entry": "main",
+          "inputKind": "invalid",
+          "passed": true
+        },
+        {
+          "variant": "starter",
+          "language": "typescript",
+          "id": "invalid-utf8",
+          "entry": "main",
+          "inputKind": "invalid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "empty",
+          "entry": "main",
+          "inputKind": "valid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "singleton",
+          "entry": "main",
+          "inputKind": "valid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "negative-singleton",
+          "entry": "main",
+          "inputKind": "valid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "all-zero",
+          "entry": "main",
+          "inputKind": "valid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "unsorted",
+          "entry": "main",
+          "inputKind": "valid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "mixed-duplicates",
+          "entry": "main",
+          "inputKind": "valid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "fractions",
+          "entry": "main",
+          "inputKind": "valid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "balanced-extrema",
+          "entry": "main",
+          "inputKind": "valid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "equal-extrema",
+          "entry": "main",
+          "inputKind": "valid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "negative-only",
+          "entry": "main",
+          "inputKind": "valid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "zero-total",
+          "entry": "main",
+          "inputKind": "valid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "ascending",
+          "entry": "main",
+          "inputKind": "valid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "empty",
+          "entry": "main",
+          "inputKind": "invalid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "wrong-element",
+          "entry": "main",
+          "inputKind": "invalid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "wrong-shape",
+          "entry": "main",
+          "inputKind": "invalid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "overflow",
+          "entry": "main",
+          "inputKind": "invalid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "null",
+          "entry": "main",
+          "inputKind": "invalid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "malformed",
+          "entry": "main",
+          "inputKind": "invalid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "invalid-utf8",
+          "entry": "main",
+          "inputKind": "invalid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "empty",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "inclusive-bounds",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "point",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "reversed",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "negative",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "positive",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "fractional",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "disjoint",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "all-in",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "tail",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-0",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-1",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-2",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-3",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-4",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-5",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-6",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-7",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-8",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-9",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-10",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-11",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-12",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-13",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-14",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-15",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-16",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-17",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-18",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-19",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-20",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-21",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-22",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-23",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-24",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-25",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-26",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-27",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-28",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-29",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-30",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-31",
+          "entry": "range",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "malformed",
+          "entry": "range-invalid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "missing-lower",
+          "entry": "range-invalid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "missing-upper",
+          "entry": "range-invalid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "wrong-values",
+          "entry": "range-invalid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "null",
+          "entry": "range-invalid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "string-bound",
+          "entry": "range-invalid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "overflow-bound",
+          "entry": "range-invalid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "overflow-value",
+          "entry": "range-invalid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "wrong-shape",
+          "entry": "range-invalid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "invalid-utf8",
+          "entry": "range-invalid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "extra-field",
+          "entry": "range-invalid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "boolean-upper",
+          "entry": "range-invalid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "null-values",
+          "entry": "range-invalid",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-0",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-1",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-2",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-3",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-4",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-5",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-6",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-7",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-8",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-9",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-10",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-11",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-12",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-13",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-14",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-15",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-16",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-17",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-18",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-19",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-20",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-21",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-22",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-23",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-24",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-25",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-26",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-27",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-28",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-29",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-30",
+          "entry": "main-generated",
+          "passed": true
+        },
+        {
+          "variant": "extended",
+          "language": "typescript",
+          "id": "generated-31",
+          "entry": "main-generated",
+          "passed": true
+        }
+      ],
+      "fixedOldInputCases": 12,
+      "fixedIntervalInputCases": 10,
+      "additionalGeneratedInputCasesVerified": 32,
+      "additionalInvalidRangeInputsVerified": 3,
+      "seededFaultsRejected": [
+        {
+          "language": "hcode",
+          "id": "exclusive-lower",
+          "rejectedByAssertions": true,
+          "oldTestsStillPass": true
+        },
+        {
+          "language": "hcode",
+          "id": "exclusive-upper",
+          "rejectedByAssertions": true,
+          "oldTestsStillPass": true
+        },
+        {
+          "language": "hcode",
+          "id": "old-positive-regression",
+          "rejectedByAssertions": true,
+          "oldTestsStillPass": false
+        },
+        {
+          "language": "hcode",
+          "id": "old-total-regression",
+          "rejectedByAssertions": true,
+          "oldTestsStillPass": false
+        },
+        {
+          "language": "typescript",
+          "id": "exclusive-lower",
+          "rejectedByAssertions": true,
+          "oldTestsStillPass": true
+        },
+        {
+          "language": "typescript",
+          "id": "exclusive-upper",
+          "rejectedByAssertions": true,
+          "oldTestsStillPass": true
+        },
+        {
+          "language": "typescript",
+          "id": "old-positive-regression",
+          "rejectedByAssertions": true,
+          "oldTestsStillPass": false
+        },
+        {
+          "language": "typescript",
+          "id": "old-total-regression",
+          "rejectedByAssertions": true,
+          "oldTestsStillPass": false
+        }
+      ],
+      "nativeRustCompiler": true,
+      "independentIdiomaticTypeScript": true,
+      "independentHCodeJSReference": false,
+      "authoredSource": {
+        "hcode": {
+          "files": [
+            {
+              "path": "compact/canonical20/feature20/extended/hcode/core.hc",
+              "gitBlobSha": "2de27752994edd7adde2916746d5b221370e137a",
+              "unicodeCodepoints": 401,
+              "utf8Bytes": 470
+            },
+            {
+              "path": "compact/canonical20/feature20/extended/hcode/main.hc",
+              "gitBlobSha": "26c35db3610c5ef361843d6526e13252e39e4090",
+              "unicodeCodepoints": 114,
+              "utf8Bytes": 134
+            },
+            {
+              "path": "compact/canonical20/feature20/extended/hcode/range.hc",
+              "gitBlobSha": "1c931434793613f0a78ad51e13b58fe86d72adf7",
+              "unicodeCodepoints": 156,
+              "utf8Bytes": 179
+            },
+            {
+              "path": "compact/canonical20/feature20/extended/hcode/range.test.hc",
+              "gitBlobSha": "dee4d371827c10c43f89d0bfa7e607397426401c",
+              "unicodeCodepoints": 368,
+              "utf8Bytes": 442
+            },
+            {
+              "path": "compact/canonical20/feature20/extended/hcode/report.hc",
+              "gitBlobSha": "218327e9abfa68ca1b5511a97b620ac14da1c12b",
+              "unicodeCodepoints": 289,
+              "utf8Bytes": 328
+            },
+            {
+              "path": "compact/canonical20/feature20/extended/hcode/report.test.hc",
+              "gitBlobSha": "c70c3e0a48407b55156b5ee0b615761261593a7c",
+              "unicodeCodepoints": 287,
+              "utf8Bytes": 355
+            },
+            {
+              "path": "compact/canonical20/feature20/extended/hcode/statistics.hc",
+              "gitBlobSha": "b1e72c3f16e6ef635dec2702ec77917484c6362d",
+              "unicodeCodepoints": 263,
+              "utf8Bytes": 301
+            },
+            {
+              "path": "compact/canonical20/feature20/extended/hcode/statistics.test.hc",
+              "gitBlobSha": "b32f818cdb248ef1d8928881f2ad6fa8d966dca2",
+              "unicodeCodepoints": 291,
+              "utf8Bytes": 363
+            }
+          ],
+          "unicodeCodepoints": 2169,
+          "utf8Bytes": 2572
+        },
+        "typescript": {
+          "files": [
+            {
+              "path": "compact/canonical20/feature20/extended/typescript/core.ts",
+              "gitBlobSha": "d7be10802fc91d2711f64eb6472c2900173dc042",
+              "unicodeCodepoints": 423,
+              "utf8Bytes": 423
+            },
+            {
+              "path": "compact/canonical20/feature20/extended/typescript/fixtures.ts",
+              "gitBlobSha": "333a0d51699e77cc5f5404d9bdf4f98f7f2776bc",
+              "unicodeCodepoints": 212,
+              "utf8Bytes": 212
+            },
+            {
+              "path": "compact/canonical20/feature20/extended/typescript/input.ts",
+              "gitBlobSha": "30e840d2428468d04af36793033d922ecfbda806",
+              "unicodeCodepoints": 375,
+              "utf8Bytes": 375
+            },
+            {
+              "path": "compact/canonical20/feature20/extended/typescript/main.ts",
+              "gitBlobSha": "9ce8ae5115b30385eaeded52753e68bff558cf8b",
+              "unicodeCodepoints": 203,
+              "utf8Bytes": 203
+            },
+            {
+              "path": "compact/canonical20/feature20/extended/typescript/range.test.ts",
+              "gitBlobSha": "2a8d881ff09f3bafcce78d7337f24b5efb3c8786",
+              "unicodeCodepoints": 829,
+              "utf8Bytes": 829
+            },
+            {
+              "path": "compact/canonical20/feature20/extended/typescript/range.ts",
+              "gitBlobSha": "d02c366c6a9235c98d1218dbc3c7e314bef3f7a1",
+              "unicodeCodepoints": 567,
+              "utf8Bytes": 567
+            },
+            {
+              "path": "compact/canonical20/feature20/extended/typescript/report.test.ts",
+              "gitBlobSha": "b2e3945555e98ed884380ec48c76ff76e5b18855",
+              "unicodeCodepoints": 432,
+              "utf8Bytes": 432
+            },
+            {
+              "path": "compact/canonical20/feature20/extended/typescript/report.ts",
+              "gitBlobSha": "80188918017c0c7458debc30a157d07193bdfb1b",
+              "unicodeCodepoints": 436,
+              "utf8Bytes": 436
+            },
+            {
+              "path": "compact/canonical20/feature20/extended/typescript/statistics.test.ts",
+              "gitBlobSha": "59712c88b4eab3cb94c0f671878f60f35f923324",
+              "unicodeCodepoints": 480,
+              "utf8Bytes": 480
+            },
+            {
+              "path": "compact/canonical20/feature20/extended/typescript/statistics.ts",
+              "gitBlobSha": "faa99155a8e6de2c56988ce54b66163a75d36a07",
+              "unicodeCodepoints": 308,
+              "utf8Bytes": 308
+            },
+            {
+              "path": "compact/canonical20/feature20/extended/typescript/types.ts",
+              "gitBlobSha": "a354f29a04a8401a2d85d652784ddca95c05cb7f",
+              "unicodeCodepoints": 115,
+              "utf8Bytes": 115
+            }
+          ],
+          "unicodeCodepoints": 4380,
+          "utf8Bytes": 4380
+        }
+      },
+      "sourceCompression": {
+        "unicodeCodepointReductionPct": 50.48,
+        "utf8ByteReductionPct": 41.28
+      },
+      "sharedFixtures": {
+        "unicodeCodepoints": 14567,
+        "utf8Bytes": 14567
+      },
+      "includingSharedFixtures": {
+        "hcode": {
+          "unicodeCodepoints": 16736,
+          "utf8Bytes": 17139
+        },
+        "typescript": {
+          "unicodeCodepoints": 18947,
+          "utf8Bytes": 18947
+        }
+      },
+      "includingSharedFixtureCompression": {
+        "unicodeCodepointReductionPct": 11.67,
+        "utf8ByteReductionPct": 9.54
+      },
+      "generatedJavaScript": {
+        "cli": {
+          "files": [
+            {
+              "source": "main.hc",
+              "utf8Bytes": 14293,
+              "sha256": "3b4cae0bbe08b7fba0a836a02c826d6ae9424af25c5489291ef3b5f10271f510"
+            },
+            {
+              "source": "range.hc",
+              "utf8Bytes": 14312,
+              "sha256": "16dfde74c1f10f6987843aea30af984e84faba68722ca8528985ec6d9a354206"
+            }
+          ],
+          "totalBytes": 28605
+        },
+        "tests": {
+          "files": [
+            {
+              "source": "report.test.hc",
+              "utf8Bytes": 17019,
+              "sha256": "ccf3d2d234095ca1fbe80332a5366329a2bd6e35c6e1d9af8a35fe5e9bb720c5"
+            },
+            {
+              "source": "statistics.test.hc",
+              "utf8Bytes": 14493,
+              "sha256": "3cc5f3222c4d82dbaec377ee595aebf1b5d80f6d923805707d5383a6e85e6220"
+            },
+            {
+              "source": "range.test.hc",
+              "utf8Bytes": 17248,
+              "sha256": "15b707b61567909dd054225625bcf7c04fb9a2328647138559c240c116c8b9a1"
+            }
+          ],
+          "totalBytes": 48760
+        }
+      },
+      "externalPackageDependencies": 0,
+      "globallyVerified70Percent": false,
+      "limitations": "Only task20. Starter CLI is established and committed before extension, derived from task18 modules. Whole extended project counts, including old/new tests, both CLI entries, input readers and types. Shared data and CLI outcomes are separate and inclusive; generated runtime is separate. Independent JS reference has no local module loader. No global median, universal floating-point, runtime-performance or AI-token claim."
+    }
+  },
+  "evidenceByPartialTask": {},
+  "explanation": "Full verification derives from source-locked compiler executions and independent comparisons. Task18 requires unchanged frozen tests on actual before/after Rust-compiled and TypeScript projects; it does not claim a local-module JS reference engine. Original preregistration remains SHA-frozen and unsupported tasks stay in the denominator. Correctness oracles are not automatically competitive TypeScript baselines. No global twenty-workload 70% median has been computed."
+}

@@ -26,6 +26,13 @@ documents the source audit, locked evidence and remaining SQL syntax debt.
 The 70% source-character reduction across the original twenty workloads
 is a research objective, not an achieved project-wide result.
 
+On the current development branch, **all twenty original acceptance workloads
+pass**, including actual Chromium UI execution, persistent sessions and WebSocket
+chat. [Acceptance evidence and source inventory](compact/canonical20/ACCEPTANCE-20.md)
+record the 2026-10-20 run and the remaining competitive TypeScript baseline audit.
+The raw mixed-comparison median is **69.71% fewer code points**; eight comparisons
+use correctness oracles, so this is **not** a certified twenty-task reduction.
+
 
 
 ## Write JFH-CODE with real signs
