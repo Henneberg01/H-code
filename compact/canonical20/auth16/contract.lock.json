@@ -1,0 +1,20 @@
+{
+  "workloadId": "16-auth-sessions",
+  "establishedOn": "2026-10-20",
+  "registry": {
+    "path": "compact/canonical20/workloads.json",
+    "gitBlobSha": "46653ef90ffb3e420fba4ddfbfac3c4cfd57f3b3"
+  },
+  "fixtures": {
+    "path": "compact/canonical20/auth16/fixtures.json",
+    "gitBlobSha": "148b55733f409f729f2d86b97df51eddbed4f499"
+  },
+  "contract": {
+    "path": "compact/canonical20/auth16/CONTRACT.md",
+    "gitBlobSha": "390e09519b853b303ca1ec9db7efd7fc028a6660"
+  },
+  "attributes": {
+    "path": "compact/canonical20/auth16/.gitattributes",
+    "gitBlobSha": "fcadb2cf97913f58a2523f535336e725c6b59d1f"
+  }
+}

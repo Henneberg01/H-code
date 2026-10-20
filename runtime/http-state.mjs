@@ -15,8 +15,9 @@ const __hc_state_receipt_max=128;
 const __hc_state_receipt_id=/^[A-Za-z0-9_-]{1,64}$/;
 const __hc_state_receipt_digest=/^[a-f0-9]{64}$/;
 // Digest all externally observed request input before state mutation.
-const __hc_state_request_digest=(method,path,body,contentType)=>
-  __hc_state_hash('sha256').update(JSON.stringify([method,path,body,contentType]),'utf8').digest('hex');
+const __hc_state_request_digest=(method,path,body,contentType,headers=undefined)=>
+  __hc_state_hash('sha256').update(JSON.stringify(headers===undefined?
+    [method,path,body,contentType]:[method,path,body,contentType,headers]),'utf8').digest('hex');
 const __hc_state_plain=value=>value!==null && typeof value==='object' &&
   !Array.isArray(value) && Object.getPrototypeOf(value)===Object.prototype;
 const __hc_state_text=value=>typeof value==='string' && value.isWellFormed() &&

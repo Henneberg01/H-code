@@ -247,6 +247,20 @@ impl Parser {
                 self.index+=1;
                 ExprKind::JsonWrite(Box::new(self.expression(8)?))
             }
+            TokenKind::HmacSign|TokenKind::HmacVerify=>{
+                let verify=matches!(self.peek().kind,TokenKind::HmacVerify);
+                self.index+=1;
+                self.expect(&TokenKind::LeftParen)?;
+                let key=self.expression(0)?;
+                self.expect(&TokenKind::Comma)?;
+                let message=self.expression(0)?;
+                let tag=if verify {
+                    self.expect(&TokenKind::Comma)?;
+                    Some(Box::new(self.expression(0)?))
+                }else{None};
+                self.expect(&TokenKind::RightParen)?;
+                ExprKind::Hmac{key:Box::new(key),message:Box::new(message),tag}
+            }
             TokenKind::StdinText=>{self.index+=1;ExprKind::StdinText}
             TokenKind::ArithEval=>{self.index+=1;ExprKind::ArithEval(Box::new(self.expression(8)?))}
             TokenKind::FileRead=>{self.index+=1;ExprKind::FileRead(Box::new(self.expression(8)?))}

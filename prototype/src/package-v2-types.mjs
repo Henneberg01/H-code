@@ -43,6 +43,11 @@ function infer(node,env,expected=null){
   if(!node||typeof node.kind!=='string')error('Malformed expression');
   let out;
   switch(node.kind){
+    case 'Hmac':
+      requireType(infer(node.key,env),'String','HMAC key');
+      requireType(infer(node.message,env),'String','HMAC message');
+      if(node.tag)requireType(infer(node.tag,env),'String','HMAC tag');
+      out=node.tag?'Bool':'String';break;
     case 'Literal':
       out=typeof node.value==='number'?'Number':typeof node.value==='string'?'String':
         typeof node.value==='boolean'?'Bool':null;

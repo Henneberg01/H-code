@@ -251,3 +251,24 @@ Unicode strings, without a dedicated dashboard or SQL ordering macro.
 `↥` is proposed in M19.15 B4 and only becomes mainline language syntax
 after exact-head Windows/Ubuntu Rust+JS and regression checks are green.
 ASCII `@^` remains compatible but is not primary developer source.
+
+
+### General HMAC primitives (2026-10-20)
+
+`✍(key,message)` (`hmac_sign`) computes the HMAC-SHA-256 of exact UTF-8 String
+arguments and returns 64 lowercase hexadecimal characters. `✓(key,message,tag)`
+(`hmac_verify`) returns Bool, accepts only canonical 64-hex tags, and compares
+all 32 bytes with Node's timing-safe comparison. These are symmetric MAC
+operations, not asymmetric signatures or session-specific macros. They are pure
+and work in user functions, verified packages, sorting keys and CAS reducers;
+operand expressions retain the surrounding effect checks.
+
+Keys/messages must be well-formed strings at most 4,096/65,536 UTF-8 bytes.
+Malformed tag text returns false; wrong argument types and invalid/oversize
+key/message text throw without including the supplied values in the diagnostic.
+Use a high-entropy secret for authentication; short keys are accepted by the
+generic operation for standard HMAC vectors. There is no implicit secret or
+key store. The Rust backend links crypto only when actually used, including
+imported modules. An independent JS reference adapter implements the same
+contract. Neither these signs nor any isolated example establishes the global
+70% source-reduction goal.

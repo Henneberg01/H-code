@@ -3,7 +3,7 @@
 // This is a stateless server primitive, NOT a CRUD API or storage engine.
 import {createServer as __hc_create_server} from 'node:http';
 let __hc_server_active=false;
-const __hc_http_serve = (handler,onClose=null) => {
+const __hc_http_serve = (handler,onClose=null,withHeaders=false) => {
   __hc_tick();
   if(typeof handler!=='function')throw TypeError('⤊ requires a request-handler function');
   const grant=process.env.HCODE_HTTP_LISTEN;
@@ -28,6 +28,7 @@ const __hc_http_serve = (handler,onClose=null) => {
       if(!req.method || !req.url || req.url.length>2048){
         fail(res,400,'invalid_request');return;
       }
+      if(withHeaders&&req.rawHeaders.length>256){fail(res,431,'too_many_headers');return;}
       let size=0,tooLarge=false;
       const chunks=[];
       for await (const c of req){
@@ -45,6 +46,7 @@ const __hc_http_serve = (handler,onClose=null) => {
         ['body',body],['method',req.method],['path',req.url]
       ]);
       const metadata={
+        rawHeaders:[...req.rawHeaders],
         requestId:String(req.headers['x-hcode-request-id']??''),
         contentType:String(req.headers['content-type']??''),
         isCancelled:()=>res.destroyed
@@ -79,6 +81,7 @@ const __hc_http_serve = (handler,onClose=null) => {
       fail(res,500,'handler_error');
     }finally{inFlight--;}
   });
+  if(withHeaders)server.maxHeadersCount=0; // Never silently truncate security headers.
   server.maxRequestsPerSocket=100;
   server.requestTimeout=5000;
   server.headersTimeout=6000;

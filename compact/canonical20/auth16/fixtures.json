@@ -1,0 +1,412 @@
+{
+  "workloadId": "16-auth-sessions",
+  "establishedOn": "2026-10-20",
+  "originalRegistryGitBlobSha": "46653ef90ffb3e420fba4ddfbfac3c4cfd57f3b3",
+  "identity": "fixture-alice",
+  "credential": "fixture-password",
+  "publicFixtureKey": "JFH-CODE public test fixture key only 2026-10-20",
+  "flows": [
+    {
+      "id": "issue-rotate-revoke",
+      "steps": [
+        {
+          "action": "verify",
+          "status": 401
+        },
+        {
+          "action": "issue",
+          "status": 201,
+          "save": "a"
+        },
+        {
+          "action": "verify",
+          "token": "a",
+          "status": 200
+        },
+        {
+          "action": "verify",
+          "token": "a",
+          "status": 401,
+          "tamper": true
+        },
+        {
+          "action": "rotate",
+          "token": "a",
+          "status": 200,
+          "save": "b"
+        },
+        {
+          "action": "verify",
+          "token": "a",
+          "status": 401
+        },
+        {
+          "action": "verify",
+          "token": "b",
+          "status": 200
+        },
+        {
+          "action": "revoke",
+          "token": "a",
+          "status": 401
+        },
+        {
+          "action": "revoke",
+          "token": "b",
+          "status": 204
+        },
+        {
+          "action": "verify",
+          "token": "b",
+          "status": 401
+        },
+        {
+          "action": "rotate",
+          "token": "b",
+          "status": 401
+        },
+        {
+          "action": "issue",
+          "status": 201,
+          "save": "c"
+        },
+        {
+          "action": "verify",
+          "token": "c",
+          "status": 200
+        },
+        {
+          "action": "verify",
+          "token": "b",
+          "status": 401
+        }
+      ]
+    },
+    {
+      "id": "durable-restart",
+      "steps": [
+        {
+          "action": "issue",
+          "status": 201,
+          "save": "a"
+        },
+        {
+          "action": "restart"
+        },
+        {
+          "action": "verify",
+          "token": "a",
+          "status": 200
+        },
+        {
+          "action": "rotate",
+          "token": "a",
+          "status": 200,
+          "save": "b"
+        },
+        {
+          "action": "crash"
+        },
+        {
+          "action": "verify",
+          "token": "a",
+          "status": 401
+        },
+        {
+          "action": "verify",
+          "token": "b",
+          "status": 200
+        },
+        {
+          "action": "revoke",
+          "token": "b",
+          "status": 204
+        },
+        {
+          "action": "crash"
+        },
+        {
+          "action": "verify",
+          "token": "b",
+          "status": 401
+        },
+        {
+          "action": "issue",
+          "status": 201,
+          "save": "c"
+        },
+        {
+          "action": "verify",
+          "token": "c",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "id": "invalid-input-does-not-mutate",
+      "steps": [
+        {
+          "action": "issue",
+          "status": 401,
+          "credential": "wrong"
+        },
+        {
+          "action": "issue",
+          "status": 401,
+          "identity": "unknown"
+        },
+        {
+          "action": "issue",
+          "status": 400,
+          "raw": "{"
+        },
+        {
+          "action": "issue",
+          "status": 400,
+          "extra": true
+        },
+        {
+          "action": "issue",
+          "status": 400,
+          "contentType": "text/plain"
+        },
+        {
+          "action": "issue",
+          "status": 400,
+          "inputHex": "ff",
+          "error": "invalid_utf8"
+        },
+        {
+          "action": "issue",
+          "status": 413,
+          "oversize": true,
+          "error": "body_too_large"
+        },
+        {
+          "action": "request",
+          "status": 404,
+          "path": "/unknown"
+        },
+        {
+          "action": "request",
+          "status": 405,
+          "method": "DELETE",
+          "path": "/session"
+        },
+        {
+          "action": "issue",
+          "status": 201,
+          "save": "a"
+        },
+        {
+          "action": "rotate",
+          "token": "a",
+          "status": 400,
+          "raw": "{}"
+        },
+        {
+          "action": "verify",
+          "token": "a",
+          "status": 200
+        },
+        {
+          "action": "rotate",
+          "token": "a",
+          "status": 400,
+          "receipt": "auth_1",
+          "error": "idempotency_not_supported"
+        },
+        {
+          "action": "rotate",
+          "token": "a",
+          "status": 400,
+          "receipt": "auth_1",
+          "error": "idempotency_not_supported"
+        },
+        {
+          "action": "verify",
+          "token": "a",
+          "status": 200
+        },
+        {
+          "action": "rotate",
+          "token": "a",
+          "status": 200,
+          "save": "b"
+        },
+        {
+          "action": "verify",
+          "token": "a",
+          "status": 401
+        }
+      ]
+    },
+    {
+      "id": "duplicate-and-malformed-signatures",
+      "steps": [
+        {
+          "action": "issue",
+          "status": 201,
+          "save": "a"
+        },
+        {
+          "action": "verify",
+          "token": "a",
+          "status": 401,
+          "duplicate": true
+        },
+        {
+          "action": "rotate",
+          "token": "a",
+          "status": 401,
+          "duplicate": true
+        },
+        {
+          "action": "revoke",
+          "token": "a",
+          "status": 401,
+          "duplicate": true
+        },
+        {
+          "action": "verify",
+          "token": "a",
+          "status": 401,
+          "uppercase": true
+        },
+        {
+          "action": "verify",
+          "status": 401,
+          "signature": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        },
+        {
+          "action": "verify",
+          "status": 401,
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        {
+          "action": "verify",
+          "token": "a",
+          "status": 431,
+          "headerFlood": true,
+          "error": "too_many_headers"
+        },
+        {
+          "action": "verify",
+          "token": "a",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "id": "concurrent-rotation",
+      "steps": [
+        {
+          "action": "issue",
+          "status": 201,
+          "save": "a"
+        },
+        {
+          "action": "race",
+          "token": "a",
+          "save": "b"
+        },
+        {
+          "action": "verify",
+          "token": "a",
+          "status": 401
+        },
+        {
+          "action": "verify",
+          "token": "b",
+          "status": 200
+        },
+        {
+          "action": "revoke",
+          "token": "a",
+          "status": 401
+        },
+        {
+          "action": "revoke",
+          "token": "b",
+          "status": 204
+        },
+        {
+          "action": "verify",
+          "token": "b",
+          "status": 401
+        },
+        {
+          "action": "restart"
+        },
+        {
+          "action": "verify",
+          "token": "b",
+          "status": 401
+        }
+      ]
+    },
+    {
+      "id": "reissue-invalidates-prior-generation",
+      "steps": [
+        {
+          "action": "issue",
+          "status": 201,
+          "save": "a"
+        },
+        {
+          "action": "issue",
+          "status": 201,
+          "save": "b"
+        },
+        {
+          "action": "verify",
+          "token": "a",
+          "status": 401
+        },
+        {
+          "action": "verify",
+          "token": "b",
+          "status": 200
+        },
+        {
+          "action": "restart"
+        },
+        {
+          "action": "issue",
+          "status": 201,
+          "save": "c"
+        },
+        {
+          "action": "verify",
+          "token": "b",
+          "status": 401
+        },
+        {
+          "action": "verify",
+          "token": "c",
+          "status": 200
+        },
+        {
+          "action": "revoke",
+          "token": "c",
+          "status": 204
+        },
+        {
+          "action": "issue",
+          "status": 201,
+          "save": "d"
+        },
+        {
+          "action": "verify",
+          "token": "c",
+          "status": 401
+        },
+        {
+          "action": "verify",
+          "token": "d",
+          "status": 200
+        }
+      ]
+    }
+  ]
+}

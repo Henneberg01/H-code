@@ -108,6 +108,7 @@ pub enum TypedExprKind {
     Sleep(Box<TypedExpr>),
     StdinText,
     ArithEval(Box<TypedExpr>),
+    Hmac {key:Box<TypedExpr>,message:Box<TypedExpr>,tag:Option<Box<TypedExpr>>},
     CsvTyped {schema:Type,value:Box<TypedExpr>},
     DbRows {schema:Type,database:Box<TypedExpr>,sql:Box<TypedExpr>,params:Box<TypedExpr>},
     DbTable {schema:Type,database:Box<TypedExpr>,table:Box<TypedExpr>},
@@ -133,6 +134,10 @@ fn cas_pure_expression<'a>(
 )->Result<(),Diagnostic>{
     let denied=||Diagnostic::new("EFFECT","CAS HTTP state reducer must be replay-safe and effect-free".into(),expr.span);
     match &expr.kind {
+        ExprKind::Hmac{key,message,tag}=>{
+            cas_pure_expression(key,functions,visiting)?;cas_pure_expression(message,functions,visiting)?;
+            if let Some(value)=tag{cas_pure_expression(value,functions,visiting)?;}
+        },
         ExprKind::FileRead(_)|ExprKind::FileWrite{..}|ExprKind::HttpGet(_)|
         ExprKind::HttpServe(_)|ExprKind::HttpServeState{..}|ExprKind::Sleep(_)|
         ExprKind::StdinText|ExprKind::DbRows{..}|ExprKind::DbTable{..}=>return Err(denied()),
@@ -273,6 +278,10 @@ fn check_sort_key_purity(program:&Program)->Result<(),Diagnostic>{
           }
         }
         match &node.kind {
+            ExprKind::Hmac{key,message,tag}=>{
+                scan_expr(key,functions)?;scan_expr(message,functions)?;
+                if let Some(value)=tag{scan_expr(value,functions)?;}
+            },
             ExprKind::FileRead(v)|ExprKind::HttpGet(v)|ExprKind::HttpServe(v)|
             ExprKind::Sleep(v)|ExprKind::ArithEval(v)|ExprKind::JsonWrite(v)|
             ExprKind::TextScalars(v)|ExprKind::TextWords(v)|ExprKind::Histogram(v)|
@@ -710,6 +719,19 @@ impl Checker {
                 self.unify(&Type::String,&typed.ty,value.span,"⩚ expects String arithmetic expression")?;
                 (TypedExprKind::ArithEval(Box::new(typed)),Type::Number)
             }
+            ExprKind::Hmac{key,message,tag}=>{
+                let key=self.expression(key)?;
+                let message=self.expression(message)?;
+                self.unify(&Type::String,&key.ty,key.span,"HMAC key expects String")?;
+                self.unify(&Type::String,&message.ty,message.span,"HMAC message expects String")?;
+                let tag=if let Some(value)=tag {
+                    let typed=self.expression(value)?;
+                    self.unify(&Type::String,&typed.ty,typed.span,"HMAC tag expects String")?;
+                    Some(Box::new(typed))
+                }else{None};
+                let returns=if tag.is_some(){Type::Bool}else{Type::String};
+                (TypedExprKind::Hmac{key:Box::new(key),message:Box::new(message),tag},returns)
+            }
             ExprKind::FileRead(value)=>{
                 if !self.allow_print {
                     return Err(Diagnostic::new("EFFECT","⧄ requires an explicitly permitted file-read capability; pure package operations cannot read files".into(),expr.span));
@@ -792,6 +814,15 @@ impl Checker {
                     ("body".into(),Type::String),("state".into(),Type::String),
                     ("status".into(),Type::Number)
                 ];
+                let with_headers=matches!(&checked_handler.ty,
+                    Type::Function(args,_) if matches!(args.first(),
+                        Some(Type::Record(fields)) if fields.iter().any(|(key,_)|key=="headers")));
+                if with_headers {
+                    request_fields.push(("headers".into(),Type::Sequence(Box::new(Type::Record(vec![
+                        ("name".into(),Type::String),("value".into(),Type::String)
+                    ])))));
+                    if !extended{return Err(Diagnostic::new("TYPE","HTTP headers require the extended contentType envelope".into(),handler.span));}
+                }
                 if extended {
                     request_fields.push(("contentType".into(),Type::String));
                     response_fields.push(("contentType".into(),Type::String));
@@ -1267,6 +1298,10 @@ impl Checker {
             TypedExprKind::Record(fields)=>{for (_,value) in fields{self.finalize_expr(value)?;}},
             TypedExprKind::Field{record,..}=>self.finalize_expr(record)?,
             TypedExprKind::JsonRead{value,..}|TypedExprKind::JsonValid{value,..}|TypedExprKind::JsonWrite{value,..}=>self.finalize_expr(value)?,
+            TypedExprKind::Hmac{key,message,tag}=>{
+                self.finalize_expr(key)?;self.finalize_expr(message)?;
+                if let Some(value)=tag{self.finalize_expr(value)?;}
+            },
             TypedExprKind::TextScalars(value)|TypedExprKind::TextWords(value)|TypedExprKind::Histogram(value)|TypedExprKind::Markdown(value)|TypedExprKind::HttpServe(value)|TypedExprKind::FileRead(value)|TypedExprKind::HttpGet(value)|TypedExprKind::Sleep(value)|TypedExprKind::ArithEval(value)=>self.finalize_expr(value)?,
             TypedExprKind::CsvTyped{value,..}=>self.finalize_expr(value)?,
             TypedExprKind::FileWrite{filename,content}=>{self.finalize_expr(filename)?;self.finalize_expr(content)?;},

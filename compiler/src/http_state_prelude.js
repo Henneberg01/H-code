@@ -1,7 +1,7 @@
 // M19.12 B2a: capability-gated transactional state around the same generic
 // inbound H-Code HTTP server. The entire reducer is USER-WRITTEN H-Code.
 // No CRUD routes, schemas, IDs or request bodies are interpreted here.
-const __hc_http_serve_state=(handler,initial,expanded=false)=>{
+const __hc_http_serve_state=(handler,initial,expanded=false,withHeaders=false)=>{
   __hc_tick();
   if(typeof handler!=='function' || typeof initial!=='string')
     throw TypeError('⤊(handler,initial) expects Function and String');
@@ -24,12 +24,20 @@ const __hc_http_serve_state=(handler,initial,expanded=false)=>{
           __hc_record([['body','invalid_request_id'],['contentType','text/plain; charset=utf-8'],['status',400]]):
           __hc_record([['body','invalid_request_id'],['status',400]]);
       const digest=requestId?__hc_state_request_digest(
-        request.method,request.path,request.body,metadata.contentType):null;
+        request.method,request.path,request.body,metadata.contentType,
+        withHeaders?metadata.rawHeaders.map((value,index)=>index%2?value:value.toLowerCase()):undefined):null;
       if(cas){
-        const typedRequest=expanded?__hc_record([
+        let typedRequest=expanded?__hc_record([
           ['body',request.body],['contentType',metadata.contentType],
           ['method',request.method],['path',request.path]
         ]):request;
+        if(withHeaders){
+          const headers=[];
+          for(let i=0;i<metadata.rawHeaders.length;i+=2){
+            headers.push(__hc_record([['name',metadata.rawHeaders[i].toLowerCase()],['value',metadata.rawHeaders[i+1]]]));
+          }
+          typedRequest=__hc_record([['body',request.body],['contentType',metadata.contentType],['headers',__hc_seq(headers)],['method',request.method],['path',request.path]]);
+        }
         const result=executeHttpCasTransaction({
           store,handler,request:typedRequest,metadata,digest,expanded,
           invoke:(fn,r,state)=>{
@@ -77,6 +85,6 @@ const __hc_http_serve_state=(handler,initial,expanded=false)=>{
         {id:requestId,digest,status:result.status,body:result.body}:null;
       if(changed||receipt)store.commit(result.state,receipt);
       return __hc_record([['body',result.body],['status',result.status]]);
-    },()=>store.close());
+    },()=>store.close(),withHeaders);
   }catch(error){store.close();throw error;}
 };

@@ -3,6 +3,7 @@ import {specializeCall,checkSpecializedReturn,typeToString} from './package-v3-s
 import {decodeTypedCSV} from './csv-pure.mjs';
 import {readMarkdownTokens} from './markdown-reference.mjs';
 import {safeArithmetic,ArithmeticInputError} from './arithmetic-pure.mjs';
+import {signMAC,verifyMAC} from './hmac-reference.mjs';
 export const CORE_GLYPHS = Object.freeze({
   '\u0192': 'fn', '\u2254': 'let', '\u21a9': 'return', '\u2192': '->',
   '\u2190': '=', '\u22a4': 'true', '\u22a5': 'false',
@@ -16,10 +17,10 @@ export const CORE_GLYPHS = Object.freeze({
   '⟕':'store_get', '⟖':'store_put', '⟗':'store_del',
   '\u2af6':'text-scalars', '\u27df':'text-words', '\u29c9':'histogram', '\u224b':'markdown-tokens',
   '\u29c4':'file-read', '\u29c5':'file-write', '\u29c8':'db-rows', '\u290b':'http-get', '\u290a':'http-serve', '\u231b':'sleep-ms', '\u29c7':'csv-typed',
-  '\u2328':'stdin-text', '\u2a5a':'arith-eval', '\u2317': '#', '\u29fa': '++', '\u2211': '@+', '\u2315': '@?', '\u21e2': '@>', '↧': '@v', '↥': '@^', '\u03bb': 'lambda', '\u2200': 'forall'
+  '✍':'hmac-sign', '✓':'hmac-verify', '\u2328':'stdin-text', '\u2a5a':'arith-eval', '\u2317': '#', '\u29fa': '++', '\u2211': '@+', '\u2315': '@?', '\u21e2': '@>', '↧': '@v', '↥': '@^', '\u03bb': 'lambda', '\u2200': 'forall'
 });
 export const RESERVED_USER_GLYPHS = new Set(['\u2205', '\u2200', '\u2208', ...Object.keys(CORE_GLYPHS)]);
-const RESERVED = new Set(['fn','let','return','true','false','if','else','while','and','or','not','use','as','lambda','forall','json_in','json_valid','json_out','text_scalars','text_words','text_hist','markdown_tokens','file_read','file_write','http_get','http_serve','sleep_ms','csv_typed','db_rows','stdin_text','arith_eval']);
+const RESERVED = new Set(['fn','let','return','true','false','if','else','while','and','or','not','use','as','lambda','forall','json_in','json_valid','json_out','text_scalars','text_words','text_hist','markdown_tokens','file_read','file_write','http_get','http_serve','sleep_ms','csv_typed','db_rows','stdin_text','arith_eval','hmac_sign','hmac_verify']);
 const TWO = new Set(['==','!=','<=','>=','->','::','|>','<<','[[',']]','++','@+','@?','@>','@v','@^','=>','<+']);
 const ONE = new Set(['+','-','*','/','%','<','>','=','(',')','{','}',',',';',':','?','#','.']);
 const ILLEGAL = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]|\p{Default_Ignorable_Code_Point}/u;
@@ -104,7 +105,7 @@ export function tokenize(source) {
     }
     if(letter(c)){
       let word='';while(alnum(peek()))word+=advance();
-      emit(word==='json_in'?'json-read':word==='json_valid'?'json-valid':word==='json_out'?'json-write':word==='text_scalars'?'text-scalars':word==='text_words'?'text-words':word==='text_hist'?'histogram':word==='markdown_tokens'?'markdown-tokens':word==='file_read'?'file-read':word==='file_write'?'file-write':word==='http_get'?'http-get':word==='http_serve'?'http-serve':word==='sleep_ms'?'sleep-ms':word==='csv_typed'?'csv-typed':word==='db_rows'?'db-rows':word==='stdin_text'?'stdin-text':word==='arith_eval'?'arith-eval':(RESERVED.has(word)?word:'ident'),word,ln,col);continue;
+      emit(word==='hmac_sign'?'hmac-sign':word==='hmac_verify'?'hmac-verify':word==='json_in'?'json-read':word==='json_valid'?'json-valid':word==='json_out'?'json-write':word==='text_scalars'?'text-scalars':word==='text_words'?'text-words':word==='text_hist'?'histogram':word==='markdown_tokens'?'markdown-tokens':word==='file_read'?'file-read':word==='file_write'?'file-write':word==='http_get'?'http-get':word==='http_serve'?'http-serve':word==='sleep_ms'?'sleep-ms':word==='csv_typed'?'csv-typed':word==='db_rows'?'db-rows':word==='stdin_text'?'stdin-text':word==='arith_eval'?'arith-eval':(RESERVED.has(word)?word:'ident'),word,ln,col);continue;
     }
     if(Object.hasOwn(CORE_GLYPHS,c)){
       advance();const alias=CORE_GLYPHS[c];
@@ -263,6 +264,12 @@ class Parser {
     let left;
     if(this.accept('not'))left={kind:'Unary',operator:'not',value:this.expr(8)};
     else if(this.accept('-'))left={kind:'Unary',operator:'-',value:this.expr(8)};
+    else if(this.at('hmac-sign')||this.at('hmac-verify')){
+      const verify=!!this.accept('hmac-verify');if(!verify)this.expect('hmac-sign');
+      this.expect('(');const key=this.expr();this.expect(',');const message=this.expr();
+      let tag=null;if(verify){this.expect(',');tag=this.expr();}
+      this.expect(')');left={kind:'Hmac',key,message,tag};
+    }
     else if(this.accept('stdin-text'))left={kind:'StdinText'};
     else if(this.accept('arith-eval'))left={kind:'ArithEval',value:this.expr(8)};
     else if(this.accept('markdown-tokens'))left={kind:'Markdown',value:this.expr(8)};
@@ -468,6 +475,7 @@ export function linkProgram(ast, registry=new Map()) {
   };
   function expression(node){
     if(node.kind==='GlyphOperation'||node.kind==='QualifiedOperation')return resolveRef(node);
+    if(node.kind==='Hmac')return {...node,key:expression(node.key),message:expression(node.message),tag:node.tag?expression(node.tag):null};
     if(node.kind==='Unary')return {...node,value:expression(node.value)};
     if(node.kind==='Sequence')return {...node,items:node.items.map(expression)};
     if(node.kind==='Record')return {...node,fields:node.fields.map(f=>({name:f.name,value:expression(f.value)}))};
@@ -966,6 +974,10 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
         if(new TextEncoder().encode(data).length>65536)
           throw new ArithmeticInputError('Arithmetic input exceeds 64 KiB');
         return data;
+      }
+      case 'Hmac':{
+        const key=expr(node.key,scope),message=expr(node.message,scope);
+        return node.tag?verifyMAC(key,message,expr(node.tag,scope)):signMAC(key,message);
       }
       case 'ArithEval':return safeArithmetic(expr(node.value,scope));
       case 'HttpServeState':{

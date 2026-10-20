@@ -31,9 +31,9 @@ fn csv_schema(ty:&Type)->String {
   }).collect::<Vec<_>>().join(",");
   format!("[{fields}]")
 }
-struct Emitter { depth:usize,assertion_used:Cell<bool> }
+struct Emitter { depth:usize,assertion_used:Cell<bool>,hmac_used:Cell<bool> }
 impl Emitter {
- fn new(depth:usize)->Self {Self{depth,assertion_used:Cell::new(false)}}
+ fn new(depth:usize)->Self {Self{depth,assertion_used:Cell::new(false),hmac_used:Cell::new(false)}}
  fn ind(&self)->String {"  ".repeat(self.depth)}
  fn expr(&self,e:&TypedExpr)->String {
   match &e.kind {
@@ -66,7 +66,11 @@ impl Emitter {
       let expanded=matches!(&handler.ty,
           Type::Function(args,_) if matches!(args.first(),
               Some(Type::Record(fields)) if fields.iter().any(|(key,_)|key=="contentType")));
-      format!("__hc_http_serve_state({}, {}, {})",self.expr(handler),self.expr(initial),expanded)
+      let headers=matches!(&handler.ty,
+          Type::Function(args,_) if matches!(args.first(),
+              Some(Type::Record(fields)) if fields.iter().any(|(key,_)|key=="headers")));
+      if headers{format!("__hc_http_serve_state({}, {}, true, true)",self.expr(handler),self.expr(initial))}
+      else{format!("__hc_http_serve_state({}, {}, {})",self.expr(handler),self.expr(initial),expanded)}
     },
     TypedExprKind::HttpGet(value)=>if matches!(value.ty,Type::Sequence(_)) {
       format!("(await __hc_http_batch({}))",self.expr(value))
@@ -76,6 +80,11 @@ impl Emitter {
     TypedExprKind::DbRows{schema,database,sql,params}=>format!("__hc_db_rows({}, {}, {}, {})",self.expr(database),self.expr(sql),self.expr(params),json_schema(schema)),
     TypedExprKind::DbTable{schema,database,table}=>format!("__hc_db_table({}, {}, {})",self.expr(database),self.expr(table),json_schema(schema)),
     TypedExprKind::StdinText=>"__hc_stdin()".into(),
+    TypedExprKind::Hmac{key,message,tag}=>{
+      self.hmac_used.set(true);
+      if let Some(tag)=tag{format!("__hc_hmac_verify({}, {}, {})",self.expr(key),self.expr(message),self.expr(tag))}
+      else{format!("__hc_hmac_sign({}, {})",self.expr(key),self.expr(message))}
+    },
     TypedExprKind::ArithEval(value)=>format!("__hc_arith({})",self.expr(value)),
     TypedExprKind::Lambda{parameter,body}=>format!("(({}) => ({}))",name(parameter),self.expr(body)),
     TypedExprKind::Section{op,right}=>{
@@ -182,6 +191,7 @@ impl Emitter {
 // that require it. A new glyph must not inflate the runtime of unrelated code.
 fn expr_uses_json(e:&TypedExpr)->bool {
  match &e.kind {
+  TypedExprKind::Hmac{key,message,tag}=>expr_uses_json(key)||expr_uses_json(message)||tag.as_ref().is_some_and(|v|expr_uses_json(v)),
     TypedExprKind::DomRecordTable{selector,rows,..}=>expr_uses_json(selector)||expr_uses_json(rows),
    TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_json(database)||expr_uses_json(sql)||expr_uses_json(params),
     TypedExprKind::DbTable{database,table,..}=>expr_uses_json(database)||expr_uses_json(table),
@@ -221,6 +231,7 @@ fn stmt_uses_json(s:&TypedStmt)->bool {
 // the universal text/histogram primitives (including verified imported packages).
 fn expr_uses_markdown(e:&TypedExpr)->bool {
  match &e.kind {
+  TypedExprKind::Hmac{key,message,tag}=>expr_uses_markdown(key)||expr_uses_markdown(message)||tag.as_ref().is_some_and(|v|expr_uses_markdown(v)),
     TypedExprKind::DomRecordTable{selector,rows,..}=>expr_uses_markdown(selector)||expr_uses_markdown(rows),
    TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_markdown(database)||expr_uses_markdown(sql)||expr_uses_markdown(params),
     TypedExprKind::DbTable{database,table,..}=>expr_uses_markdown(database)||expr_uses_markdown(table),
@@ -261,6 +272,7 @@ fn stmt_uses_markdown(s:&TypedStmt)->bool {
 // the universal text/histogram primitives (including verified imported packages).
 fn expr_uses_http_serve(e:&TypedExpr)->bool {
  match &e.kind {
+  TypedExprKind::Hmac{key,message,tag}=>expr_uses_http_serve(key)||expr_uses_http_serve(message)||tag.as_ref().is_some_and(|v|expr_uses_http_serve(v)),
     TypedExprKind::DomRecordTable{selector,rows,..}=>expr_uses_http_serve(selector)||expr_uses_http_serve(rows),
    TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_http_serve(database)||expr_uses_http_serve(sql)||expr_uses_http_serve(params),
     TypedExprKind::DbTable{database,table,..}=>expr_uses_http_serve(database)||expr_uses_http_serve(table),
@@ -300,6 +312,7 @@ fn stmt_uses_http_serve(s:&TypedStmt)->bool {
 // the universal text/histogram primitives (including verified imported packages).
 fn expr_uses_http_state(e:&TypedExpr)->bool {
  match &e.kind {
+  TypedExprKind::Hmac{key,message,tag}=>expr_uses_http_state(key)||expr_uses_http_state(message)||tag.as_ref().is_some_and(|v|expr_uses_http_state(v)),
     TypedExprKind::DomRecordTable{selector,rows,..}=>expr_uses_http_state(selector)||expr_uses_http_state(rows),
    TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_http_state(database)||expr_uses_http_state(sql)||expr_uses_http_state(params),
     TypedExprKind::DbTable{database,table,..}=>expr_uses_http_state(database)||expr_uses_http_state(table),
@@ -340,6 +353,7 @@ fn stmt_uses_http_state(s:&TypedStmt)->bool {
 // the universal text/histogram primitives (including verified imported packages).
 fn expr_uses_text(e:&TypedExpr)->bool {
  match &e.kind {
+  TypedExprKind::Hmac{key,message,tag}=>expr_uses_text(key)||expr_uses_text(message)||tag.as_ref().is_some_and(|v|expr_uses_text(v)),
     TypedExprKind::DomRecordTable{selector,rows,..}=>expr_uses_text(selector)||expr_uses_text(rows),
    TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_text(database)||expr_uses_text(sql)||expr_uses_text(params),
     TypedExprKind::DbTable{database,table,..}=>expr_uses_text(database)||expr_uses_text(table),
@@ -379,6 +393,7 @@ fn stmt_uses_text(s:&TypedStmt)->bool {
 
 fn expr_uses_csv(e:&TypedExpr)->bool {
   match &e.kind {
+  TypedExprKind::Hmac{key,message,tag}=>expr_uses_csv(key)||expr_uses_csv(message)||tag.as_ref().is_some_and(|v|expr_uses_csv(v)),
     TypedExprKind::DomRecordTable{selector,rows,..}=>expr_uses_csv(selector)||expr_uses_csv(rows),
    TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_csv(database)||expr_uses_csv(sql)||expr_uses_csv(params),
     TypedExprKind::DbTable{database,table,..}=>expr_uses_csv(database)||expr_uses_csv(table),
@@ -417,6 +432,7 @@ fn stmt_uses_csv(s:&TypedStmt)->bool {
 }
 fn expr_uses_file(e:&TypedExpr)->bool {
   match &e.kind {
+  TypedExprKind::Hmac{key,message,tag}=>expr_uses_file(key)||expr_uses_file(message)||tag.as_ref().is_some_and(|v|expr_uses_file(v)),
     TypedExprKind::DomRecordTable{selector,rows,..}=>expr_uses_file(selector)||expr_uses_file(rows),
    TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_file(database)||expr_uses_file(sql)||expr_uses_file(params),
     TypedExprKind::DbTable{database,table,..}=>expr_uses_file(database)||expr_uses_file(table),
@@ -456,6 +472,7 @@ fn stmt_uses_file(s:&TypedStmt)->bool {
 // Link the network runtime only when a checked expression contains ⤋.
 fn expr_uses_http(e:&TypedExpr)->bool {
  match &e.kind {
+  TypedExprKind::Hmac{key,message,tag}=>expr_uses_http(key)||expr_uses_http(message)||tag.as_ref().is_some_and(|v|expr_uses_http(v)),
     TypedExprKind::DomRecordTable{selector,rows,..}=>expr_uses_http(selector)||expr_uses_http(rows),
    TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_http(database)||expr_uses_http(sql)||expr_uses_http(params),
     TypedExprKind::DbTable{database,table,..}=>expr_uses_http(database)||expr_uses_http(table),
@@ -495,6 +512,7 @@ fn stmt_uses_http(s:&TypedStmt)->bool {
 
 fn expr_uses_sleep(e:&TypedExpr)->bool {
  match &e.kind {
+  TypedExprKind::Hmac{key,message,tag}=>expr_uses_sleep(key)||expr_uses_sleep(message)||tag.as_ref().is_some_and(|v|expr_uses_sleep(v)),
     TypedExprKind::DomRecordTable{selector,rows,..}=>expr_uses_sleep(selector)||expr_uses_sleep(rows),
    TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_sleep(database)||expr_uses_sleep(sql)||expr_uses_sleep(params),
     TypedExprKind::DbTable{database,table,..}=>expr_uses_sleep(database)||expr_uses_sleep(table),
@@ -534,6 +552,7 @@ fn stmt_uses_sleep(s:&TypedStmt)->bool {
 
 fn expr_uses_file_write(e:&TypedExpr)->bool {
  match &e.kind {
+  TypedExprKind::Hmac{key,message,tag}=>expr_uses_file_write(key)||expr_uses_file_write(message)||tag.as_ref().is_some_and(|v|expr_uses_file_write(v)),
     TypedExprKind::DomRecordTable{selector,rows,..}=>expr_uses_file_write(selector)||expr_uses_file_write(rows),
    TypedExprKind::DbRows{database,sql,params,..}=>expr_uses_file_write(database)||expr_uses_file_write(sql)||expr_uses_file_write(params),
     TypedExprKind::DbTable{database,table,..}=>expr_uses_file_write(database)||expr_uses_file_write(table),
@@ -572,6 +591,7 @@ fn stmt_uses_file_write(s:&TypedStmt)->bool {
 
 fn expr_cli_flags(e:&TypedExpr)->u8 {
   match &e.kind {
+  TypedExprKind::Hmac{key,message,tag}=>expr_cli_flags(key)|expr_cli_flags(message)|tag.as_ref().map_or(0,|v|expr_cli_flags(v)),
     TypedExprKind::DomRecordTable{selector,rows,..}=>expr_cli_flags(selector)|expr_cli_flags(rows),
     TypedExprKind::DbRows{database,sql,params,..}=>expr_cli_flags(database)|expr_cli_flags(sql)|expr_cli_flags(params),
     TypedExprKind::DbTable{database,table,..}=>expr_cli_flags(database)|expr_cli_flags(table),
@@ -611,6 +631,7 @@ fn stmt_cli_flags(s:&TypedStmt)->u8 {
 
 fn expr_uses_db(e:&TypedExpr)->bool {
  match &e.kind {
+  TypedExprKind::Hmac{key,message,tag}=>expr_uses_db(key)||expr_uses_db(message)||tag.as_ref().is_some_and(|v|expr_uses_db(v)),
     TypedExprKind::DomRecordTable{selector,rows,..}=>expr_uses_db(selector)||expr_uses_db(rows),
    TypedExprKind::DbRows{..}|TypedExprKind::DbTable{..}=>true,
    TypedExprKind::HttpServeState{handler,initial}=>expr_uses_db(handler)||expr_uses_db(initial),
@@ -691,6 +712,11 @@ pub fn emit(program:&TypedProgram,registry:&PackageRegistry)->Result<String,Stri
  let mut application_emitter=Emitter::new(0);
  let application=application_emitter.statements(&program.statements);
  let requires_assert=application_emitter.assertion_used.get();
+ let requires_hmac=application_emitter.hmac_used.get() || imported.keys().any(|id|{
+   let mut emitter=Emitter::new(0);
+   if let Some(pkg)=registry.packages.get(id){emitter.statements(&pkg.typed_source.statements);}
+   emitter.hmac_used.get()
+ });
  let requires_sort=application.contains("__hc_sort_desc(") ||
    imported.keys().any(|id|registry.packages.get(id).is_some_and(|pkg|
      Emitter::new(0).statements(&pkg.typed_source.statements).contains("__hc_sort_desc(")));
@@ -701,6 +727,7 @@ pub fn emit(program:&TypedProgram,registry:&PackageRegistry)->Result<String,Stri
    imported.keys().any(|id|registry.packages.get(id).is_some_and(|pkg|
      Emitter::new(0).statements(&pkg.typed_source.statements).contains("__hc_compare(")));
  let mut output=String::from("// Generated by H-Code M3. ESM, no eval or source interpolation.\n'use strict';\n");
+ if requires_hmac {output.push_str(include_str!("hmac_prelude.js"));}
  if cli_flags&1!=0 {
    output.push_str("import {readSync as __hc_read_fd0} from 'node:fs';\n");
    output.push_str(r#"

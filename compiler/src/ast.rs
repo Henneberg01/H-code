@@ -64,6 +64,7 @@ pub enum ExprKind {
     Sleep(Box<Expr>),
     StdinText,
     ArithEval(Box<Expr>),
+    Hmac {key:Box<Expr>,message:Box<Expr>,tag:Option<Box<Expr>>},
     CsvTyped { schema: String, value: Box<Expr> },
     DbRows { schema: String, database: Box<Expr>, sql: Box<Expr>, params: Box<Expr> },
     DbTable { schema: String, database: Box<Expr>, table: Box<Expr> },
