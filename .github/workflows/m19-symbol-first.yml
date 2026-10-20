@@ -18,6 +18,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Install SRI-locked maintained WebSocket transport
+        run: npm ci --ignore-scripts --no-audit --no-fund
       - uses: dtolnay/rust-toolchain@stable
       - name: Rust native symbols, typechecker and conditional linking
         run: cargo test --manifest-path compiler/Cargo.toml --test m19_symbol_sort

@@ -22,6 +22,7 @@ import {verifyCanonical13} from './canonical20-verify-13.mjs';
 import {verifyCanonical14} from './canonical20-verify-14.mjs';
 import {verifyCanonical15} from './canonical20-verify-15.mjs';
 import {verifyCanonical16} from './canonical20-verify-16.mjs';
+import {verifyCanonical17} from './canonical20-verify-17.mjs';
 import {verifyCanonical18} from './canonical20-verify-18.mjs';
 import {verifyCanonical19} from './canonical20-verify-19.mjs';
 import {verifyCanonical20Feature} from './canonical20-verify-20.mjs';
@@ -168,6 +169,10 @@ export function readiness(){
         // Frozen contract, whole native/TS apps and real HTTP/restart/fault evidence.
         fullEvidence[w.id]=verifyCanonical16();
         verified++;
+      }else if(w.id==='17-websocket-chat'){
+        // Whole source-locked chat apps, independent real clients and rejected policy faults.
+        fullEvidence[w.id]=verifyCanonical17();
+        verified++;
       }else if(w.id==='18-refactor-task'){
         // The concrete baseline was committed before refactoring. Require
         // identical assertion bytes, real native projects, independent TS,
@@ -226,6 +231,7 @@ export function readiness(){
     capabilityDemandIsNotCompilerCoverage:true,
     requestedByUnverifiedTasks,
     verifiedFullWorkloads:verified,partialReferenceEvidence:partial,unsupported,
+    acceptanceComplete:verified===20&&partial===0&&unsupported===0,
     complete:false,globalMedianCodepointReduction:null,globalMedianUtf8Reduction:null,
     objectiveAchieved:false,compilerProvenanceValidated:false,
     historicalM14MedianCodepointReductionPct:fullEvidence['10-generic-collection-transforms'].historicalM14MedianCodepointReductionPct,
@@ -238,7 +244,7 @@ export function readiness(){
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){
   const report=readiness();
   console.log(JSON.stringify(report,null,2));
-  if(process.argv.includes('--require-complete')&&!report.complete){
+  if(process.argv.includes('--require-complete')&&!report.acceptanceComplete){
     console.error('Canonical 20-task gate NOT MET: all 20 must be compiler-verified.');
     process.exitCode=2;
   }

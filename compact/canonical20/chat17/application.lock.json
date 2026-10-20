@@ -1,0 +1,26 @@
+{
+  "workloadId": "17-websocket-chat",
+  "contractCommit": "6489e6d8a9b9997a71da7af29d6ba063858d664e",
+  "contractManifest": {
+    "path": "compact/canonical20/chat17/contract.lock.json",
+    "gitBlobSha": "d6fd2be3672e671db7d7974529eb730985d7151f"
+  },
+  "dependencyLock": {
+    "path": "package-lock.json",
+    "gitBlobSha": "d9dbf61ca9d0fa773f1a350f11ea87a906a0e8c4"
+  },
+  "dependencyNotice": {
+    "path": "third_party/ws-LICENSE.txt",
+    "gitBlobSha": "1da5b96a11ac2c83160e3085188f04eba7e3dd7d"
+  },
+  "files": [
+    {
+      "path": "compact/canonical20/chat17/hcode/main.hc",
+      "gitBlobSha": "98a10aaf17165fd8896a5bbaf69b4eaa5dc79703"
+    },
+    {
+      "path": "compact/canonical20/chat17/typescript/main.ts",
+      "gitBlobSha": "4856b898377aedbed5f277a2315910db8b3f9219"
+    }
+  ]
+}

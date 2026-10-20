@@ -50,9 +50,10 @@ Both print `42`. The imported `⊕` denotes an inspected, version-locked functio
 
 ## Start locally
 
-Requires Node.js **20+** and the stable Rust toolchain. In the repository root:
+Requires Node.js **20+** and the stable Rust toolchain; the complete acceptance workflows require **Node 22.13+**. WebSocket serving uses the SRI-locked maintained ws dependency. In the repository root:
 
 ```sh
+npm ci --ignore-scripts --no-audit --no-fund
 npm test
 cargo test --manifest-path compiler/Cargo.toml
 npm run studio:test

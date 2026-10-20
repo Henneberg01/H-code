@@ -10,3 +10,5 @@ coverage/
 !.env.example
 studio/output.mjs
 .m9-backup-*/
+
+.chat17-proof-*/

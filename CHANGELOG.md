@@ -1,5 +1,12 @@
 # JFH-CODE change log
 
+## Unreleased — WebSocket room chat (2026-10-20)
+
+- Added typed generic `⇄` / `websocket_serve` event reducers with a maintained, SRI-pinned ws 8.22.0 transport, explicit loopback grants, text/peer/queue limits and full output validation before state or sends.
+- Closed callback purity gaps through nested registrations, named map/filter and composition helpers; rejected sparse outboxes atomically. Preserved typed empty JSON sequence constraints and ordinary-function argument context in the independent interpreter, with regression tests.
+- Froze task17 protocol/traces before app implementation. Native/reference/TypeScript chat passes 42 wire runs, 2,526 accepted messages, 2,388 concurrent sends, 30 disconnects including 3 killed isolated client processes, and 9 rejected room/sequence/cleanup faults.
+- Counted complete apps: 1,689 JFH-CODE vs 3,968 TypeScript codepoints (57.43% fewer), with UTF-8, common fixture, maintained dependency and generated runtime reported separately. Conditional acceptance coverage is 20/20; successful real-browser verification and the global 70% benchmark remain outstanding.
+
 ## Unreleased — signed stateful sessions (2026-10-20)
 
 - Added typed HMAC-SHA-256 signing/verification (`✍`/`✓`, with readable aliases), canonical constant-time tag verification, exact UTF-8 bounds and transitive effect checking in Rust and the independent JavaScript language reference.

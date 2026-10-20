@@ -16,10 +16,12 @@ test('all 20 canonical tasks remain registered in source order, including unsupp
 test('source-locked reference-only examples cannot be misrepresented as global 70% proof',{skip:!canRunTs},()=>{
   const r=readiness();
   assert.equal(r.preregisteredTasks,20);
-  assert.equal(r.verifiedFullWorkloads,19);
+  assert.equal(r.verifiedFullWorkloads,20);
   assert.equal(r.partialReferenceEvidence,0);
-  assert.equal(r.unsupported,1);
+  assert.equal(r.unsupported,0);
   assert.equal(r.complete,false);
+  assert.equal(r.acceptanceComplete,true);
+  assert.deepEqual(r.requestedByUnverifiedTasks,[]);
   assert.equal(r.globalMedianCodepointReduction,null);
   assert.equal(r.objectiveAchieved,false);
   assert.equal(r.evidenceByFullTask['01-calculator-cli'].kind,'full-compiler-evidence');
@@ -67,6 +69,9 @@ test('source-locked reference-only examples cannot be misrepresented as global 7
   assert.equal(r.evidenceByFullTask['16-auth-sessions'].httpAssertions,888);
   assert.equal(r.evidenceByFullTask['16-auth-sessions'].seededFaultsRejected.length,9);
   assert.equal(r.evidenceByFullTask['16-auth-sessions'].globallyVerified70Percent,false);
+  assert.equal(r.evidenceByFullTask['17-websocket-chat'].acceptedChatMessages,2526);
+  assert.equal(r.evidenceByFullTask['17-websocket-chat'].forcedDisconnects,3);
+  assert.equal(r.evidenceByFullTask['17-websocket-chat'].globallyVerified70Percent,false);
   assert.equal(r.evidenceByFullTask['04-csv-validation'].kind,'full-compiler-evidence');
   assert.equal(r.evidenceByFullTask['04-csv-validation'].fixedFilesVerified,4);
   assert.equal(r.evidenceByFullTask['04-csv-validation'].generatedCSVFilesAndExpectedOutputsVerified,40);
@@ -173,18 +178,19 @@ test('registry cannot claim an unsupported case is fully verified without compil
 // This starts all current source-locked proofs again in a new process.
 // On Windows, independent child runtimes exceed 30s; extending the timeout does
 // not skip a single test or loosen the original 20-task strict rejection.
-test('the strict twenty-workload CI gate intentionally fails until all 20 pass',{skip:!canRunTs},()=>{
+test('the strict acceptance gate requires all twenty real proofs and does not certify source savings',{skip:!canRunTs},()=>{
   const root=fileURLToPath(new URL('../../',import.meta.url));
   const child=spawnSync(process.execPath,['scripts/canonical20-coverage.mjs','--require-complete'],{
     cwd:root,encoding:'utf8',timeout:300_000,windowsHide:true
   });
   assert.ifError(child.error);
-  assert.equal(child.status,2);
-  assert.match(child.stderr,/all 20 must be compiler-verified/);
+  assert.equal(child.status,0);
   const report=JSON.parse(child.stdout);
   assert.equal(report.preregisteredTasks,20);
-  assert.equal(report.verifiedFullWorkloads,19);
-  assert.equal(report.unsupported,1);
+  assert.equal(report.verifiedFullWorkloads,20);
+  assert.equal(report.unsupported,0);
+  assert.equal(report.acceptanceComplete,true);
+  assert.equal(report.complete,false);
   assert.equal(report.globalMedianCodepointReduction,null);
   assert.equal(report.objectiveAchieved,false);
 });

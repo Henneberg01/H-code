@@ -74,7 +74,9 @@
     "benchmark20:verify20": "node scripts/canonical20-verify-20.mjs",
     "benchmark20:test20": "node --test scripts/test/canonical20-feature.test.mjs",
     "benchmark20:verify16": "node scripts/canonical20-verify-16.mjs",
-    "benchmark20:test16": "node --test scripts/test/canonical20-auth.test.mjs scripts/canonical20-auth-policy.test.mjs"
+    "benchmark20:test16": "node --test scripts/test/canonical20-auth.test.mjs scripts/canonical20-auth-policy.test.mjs",
+    "benchmark20:verify17": "node scripts/canonical20-verify-17.mjs",
+    "benchmark20:test17": "node --test scripts/test/canonical20-chat.test.mjs scripts/canonical20-chat-policy.test.mjs scripts/websocket-runtime.test.mjs"
   },
   "engines": {
     "node": ">=20"

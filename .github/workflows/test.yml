@@ -22,6 +22,7 @@ on:
       - feat/m15-sign-blocks-delimiters
       - feat/m16-typed-user-signs
       - 'feat/m19-*'
+      - codex/jfh-code-websocket-chat
       - feat/m16-2-universal-sign-types
 permissions:
   contents: read
@@ -37,6 +38,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Install SRI-locked maintained WebSocket transport
+        run: npm ci --ignore-scripts --no-audit --no-fund
       - uses: dtolnay/rust-toolchain@stable
       # phase1:test includes canonical20 coverage tests, so Chromium must be
       # available BEFORE the phase1, compact and source-locked test steps.
@@ -185,6 +188,9 @@ jobs:
         if: ${{ success() || failure() }}
       - name: M19.14 typed browser persistence Rust and independent JFH-CODE JS tests
         run: npm run m19:browser-storage
+        if: ${{ success() || failure() }}
+      - name: Canonical17 actual WebSocket chat, transport and integrity proof
+        run: npm run benchmark20:test17
         if: ${{ success() || failure() }}
       - name: Canonical twenty source-locked readiness check
         run: npm run benchmark20:status
