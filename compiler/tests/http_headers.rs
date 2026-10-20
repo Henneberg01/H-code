@@ -23,3 +23,19 @@ fn malformed_header_types_and_incomplete_extended_shapes_are_rejected(){
   assert!(compiled(&source).is_err());
  }
 }
+
+#[test]
+fn file_read_and_persistent_http_emit_without_import_binding_collisions(){
+ use std::io::Write;
+ use std::process::{Command,Stdio};
+ let source=r#"
+≔key←⧄"key.txt"
+ƒ reply(r:⦃body:String,method:String,path:String⦄,state:String)→⦃body:String,state:String,status:Number⦄↩⦃body:✍(key,r·body),state:state,status:200⦄
+⤊(reply,"0")
+"#;
+ let js=compiled(source).unwrap();
+ let mut child=Command::new("node").args(["--input-type=module","--check"]).stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::piped()).spawn().unwrap();
+ child.stdin.take().unwrap().write_all(js.as_bytes()).unwrap();
+ let result=child.wait_with_output().unwrap();
+ assert!(result.status.success(),"{}",String::from_utf8_lossy(&result.stderr));
+}
