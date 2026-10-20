@@ -65,3 +65,31 @@ test('missing explicit listen grant and malformed initial state fail before bind
  finally{if(previous!==undefined)process.env.HCODE_WS_LISTEN=previous;}
  assert.throws(()=>runtime.serveWebSocket(()=>{},'\ud800',{listen:'127.0.0.1:0'}),/state/);
 });
+
+test('sparse outgoing arrays cannot leak a partial message or corrupt state',async()=>{
+ const host=await server((e,state)=>({state:e.data==='bad'?'corrupt':state,messages:e.kind!=='message'?[]:
+  e.data==='bad'?[{client:e.client,data:'leak'},,]:[{client:e.client,data:state}]}));
+ try{
+  const a=await peer(host.port),b=await peer(host.port),closed=once(a.socket,'close',{signal:deadline()});
+  a.socket.send('bad');assert.equal((await closed)[0].code,1011);assert.deepEqual(a.messages,[]);
+  b.socket.send('probe');assert.equal(await b.next(),'seed');
+ }finally{await host.close();}
+});
+
+test('fragmented text reassembles and upgrade capacity and header budgets are enforced',async()=>{
+ const host=await server((e,state)=>({state,messages:e.kind==='message'?[{client:e.client,data:e.data}]:[]}));
+ const clients=[];
+ try{
+  const fragment=new WS(`ws://127.0.0.1:${host.port}/`);clients.push(fragment);
+  await once(fragment,'open',{signal:deadline()});const reply=once(fragment,'message',{signal:deadline()});
+  fragment.send('Mø',{fin:false,binary:false});fragment.send('bel 🙂',{fin:true,binary:false});
+  assert.equal(String((await reply)[0]),'Møbel 🙂');
+  for(let i=1;i<64;i++){const p=await peer(host.port);clients.push(p.socket);}
+  async function rejected(options,expected){
+   const socket=new WS(`ws://127.0.0.1:${host.port}/`,options);socket.on('error',()=>{});
+   const [,response]=await once(socket,'unexpected-response',{signal:deadline()});assert.equal(response.statusCode,expected);response.resume();socket.terminate();
+  }
+  await rejected({},503);
+  await rejected({headers:Object.fromEntries(Array.from({length:128},(_,i)=>['x-limit-'+i,'x']))},431);
+ }finally{await host.close();}
+});

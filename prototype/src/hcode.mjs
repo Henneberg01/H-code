@@ -544,7 +544,7 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
   const root=new Scope(),operations=new Map(),operationSpecs=new Map(),loadedLibraries=new Set();let steps=0,stdinConsumed=false,httpIndex=0,sleepIndex=0,fileIndex=0,pureDepth=0,functionDepth=0,httpServerRegistered=false,websocketServerRegistered=false;
   // Preserve explicit H-Code structural record types for empty sequences;
   // JS arrays alone cannot identify an empty element type.
-  const typedSequenceSchemas=new WeakMap();
+  const typedSequenceSchemas=new WeakMap(),sourceFunctionParameters=new WeakMap();
   const step=()=>{if(++steps>maxSteps)throw Error('Execution step limit exceeded');};
   root.define('print',(...args)=>{if(pureDepth>0)throw Error('CAS reducer effect denied: print');stdout(args.map(x=>x===null?'none':String(x)).join(' '));return null;});
   let assertions=0;
@@ -799,6 +799,7 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
       if(!Array.isArray(value))throw Error(context==='return'?'return expects '+type+', got '+runtimeType(value):'Annotated type mismatch: expected '+type);
       if(value.length>maxSequenceItems)throw Error('Sequence allocation limit exceeded');
       for(const element of value)requireType(element,type.slice(1,-1),context);
+      typedSequenceSchemas.set(value,type.slice(1,-1));
       return;
     }
     if(type.startsWith('⦃')&&type.endsWith('⦄')){
@@ -861,7 +862,8 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
     if(schema.startsWith('⟦')&&schema.endsWith('⟧')){
       if(!Array.isArray(value))throw Error('JSON Sequence type mismatch');
       if(value.length>maxSequenceItems)throw Error('JSON Sequence length exceeded');
-      return Object.freeze(value.map(item=>jsonReadCheck(item,schema.slice(1,-1),depth+1)));
+      const sequence=Object.freeze(value.map(item=>jsonReadCheck(item,schema.slice(1,-1),depth+1)));
+      typedSequenceSchemas.set(sequence,schema.slice(1,-1));return sequence;
     }
     if(schema.startsWith('⦃')&&schema.endsWith('⦄')){
       if(value===null||typeof value!=='object'||Array.isArray(value))throw Error('JSON Record type mismatch');
@@ -1201,10 +1203,11 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
       case 'Record':{
         if(node.fields.length>64)throw Error('Record field limit exceeded');
         const value=Object.create(null);
+        const contextFields=typeof expectedType==='string'&&expectedType.startsWith('⦃')?new Map(recordAnnotationFields(expectedType)):new Map();
         for(const field of node.fields){
           step();
           if(Object.hasOwn(value,field.name))throw Error('Duplicate record field '+field.name);
-          value[field.name]=expr(field.value,scope);
+          value[field.name]=expr(field.value,scope,contextFields.get(field.name)??null);
         }
         return Object.freeze(value);
       }
@@ -1214,8 +1217,9 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
            Object.getPrototypeOf(original)!==null||!Object.hasOwn(original,node.name))
           throw Error('Unknown record field '+node.name);
         const updated=expr(node.value,scope);
-        if(seqElementType(original[node.name])!==seqElementType(updated))
-          throw Error('Record update field type mismatch');
+        const previous=original[node.name],schema=Array.isArray(previous)?typedSequenceSchemas.get(previous):null;
+        if(schema)requireType(updated,'⟦'+schema+'⟧');
+        else if(seqElementType(previous)!==seqElementType(updated))throw Error('Record update field type mismatch');
         const copy=Object.assign(Object.create(null),original);
         copy[node.name]=updated;
         return Object.freeze(copy);
@@ -1391,7 +1395,7 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
       case 'Call':{
         const fun=expr(node.callee,scope);if(typeof fun!=='function')throw Error('Value is not callable');
         const signature=node.callee.kind==='OperationRef'?operationSpecs.get(node.callee.id):null;
-        const args=node.args.map((arg,i)=>expr(arg,scope,signature?.parameters[i]?.type??null));
+        const args=node.args.map((arg,i)=>expr(arg,scope,signature?.parameters[i]?.type??sourceFunctionParameters.get(fun)?.[i]??null));
         return fun(...args);
       }
       default:throw Error(`Unsupported AST expression ${node.kind}`);
@@ -1455,6 +1459,7 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
           return null;
           }finally{functionDepth--;}
         };
+        if(!node.typeParameters?.length)sourceFunctionParameters.set(fn,node.params.map(p=>p.type));
         scope.define(node.name,fn);break;
       }
       case 'If':block(truth(expr(node.condition,scope))?node.then:(node.otherwise??{kind:'Block',body:[]}),scope);break;

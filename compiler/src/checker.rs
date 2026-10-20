@@ -130,6 +130,32 @@ struct ActiveFunction { expected:Type,saw_return:bool,generics:Vec<String> }
 /* B2c-3: a CAS conflict may retry the H-Code reducer. Reject effects
    transitively through named H-Code functions before emitting JS. Unknown
    indirect calls fail closed; verified package operations remain pure. */
+fn cas_pure_callable<'a>(expr:&Expr,functions:&HashMap<String,&'a Stmt>,visiting:&mut Vec<String>)->Result<(),Diagnostic>{
+    let denied=||Diagnostic::new("EFFECT","State/event callback requires a statically known effect-free callable".into(),expr.span);
+    match &expr.kind {
+        ExprKind::Identifier(name)=>{
+            let function=functions.get(name).ok_or_else(denied)?;
+            if !visiting.contains(name){
+                visiting.push(name.clone());
+                if let StmtKind::Function{body,..}=&function.kind {
+                    for stmt in body{cas_pure_statement(stmt,functions,visiting)?;}
+                }else{return Err(denied());}
+                visiting.pop();
+            }
+        },
+        ExprKind::Operation{..}=>{},
+        ExprKind::Lambda{body,..}|ExprKind::Section{right:body,..}=>cas_pure_expression(body,functions,visiting)?,
+        ExprKind::Binary{op:BinaryOp::Compose,left,right}=>{
+            cas_pure_callable(left,functions,visiting)?;cas_pure_callable(right,functions,visiting)?;
+        },
+        ExprKind::Choice{condition,when_true,when_false}=>{
+            cas_pure_expression(condition,functions,visiting)?;
+            cas_pure_callable(when_true,functions,visiting)?;cas_pure_callable(when_false,functions,visiting)?;
+        },
+        _=>return Err(denied())
+    }
+    Ok(())
+}
 fn cas_pure_expression<'a>(
     expr:&Expr,functions:&HashMap<String,&'a Stmt>,visiting:&mut Vec<String>
 )->Result<(),Diagnostic>{
@@ -143,21 +169,7 @@ fn cas_pure_expression<'a>(
         ExprKind::HttpServe(_)|ExprKind::HttpServeState{..}|ExprKind::WebSocketServe{..}|ExprKind::Sleep(_)|
         ExprKind::StdinText|ExprKind::DbRows{..}|ExprKind::DbTable{..}=>return Err(denied()),
         ExprKind::Call{callee,arguments}=>{
-            match &callee.kind {
-                ExprKind::Identifier(name)=>{
-                    if name=="print"{return Err(denied());}
-                    let function=functions.get(name).ok_or_else(denied)?;
-                    if !visiting.contains(name) {
-                        visiting.push(name.clone());
-                        if let StmtKind::Function{body,..}=&function.kind {
-                            for stmt in body {cas_pure_statement(stmt,functions,visiting)?;}
-                        }else{return Err(denied());}
-                        visiting.pop();
-                    }
-                },
-                ExprKind::Operation{..}=>{},
-                _=>return Err(denied())
-            }
+            cas_pure_callable(callee,functions,visiting)?;
             for arg in arguments {cas_pure_expression(arg,functions,visiting)?;}
         },
         ExprKind::JsonRead{value,..}|ExprKind::JsonValid{value,..}|ExprKind::JsonWrite(value)|
@@ -178,9 +190,15 @@ fn cas_pure_expression<'a>(
             cas_pure_expression(sequence,functions,visiting)?;
             cas_pure_expression(index,functions,visiting)?;
         },
-        ExprKind::Binary{left,right,..}=>{
-            cas_pure_expression(left,functions,visiting)?;
-            cas_pure_expression(right,functions,visiting)?;
+        ExprKind::Binary{op,left,right}=>{
+            if *op==BinaryOp::Compose {
+                cas_pure_callable(left,functions,visiting)?;cas_pure_callable(right,functions,visiting)?;
+            }else{
+                cas_pure_expression(left,functions,visiting)?;
+                if matches!(op,BinaryOp::Map|BinaryOp::Filter|BinaryOp::SortDesc|BinaryOp::SortTextAsc){
+                    cas_pure_callable(right,functions,visiting)?;
+                }else{cas_pure_expression(right,functions,visiting)?;}
+            }
         },
         ExprKind::Choice{condition,when_true,when_false}=>{
             cas_pure_expression(condition,functions,visiting)?;

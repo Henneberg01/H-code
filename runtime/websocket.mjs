@@ -22,7 +22,7 @@ export function serveWebSocket(handler,initial,{listen=process.env.HCODE_WS_LIST
       const result=handler(wsRecord({client,data,kind}),state);
       if(!wsShape(result,'messages,state')||!wsText(result.state,1048576)||
           !Array.isArray(result.messages)||result.messages.length>64)throw TypeError('Invalid WebSocket reducer output');
-      const messages=result.messages.map(message=>{
+      const messages=Array.from(result.messages,message=>{
         if(!wsShape(message,'client,data')||!wsText(message.client,128)||!message.client||!wsText(message.data,16384))
           throw TypeError('Invalid WebSocket output message');
         return {client:message.client,data:message.data};

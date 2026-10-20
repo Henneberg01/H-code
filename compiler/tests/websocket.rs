@@ -50,3 +50,11 @@ fn nested_top_level_websocket_registration_still_checks_callback_effects(){
   assert!(compile(&format!("{bad}{register}")).unwrap_err().contains("EFFECT"));
  }
 }
+#[test]
+fn websocket_map_filter_and_composition_follow_named_helper_effects(){
+ for body in ["≔x←⟦e·data⟧⇢impure;","≔x←⟦e·data⟧⌕badPredicate;","≔x←(impure∘impure)(e·data);"]{
+  let helper="ƒ impure(x:String)→String{⎙(x);↩x}ƒ badPredicate(x:String)→Bool{⎙(x);↩⊤}";
+  let handler=HANDLER.replace("↩⦃messages:",&format!("{{{body}↩⦃messages:")).replace("state:s⦄;","state:s⦄}");
+  assert!(compile(&format!("{helper}{handler}⇄(handle,\"\");")).unwrap_err().contains("EFFECT"));
+ }
+}
