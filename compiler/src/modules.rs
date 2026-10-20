@@ -20,7 +20,7 @@ pub fn resolve(program:&mut Program,entry:&Path,registry:&mut PackageRegistry)->
 }
 fn resolve_inner(program:&mut Program,entry:&Path,registry:&mut PackageRegistry,visiting:&mut HashSet<PathBuf>,depth:usize)->Result<(),Diagnostic>{
  if depth>=32{return Err(fail("Maximum module import depth exceeded"));}
- let root=entry.parent().unwrap_or_else(||Path::new("."));
+ let root=entry.parent().filter(|path|!path.as_os_str().is_empty()).unwrap_or_else(||Path::new("."));
  let mut seen=HashSet::new();
  for stmt in &mut program.statements {
   let StmtKind::Import{source,alias}=&stmt.kind else {continue};

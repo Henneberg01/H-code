@@ -41,6 +41,19 @@ fn discovers_test_files_in_order_and_runs_real_imported_modules() {
 }
 
 #[test]
+fn bare_relative_test_filename_resolves_imports_from_the_working_directory() {
+    let w = Workspace::new();
+    w.write("math.hc", "export ƒ twice(x:Number)→Number↩x*2;");
+    w.write("entry.test.hc", "import \"./math.hc\" as math;⊨(math∷twice(21)≡42);");
+    for target in ["entry.test.hc", "./entry.test.hc"] {
+        let out = Command::new(env!("CARGO_BIN_EXE_hcodec"))
+            .current_dir(&w.0).args(["test", target]).output().unwrap();
+        assert!(out.status.success(), "{}", text(&out));
+        assert!(text(&out).contains("# assertions 1"), "{}", text(&out));
+    }
+}
+
+#[test]
 fn empty_discovery_is_an_error_and_never_a_zero_test_success() {
     let w = Workspace::new();
     let out = w.run(".", &[]);
