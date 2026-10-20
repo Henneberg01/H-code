@@ -1,5 +1,13 @@
 # JFH-CODE change log
 
+## Unreleased — signed stateful sessions (2026-10-20)
+
+- Added typed HMAC-SHA-256 signing/verification (`✍`/`✓`, with readable aliases), canonical constant-time tag verification, exact UTF-8 bounds and transitive effect checking in Rust and the independent JavaScript language reference.
+- Added optional raw HTTP header records preserving duplicate occurrences, a 128-pair budget and header-bound idempotency digests for the new request envelope. Session policy explicitly rejects request IDs to prevent stale authentication receipts.
+- Fixed file-reader and CAS runtime import binding collisions when both are emitted into one program, with a syntax regression test.
+- Froze task16's concrete protocol before implementing whole native and independent TypeScript/SQLite session apps. Verified 888 HTTP assertions, 45 forced crashes, 42 concurrent rotations, key replacement, Unicode-key boundaries, generation exhaustion and nine rejected application faults.
+- Counted complete app source: 2,403 JFH-CODE vs 7,762 TypeScript codepoints (69.04% fewer); bytes, fixtures and generated runtime remain separate. Task17 and successful aggregate browser verification remain outstanding; the global 70% goal is unverified.
+
 ## Unreleased — incremental application feature (2026-10-20)
 
 - Froze a concrete task20 starter and new acceptance before adding inclusive interval summaries, reports and a separate CLI. Preserved the original modules, tests and CLI protocol.

@@ -21,6 +21,7 @@ import {verifyCanonical12} from './canonical20-verify-12.mjs';
 import {verifyCanonical13} from './canonical20-verify-13.mjs';
 import {verifyCanonical14} from './canonical20-verify-14.mjs';
 import {verifyCanonical15} from './canonical20-verify-15.mjs';
+import {verifyCanonical16} from './canonical20-verify-16.mjs';
 import {verifyCanonical18} from './canonical20-verify-18.mjs';
 import {verifyCanonical19} from './canonical20-verify-19.mjs';
 import {verifyCanonical20Feature} from './canonical20-verify-20.mjs';
@@ -162,6 +163,10 @@ export function readiness(){
         // No registry edits: derive proof from immutable original contract,
         // typed SQL-free H-Code Rust/JS, independent TS and real Chromium.
         fullEvidence[w.id]=verifyCanonical15();
+        verified++;
+      }else if(w.id==='16-auth-sessions'){
+        // Frozen contract, whole native/TS apps and real HTTP/restart/fault evidence.
+        fullEvidence[w.id]=verifyCanonical16();
         verified++;
       }else if(w.id==='18-refactor-task'){
         // The concrete baseline was committed before refactoring. Require

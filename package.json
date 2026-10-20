@@ -72,7 +72,9 @@
     "benchmark20:verify19": "node scripts/canonical20-verify-19.mjs",
     "benchmark20:test19": "node --test scripts/test/canonical20-bug-repair.test.mjs",
     "benchmark20:verify20": "node scripts/canonical20-verify-20.mjs",
-    "benchmark20:test20": "node --test scripts/test/canonical20-feature.test.mjs"
+    "benchmark20:test20": "node --test scripts/test/canonical20-feature.test.mjs",
+    "benchmark20:verify16": "node scripts/canonical20-verify-16.mjs",
+    "benchmark20:test16": "node --test scripts/test/canonical20-auth.test.mjs scripts/canonical20-auth-policy.test.mjs"
   },
   "engines": {
     "node": ">=20"

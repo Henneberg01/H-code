@@ -1,0 +1,18 @@
+{
+  "workloadId": "16-auth-sessions",
+  "contractCommit": "01cef3b86b361eafc6accd2b78a6a3be6b20108e",
+  "contractManifest": {
+    "path": "compact/canonical20/auth16/contract.lock.json",
+    "gitBlobSha": "02cc17e1be5578550837568c77c639dcb4860d51"
+  },
+  "files": [
+    {
+      "path": "compact/canonical20/auth16/hcode/main.hc",
+      "gitBlobSha": "7c539c75f34be5dd45f405400841617670da53aa"
+    },
+    {
+      "path": "compact/canonical20/auth16/typescript/main.ts",
+      "gitBlobSha": "e9292439af93a9c0877464de45532f72fb8d747d"
+    }
+  ]
+}

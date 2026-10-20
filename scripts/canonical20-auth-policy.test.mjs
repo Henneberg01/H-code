@@ -1,0 +1,26 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {createHmac} from 'node:crypto';
+import {execute} from '../prototype/src/hcode.mjs';
+const source=()=>readFileSync(new URL('../compact/canonical20/auth16/hcode/main.hc',import.meta.url),'utf8');
+const fixture=JSON.parse(readFileSync(new URL('../compact/canonical20/auth16/fixtures.json',import.meta.url),'utf8'));
+const record=values=>Object.assign(Object.create(null),values);
+test('session policy issues a genuine MAC and invalidates rotated/revoked signatures',()=>{
+ let handler,initial;
+ execute(source(),{readFile:name=>{assert.equal(name,'signing-key.txt');return fixture.publicFixtureKey;},httpServeState:(fn,state)=>{handler=fn;initial=state;}});
+ assert.equal(typeof handler,'function','session application must register an HTTP state reducer');
+ assert.deepEqual(JSON.parse(initial),{generation:0,revoked:true});
+ const request=(method,path,body='',signature='')=>record({method,path,body,contentType:body?'application/json':'',headers:[...(body?[record({name:'content-type',value:'application/json'})]:[]),...(signature?[record({name:'x-session-signature',value:signature})]:[])]});
+ const issued=handler(request('POST','/session',JSON.stringify({identity:fixture.identity,credential:fixture.credential})),initial);
+ assert.equal(issued.status,201);
+ const token=JSON.parse(issued.body);
+ assert.equal(token.signature,createHmac('sha256',fixture.publicFixtureKey).update(JSON.stringify({generation:1,identity:fixture.identity})).digest('hex'));
+ const rotated=handler(request('POST','/session/rotate','',token.signature),issued.state);
+ assert.equal(rotated.status,200);
+ assert.equal(handler(request('GET','/session','',token.signature),rotated.state).status,401);
+ const next=JSON.parse(rotated.body);
+ const revoked=handler(request('POST','/session/revoke','',next.signature),rotated.state);
+ assert.equal(revoked.status,204);
+ assert.equal(handler(request('GET','/session','',next.signature),revoked.state).status,401);
+});

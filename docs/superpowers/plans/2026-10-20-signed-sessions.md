@@ -30,30 +30,49 @@ an independent TypeScript server execute the same frozen protocol.
 Files: compiler AST/lexer/parser/checker/codegen/packages; new HMAC runtime prelude;
 prototype parser/evaluator and independent crypto adapter; conformance tests; symbol docs.
 Interface: `✍(String,String)→String`, `✓(String,String,String)→Bool`, ASCII aliases.
-- [ ] Add failing Rust/JS conformance tests for published vector, aliases, types,
+- [x] Add failing Rust/JS conformance tests for published vector, aliases, types,
   tampering, malformed/oversize input, pure-package reservations and nested effects.
-- [ ] Run them RED, implement AST and recursive visitors plus opt-in runtime, run GREEN.
-- [ ] Run existing compiler/reference tests and commit the standalone capability.
+- [x] Run them RED, implement AST and recursive visitors plus opt-in runtime, run GREEN.
+- [x] Run existing compiler/reference tests and commit the standalone capability.
 
 ## Task 2: Generic HTTP header envelope
 
 Files: HTTP request checker, codegen, HTTP state/server preludes, focused tests.
 Interface: optional `headers:⟦⦃name:String,value:String⦄⟧` in expanded request.
-- [ ] Add failing tests for five-field request type, duplicate mixed-case headers,
+- [x] Add failing tests for five-field request type, duplicate mixed-case headers,
   real HTTP delivery, and unchanged old three/four-field handlers.
-- [ ] Implement raw header metadata and typed records without collapsing duplicates.
-- [ ] Verify CAS/read-only behavior and old HTTP tests; commit.
+- [x] Implement raw header metadata and typed records without collapsing duplicates.
+- [x] Verify CAS/read-only behavior and old HTTP tests; commit.
 
 ## Task 3: Canonical16 application and proof
 
 Files: new task16 contract/fixtures, native and TS apps, JS reference HTTP host,
 proof verifier/tests and measurement docs; derived coverage integration.
-- [ ] Commit fixture identity, protocol and acceptance before app implementation.
-- [ ] Write HTTP acceptance tests and observe missing-capability/feature failure.
-- [ ] Implement the spec's routes and durable generation/revocation in both apps.
-- [ ] Run native/reference/TS flows, duplicate headers, tampering, invalid input,
+- [x] Commit fixture identity, protocol and acceptance before app implementation.
+- [x] Write HTTP acceptance tests and observe missing-capability/feature failure.
+- [x] Implement the spec's routes and durable generation/revocation in both apps.
+- [x] Run native/reference/TS flows, duplicate headers, tampering, invalid input,
   concurrent rotation, graceful/forced restarts, and extra generated keys/traces.
-- [ ] Reject deliberately broken MAC checks, revocation or rotation implementations.
-- [ ] Freeze/count full source and report generated/runtime/common data separately.
-- [ ] Run relevant regressions, independent review, and document actual blockers.
+- [x] Reject deliberately broken MAC checks, revocation or rotation implementations.
+- [x] Freeze/count full source and report generated/runtime/common data separately.
+- [x] Run relevant regressions, independent review, and document actual blockers.
 - [ ] Commit and push development branch, confirming remote commit identity.
+
+## Execution record
+
+- Generic HMAC/header capability and pre-application contract: commit01cef3b.
+- Actual session policy initially failed because no HTTP reducer existed;
+  implemented policy then passed native/reference/TypeScript HTTP acceptance.
+- Real file-read plus CAS emission exposed duplicate imports; the emitted-ESM
+  syntax regression failed before namespacing and passed after the fix.
+- BOM-prefixed key parity and invalid-surrogate credential cases failed before
+  fixing the TS/reference decoders and TS input validation, then passed.
+- Final task16 suite:5/5; all888 HTTP assertions,45 forced crashes,42 rotation
+  races,18 startup negatives and9 application faults verified.
+- Full Rust226/226, reference181/181, Studio17/17; previous project/HTTP/CAS
+  regression selection49/49. Release and symbol-first checks passed.
+- Independent capability/application and accounting/integration reviews found
+  no remaining important issues. The evidence document and grammar gap noted
+  during concurrent review were corrected.
+- The original registry and all earlier frozen workload/application sources
+  are byte-unchanged. Aggregate Chromium verification remains a separate gate.

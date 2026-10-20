@@ -16,9 +16,9 @@ test('all 20 canonical tasks remain registered in source order, including unsupp
 test('source-locked reference-only examples cannot be misrepresented as global 70% proof',{skip:!canRunTs},()=>{
   const r=readiness();
   assert.equal(r.preregisteredTasks,20);
-  assert.equal(r.verifiedFullWorkloads,18);
+  assert.equal(r.verifiedFullWorkloads,19);
   assert.equal(r.partialReferenceEvidence,0);
-  assert.equal(r.unsupported,2);
+  assert.equal(r.unsupported,1);
   assert.equal(r.complete,false);
   assert.equal(r.globalMedianCodepointReduction,null);
   assert.equal(r.objectiveAchieved,false);
@@ -62,8 +62,11 @@ test('source-locked reference-only examples cannot be misrepresented as global 7
   assert.equal(r.evidenceByFullTask['18-refactor-task'].seededFaultsRejected.length,6);
   assert.equal(r.evidenceByFullTask['18-refactor-task'].sourceCompression.refactoredVsTypeScript.unicodeCodepointReductionPct,36.51);
   assert.equal(r.evidenceByFullTask['18-refactor-task'].globallyVerified70Percent,false);
-  assert.equal(r.requestedByUnverifiedTasks
-    .find(x=>x.capability==='http-server')?.workloads,1);
+  assert.equal(r.requestedByUnverifiedTasks.some(x=>x.capability==='http-server'),false);
+  assert.equal(r.requestedByUnverifiedTasks.some(x=>x.capability==='cryptography'),false);
+  assert.equal(r.evidenceByFullTask['16-auth-sessions'].httpAssertions,888);
+  assert.equal(r.evidenceByFullTask['16-auth-sessions'].seededFaultsRejected.length,9);
+  assert.equal(r.evidenceByFullTask['16-auth-sessions'].globallyVerified70Percent,false);
   assert.equal(r.evidenceByFullTask['04-csv-validation'].kind,'full-compiler-evidence');
   assert.equal(r.evidenceByFullTask['04-csv-validation'].fixedFilesVerified,4);
   assert.equal(r.evidenceByFullTask['04-csv-validation'].generatedCSVFilesAndExpectedOutputsVerified,40);
@@ -180,8 +183,8 @@ test('the strict twenty-workload CI gate intentionally fails until all 20 pass',
   assert.match(child.stderr,/all 20 must be compiler-verified/);
   const report=JSON.parse(child.stdout);
   assert.equal(report.preregisteredTasks,20);
-  assert.equal(report.verifiedFullWorkloads,18);
-  assert.equal(report.unsupported,2);
+  assert.equal(report.verifiedFullWorkloads,19);
+  assert.equal(report.unsupported,1);
   assert.equal(report.globalMedianCodepointReduction,null);
   assert.equal(report.objectiveAchieved,false);
 });
