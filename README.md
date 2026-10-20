@@ -37,6 +37,16 @@ use correctness oracles, so this is **not** a certified twenty-task reduction.
 
 ## Write JFH-CODE with real signs
 
+Native existential search `∃` checks typed data and stops at the first match:
+
+```hcode
+≔values←⟦3,-2,7⟧
+⊨(values∃(<0))
+```
+
+The [language rules and working app proof](docs/SEQUENCE-EXISTS.md) cover Rust,
+the independent reference, and the shorter JFH-CODE application variant.
+
 These are executable JFH-CODE programs using the same imported typed operation:
 
 ```hcode

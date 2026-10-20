@@ -31,9 +31,9 @@ fn csv_schema(ty:&Type)->String {
   }).collect::<Vec<_>>().join(",");
   format!("[{fields}]")
 }
-struct Emitter { depth:usize,assertion_used:Cell<bool>,hmac_used:Cell<bool>,websocket_used:Cell<bool> }
+struct Emitter { depth:usize,assertion_used:Cell<bool>,hmac_used:Cell<bool>,websocket_used:Cell<bool>,exists_used:Cell<bool> }
 impl Emitter {
- fn new(depth:usize)->Self {Self{depth,assertion_used:Cell::new(false),hmac_used:Cell::new(false),websocket_used:Cell::new(false)}}
+ fn new(depth:usize)->Self {Self{depth,assertion_used:Cell::new(false),hmac_used:Cell::new(false),websocket_used:Cell::new(false),exists_used:Cell::new(false)}}
  fn ind(&self)->String {"  ".repeat(self.depth)}
  fn expr(&self,e:&TypedExpr)->String {
   match &e.kind {
@@ -124,6 +124,7 @@ impl Emitter {
      BinaryOp::Greater if matches!(&left.ty,Type::String)=>format!("(__hc_compare({a},{b}) > 0)"),
      BinaryOp::LessEqual if matches!(&left.ty,Type::String)=>format!("(__hc_compare({a},{b}) <= 0)"),
      BinaryOp::GreaterEqual if matches!(&left.ty,Type::String)=>format!("(__hc_compare({a},{b}) >= 0)"),
+     BinaryOp::Exists=>{self.exists_used.set(true);format!("__hc_exists({a},{b})")},
      BinaryOp::Filter=>format!("__hc_filter({a},{b})"),
      BinaryOp::Map=>format!("__hc_map({a},{b})"),
      BinaryOp::SortDesc=>format!("__hc_sort_desc({a},{b})"),
@@ -722,6 +723,11 @@ pub fn emit(program:&TypedProgram,registry:&PackageRegistry)->Result<String,Stri
    if let Some(pkg)=registry.packages.get(id){emitter.statements(&pkg.typed_source.statements);}
    emitter.hmac_used.get()
  });
+ let requires_exists=application_emitter.exists_used.get() || imported.keys().any(|id|{
+   let mut emitter=Emitter::new(0);
+   if let Some(pkg)=registry.packages.get(id){emitter.statements(&pkg.typed_source.statements);}
+   emitter.exists_used.get()
+ });
  let requires_sort=application.contains("__hc_sort_desc(") ||
    imported.keys().any(|id|registry.packages.get(id).is_some_and(|pkg|
      Emitter::new(0).statements(&pkg.typed_source.statements).contains("__hc_sort_desc(")));
@@ -784,6 +790,9 @@ const __hc_stdin=()=>{
  output.push_str("const __hc_len = (xs) => { __hc_tick(); return __hc_seq(xs).length; };\n");
  output.push_str("const __hc_concat = (a,b) => { __hc_tick(); __hc_seq(a); __hc_seq(b); if (a.length+b.length>16384) throw Error('Sequence allocation limit exceeded'); return __hc_seq([...a,...b]); };\n");
  output.push_str("const __hc_sum = (xs) => { __hc_seq(xs); let total=0; for (const item of xs) { __hc_tick(); if (typeof item !== 'number') throw Error('∑ requires a numeric sequence'); total+=item; } return total; };\n");
+ if requires_exists {
+  output.push_str("const __hc_exists = (xs,fn) => { __hc_seq(xs); if(typeof fn!=='function') throw TypeError('∃ requires a unary predicate'); for(const item of xs){ __hc_tick(); const result=fn(item); if(typeof result!=='boolean') throw TypeError('∃ predicate must return Bool'); if(result)return true; } return false; };\n");
+ }
   output.push_str("const __hc_filter = (xs,fn) => { __hc_seq(xs); if (typeof fn!=='function') throw Error('⌕ requires a unary predicate'); const output=[]; for (const item of xs) { __hc_tick(); const keep=fn(item); if (typeof keep!=='boolean') throw Error('⌕ predicate must return Bool'); if (keep) output.push(item); if (output.length>16384) throw Error('Sequence allocation limit exceeded'); } return __hc_seq(output); };\n");
   output.push_str("const __hc_map = (xs,fn) => { __hc_seq(xs); if (typeof fn!=='function') throw Error('⇢ requires a unary transform'); const output=[]; for (const item of xs) { __hc_tick(); output.push(fn(item)); if (output.length>16384) throw Error('Sequence allocation limit exceeded'); } return __hc_seq(output); };\n");
   if requires_sort {

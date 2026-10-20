@@ -17,11 +17,11 @@ export const CORE_GLYPHS = Object.freeze({
   '⟕':'store_get', '⟖':'store_put', '⟗':'store_del',
   '\u2af6':'text-scalars', '\u27df':'text-words', '\u29c9':'histogram', '\u224b':'markdown-tokens',
   '\u29c4':'file-read', '\u29c5':'file-write', '\u29c8':'db-rows', '\u290b':'http-get', '\u290a':'http-serve', '\u231b':'sleep-ms', '\u29c7':'csv-typed',
-  '⇄':'websocket-serve', '✍':'hmac-sign', '✓':'hmac-verify', '\u2328':'stdin-text', '\u2a5a':'arith-eval', '\u2317': '#', '\u29fa': '++', '\u2211': '@+', '\u2315': '@?', '\u21e2': '@>', '↧': '@v', '↥': '@^', '\u03bb': 'lambda', '\u2200': 'forall'
+  '⇄':'websocket-serve', '✍':'hmac-sign', '✓':'hmac-verify', '\u2328':'stdin-text', '\u2a5a':'arith-eval', '\u2317': '#', '\u29fa': '++', '\u2211': '@+', '\u2315': '@?', '\u21e2': '@>', '∃':'@!', '↧': '@v', '↥': '@^', '\u03bb': 'lambda', '\u2200': 'forall'
 });
 export const RESERVED_USER_GLYPHS = new Set(['\u2205', '\u2200', '\u2208', ...Object.keys(CORE_GLYPHS)]);
 const RESERVED = new Set(['fn','let','return','true','false','if','else','while','and','or','not','use','as','lambda','forall','json_in','json_valid','json_out','text_scalars','text_words','text_hist','markdown_tokens','file_read','file_write','http_get','http_serve','sleep_ms','csv_typed','db_rows','stdin_text','arith_eval','hmac_sign','hmac_verify','websocket_serve']);
-const TWO = new Set(['==','!=','<=','>=','->','::','|>','<<','[[',']]','++','@+','@?','@>','@v','@^','=>','<+']);
+const TWO = new Set(['==','!=','<=','>=','->','::','|>','<<','[[',']]','++','@+','@!','@?','@>','@v','@^','=>','<+']);
 const ONE = new Set(['+','-','*','/','%','<','>','=','(',')','{','}',',',';',':','?','#','.']);
 const ILLEGAL = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]|\p{Default_Ignorable_Code_Point}/u;
 const SYMBOL_CHARACTER = /^\p{S}$/u;
@@ -410,7 +410,7 @@ class Parser {
         continue;
       }
       const op=this.peek().type;
-      const power={or:1,and:2,'==':3,'!=':3,'<':4,'>':4,'<=':4,'>=':4,'+':5,'-':5,'*':6,'/':6,'%':6,'<<':7,'++':5,'@?':5,'@>':5,'@v':5,'@^':5}[op];
+      const power={or:1,and:2,'==':3,'!=':3,'<':4,'>':4,'<=':4,'>=':4,'+':5,'-':5,'*':6,'/':6,'%':6,'<<':7,'++':5,'@!':5,'@?':5,'@>':5,'@v':5,'@^':5}[op];
       if(power===undefined||power<min)break;
       this.i++;const right=this.expr(power+1);left={kind:'Binary',operator:op,left,right};
     }
@@ -1347,6 +1347,20 @@ export function evaluate(ast,{stdout=()=>{},maxSteps=200000,maxSequenceItems=163
           });
           keyed.sort((x,y)=>{step();return x.key>y.key?-1:x.key<y.key?1:x.index-y.index;});
           return validateSequence(keyed.map(x=>x.item));
+        }
+        if(op==='@!'){
+          const source=validateSequence(a);
+          const fn=expr(node.right,scope);
+          if(typeof fn!=='function')throw TypeError('∃ requires a unary predicate');
+          const parameters=sourceFunctionParameters.get(fn);
+          if(parameters&&parameters.length!==1)throw TypeError('∃ requires a unary predicate');
+          for(const item of source){
+            step();
+            const result=fn(item);
+            if(typeof result!=='boolean')throw TypeError('∃ predicate must return Bool');
+            if(result)return true;
+          }
+          return false;
         }
         if(op==='@?'||op==='@>'){
           const source=validateSequence(a);

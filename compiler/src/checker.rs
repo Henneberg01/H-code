@@ -195,7 +195,7 @@ fn cas_pure_expression<'a>(
                 cas_pure_callable(left,functions,visiting)?;cas_pure_callable(right,functions,visiting)?;
             }else{
                 cas_pure_expression(left,functions,visiting)?;
-                if matches!(op,BinaryOp::Map|BinaryOp::Filter|BinaryOp::SortDesc|BinaryOp::SortTextAsc){
+                if matches!(op,BinaryOp::Map|BinaryOp::Exists|BinaryOp::Filter|BinaryOp::SortDesc|BinaryOp::SortTextAsc){
                     cas_pure_callable(right,functions,visiting)?;
                 }else{cas_pure_expression(right,functions,visiting)?;}
             }
@@ -1114,7 +1114,14 @@ impl Checker {
             }
             ExprKind::Binary{op,left,right}=>{
                 let l=self.expression(left)?;
-                let r=if matches!(op,BinaryOp::Filter|BinaryOp::Map|BinaryOp::SortDesc|BinaryOp::SortTextAsc) &&
+                // Existential search requires an established input element type,
+                // including when its short-circuit result skips every callback.
+                // Keep the same rule in the independent interpreter/package checker.
+                if *op==BinaryOp::Exists && contains_variable(&self.resolved(&l.ty)) {
+                    return Err(Diagnostic::new("TYPE",
+                        "∃ requires a concrete input element type; annotate an empty sequence".into(),left.span));
+                }
+                let r=if matches!(op,BinaryOp::Filter|BinaryOp::Map|BinaryOp::Exists|BinaryOp::SortDesc|BinaryOp::SortTextAsc) &&
                           matches!(&right.kind,ExprKind::Lambda{..}){
                     let element=self.fresh();
                     self.unify(&l.ty,&Type::Sequence(Box::new(element.clone())),left.span,
@@ -1123,6 +1130,14 @@ impl Checker {
                     self.sequence_lambda(right,context)?
                 }else{self.expression(right)?};
                 let ty=match op {
+                    BinaryOp::Exists=>{
+                        let element=self.fresh();
+                        let seq=Type::Sequence(Box::new(element.clone()));
+                        self.unify(&l.ty,&seq,left.span,"∃ requires a typed sequence")?;
+                        let callback=Type::Function(vec![element],Box::new(Type::Bool));
+                        self.unify(&r.ty,&callback,right.span,"∃ predicate must be unary and return Bool")?;
+                        Type::Bool
+                    }
                     BinaryOp::Filter=>{
                         let element=self.fresh();
                         let seq=Type::Sequence(Box::new(element.clone()));

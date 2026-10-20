@@ -106,17 +106,17 @@ function infer(node,env,expected=null){
     }
     case 'Binary':{
       const op=node.operator;
-      if(op==='@?'||op==='@>'){
+      if(op==='@?'||op==='@>'||op==='@!'){
         const xs=infer(node.left,env);
         if(!isSeq(xs))error('⌕/⇢ left side must be typed sequence');
         const input=element(xs);
         if(input==='?')error('⌕/⇢ cannot infer empty sequence without type');
-        const target=op==='@?'?callable([input],'Bool'):isSeq(expected)?callable([input],element(expected)):callable([input],'?');
+        const target=(op==='@?'||op==='@!')?callable([input],'Bool'):isSeq(expected)?callable([input],element(expected)):callable([input],'?');
         const fn=infer(node.right,env,target);
         if(!isFn(fn)||fn.params.length!==1)error('⌕/⇢ requires a unary H-Code function');
         requireType(fn.params[0],input,'⌕/⇢ callback input');
-        if(op==='@?')requireType(fn.result,'Bool','⌕ callback must return Bool');
-        out=op==='@?'?xs:sequence(fn.result);
+        if(op==='@?'||op==='@!')requireType(fn.result,'Bool','⌕/∃ callback must return Bool');
+        out=op==='@!'?'Bool':op==='@?'?xs:sequence(fn.result);
       }else if(op==='++'){
         const a=infer(node.left,env,expected),b=infer(node.right,env,expected??a);
         if(!isSeq(a)||!isSeq(b))error('⧺ requires typed sequences');

@@ -14,6 +14,18 @@ async function fixture(handler,run){
  try{return await run('http://127.0.0.1:'+server.address().port,temporary);}
  finally{server.closeAllConnections();await new Promise(resolve=>server.close(resolve));rmSync(temporary,{recursive:true,force:true});}
 }
+test('target discovery waits when the debug port is ready before the browser page',async()=>{
+ assert.equal(typeof driver.waitForPageTarget,'function','browser target discovery waits for a real page');
+ let requests=0;
+ await fixture((_req,res)=>{
+  res.setHeader('content-type','application/json');
+  res.end(JSON.stringify(++requests<4?[]:[{type:'page',webSocketDebuggerUrl:'ws://127.0.0.1/unit-page'}]));
+ },async(url)=>{
+  const page=await driver.waitForPageTarget(new URL(url).port,AbortSignal.timeout(2000));
+  assert.equal(page.webSocketDebuggerUrl,'ws://127.0.0.1/unit-page');
+  assert.equal(requests,4);
+ });
+});
 test('real Chrome executes modules, DOM events and delayed work before returning DOM',async()=>{
  await fixture((req,res)=>{
   if(req.url==='/app.mjs'){res.setHeader('content-type','text/javascript');res.end('document.querySelector("button").onclick=()=>document.body.dataset.event="yes";window.addEventListener("load",()=>setTimeout(()=>{document.querySelector("button").click();document.body.dataset.delayed="yes";},1000));');return;}

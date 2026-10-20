@@ -213,7 +213,7 @@ impl Parser {
             TokenKind::Star=>BinaryOp::Multiply,TokenKind::Slash=>BinaryOp::Divide,
             TokenKind::Percent=>BinaryOp::Modulo,TokenKind::Compose=>BinaryOp::Compose,
             TokenKind::SeqConcat=>BinaryOp::Concat,
-            TokenKind::Filter=>BinaryOp::Filter,TokenKind::Map=>BinaryOp::Map,
+            TokenKind::Exists=>BinaryOp::Exists,TokenKind::Filter=>BinaryOp::Filter,TokenKind::Map=>BinaryOp::Map,
             TokenKind::SortDesc=>BinaryOp::SortDesc,
             TokenKind::SortTextAsc=>BinaryOp::SortTextAsc,_=>return None
         })

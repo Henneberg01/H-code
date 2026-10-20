@@ -53,3 +53,7 @@ Measure Unicode code points and UTF-8 bytes **separately**; fewer visible charac
 ## Owner-approved name and license transition — 2026-10-19
 
 The official product name is **JFH-CODE**. This owner-directed change replaces the former H-Code name and the previous licensing policy for this revision and later revisions with a proprietary paid-use policy. The historical revisions and frozen benchmark sources remain unchanged. Technical compatibility identifiers such as `.hc`, `hcodec`, `hcode.lock.json` and `HCODE_*` remain supported. `LICENSING.md` defines the current terms and preserves existing legal permissions.
+
+## Development priority reaffirmed — 2026-10-20
+
+The owner directs active development toward JFH-CODE itself: its typed signs, compiler, libraries and runnable JFH-CODE programs. Benchmark comparators support verification of that work; they must remain proportionate to developing the language and reducing real JFH-CODE source.

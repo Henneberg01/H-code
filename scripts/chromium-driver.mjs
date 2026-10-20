@@ -37,6 +37,18 @@ function killBrowser(child,signal){
  if(!child.pid||child.exitCode!==null||child.signalCode!==null)return;
  try{if(process.platform==='win32')child.kill(signal);else process.kill(-child.pid,signal);}catch(error){if(error.code!=='ESRCH')throw error;}
 }
+export async function waitForPageTarget(port,signal){
+ // Chromium publishes the debug port before its initial page is necessarily
+ // created. Wait for that page under the same bounded capture deadline.
+ for(;;){
+  const targets=await fetch(`http://127.0.0.1:${port}/json/list`,{signal}).then(response=>{
+   if(!response.ok)throw Error('Chromium target discovery failed');return response.json();
+  });
+  const page=targets.find(target=>target.type==='page'&&target.webSocketDebuggerUrl);
+  if(page)return page;
+  await delay(25,undefined,{signal});
+ }
+}
 export async function dumpDOM({binary,url,profile,virtualTimeBudget=5000,timeout=22000,args=[]}){
  if(!binary||!profile||!Number.isSafeInteger(virtualTimeBudget)||virtualTimeBudget<0||virtualTimeBudget>60000)throw Error('Invalid Chromium driver configuration');
  const target=new URL(url);
@@ -61,11 +73,7 @@ export async function dumpDOM({binary,url,profile,virtualTimeBudget=5000,timeout
   const port=Number(readFileSync(join(profile,'DevToolsActivePort'),'utf8').split('\n')[0]);
   if(!Number.isInteger(port)||port<1||port>65535)throw Error('Invalid actual Chromium DevTools port');
   phase='target discovery';
-  const targets=await fetch(`http://127.0.0.1:${port}/json/list`,{signal}).then(response=>{
-   if(!response.ok)throw Error('Chromium target discovery failed');return response.json();
-  });
-  const page=targets.find(target=>target.type==='page');
-  if(!page?.webSocketDebuggerUrl)throw Error('Actual Chromium page target missing');
+  const page=await waitForPageTarget(port,signal);
   phase='CDP attach';
   client=await connectCDP(page.webSocketDebuggerUrl,signal);
   phase='Page.enable';await client.call('Page.enable');

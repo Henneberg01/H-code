@@ -24,6 +24,7 @@ on:
       - 'feat/m19-*'
       - codex/jfh-code-websocket-chat
       - codex/jfh-code-browser-benchmark
+      - codex/jfh-code-exists
       - feat/m16-2-universal-sign-types
 permissions:
   contents: read
@@ -54,6 +55,11 @@ jobs:
         env:
           HCODE_CHROME_BINARY: ${{ steps.chrome.outputs.chrome-path }}
         run: npm run browser:driver:test
+      - name: Verify existential JFH-CODE search in the real browser app
+        if: runner.os == 'Linux'
+        env:
+          HCODE_CHROME_BINARY: ${{ steps.chrome.outputs.chrome-path }}
+        run: npm run language:exists:test
       - name: Generate typed packages from concise JFH-CODE
         run: cargo run --manifest-path compiler/Cargo.toml -- pack --name poly.auto --version 1.0.0 --source packages/poly.auto/signs.hcs --lock hcode.m16.3.lock.json
       - name: Verify deterministic package output

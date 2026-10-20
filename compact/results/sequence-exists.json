@@ -1,0 +1,37 @@
+{
+  "kind": "JFH-CODE typed existential search same-application proof",
+  "before": {
+    "path": "compact/canonical20/programs/14-todo-app.hc",
+    "unicodeCodepoints": 1456,
+    "utf8Bytes": 1757,
+    "gitBlobSha": "2931b75caac9db0582e0d8088fe2f1e29f5cd934"
+  },
+  "after": {
+    "path": "compact/canonical20/candidates/14-todo-exists.hc",
+    "unicodeCodepoints": 1442,
+    "utf8Bytes": 1733,
+    "gitBlobSha": "4f45148c6e208b31fcc995983754910f0ef0b026"
+  },
+  "codepointReductionPct": 0.96,
+  "utf8ReductionPct": 1.37,
+  "generatedBefore": {
+    "utf8Bytes": 22392,
+    "sha256": "46a1c689391a091bc8a3f4507bce2cbf910320b1b0dc907b9e23f41d946868c8"
+  },
+  "generatedAfter": {
+    "utf8Bytes": 22637,
+    "sha256": "1166a8dc05160f26056f571eef617f8e58304a1bb40849caa88d7f822e6e19b4"
+  },
+  "temporaryFilteredSequencesReplaced": 4,
+  "actualBrowserTraceStages": 15,
+  "browserLaunchesPerVersion": 3,
+  "nativeRustTestsPassed": 239,
+  "referenceTestsPassed": 190,
+  "studioTestsPassed": 17,
+  "focusedLanguageAndBrowserTestsPassed": 13,
+  "originalCanonicalWorkloadsPassed": 20,
+  "originalRegistryUnchanged": true,
+  "global70PercentObjectiveProven": false,
+  "runtimeSpeedMeasured": false,
+  "AIOrDeveloperTimeMeasured": false
+}
